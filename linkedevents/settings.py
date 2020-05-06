@@ -169,6 +169,7 @@ INSTALLED_APPS = [
     'munigeo',
     'leaflet',
     'django_orghierarchy',
+    'admin_auto_filters',
 ] + env('EXTRA_INSTALLED_APPS')
 
 if env('SENTRY_DSN'):
