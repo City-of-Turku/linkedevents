@@ -1,7 +1,8 @@
 from helusers.oidc import resolve_user, ApiTokenAuthentication as HelusersApiTokenAuthentication
 from helusers.authz import UserAuthorization
 
-import json
+from rest_framework.exceptions import AuthenticationFailed
+from django.utils.translation import ugettext as _
 
 class ApiTokenAuthentication(HelusersApiTokenAuthentication):
     def authenticate(self, request):
