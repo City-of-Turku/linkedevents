@@ -34,7 +34,7 @@ class TprekImporter(Importer):
 
     def setup(self):
 
-       #public data sourse for organisations model
+        #public data source for organisations model
         ds_args = dict(id='org', user_editable=True)
         defaults = dict(name='Ulkoa tuodut organisaatiotiedot')
         self.data_source, _ = DataSource.objects.get_or_create(defaults=defaults, **ds_args)         
@@ -44,10 +44,12 @@ class TprekImporter(Importer):
         defaults = dict(name='Paikkatieto')
         self.organizationclass, _ =  OrganizationClass.objects.get_or_create(defaults=defaults, **ds_args)
 
-        ds_args = dict(id='tpr')
+        #Unit data source
+        ds_args = dict(id='tpr', user_editable=True)
         defaults = dict(name='Ulkoa tuodut paikkatiedot toimipisteille')
         self.data_source, _ = DataSource.objects.get_or_create(defaults=defaults, **ds_args)
         
+        #Organization for units register  
         org_args = dict(origin_id='1100', data_source= self.data_source, classification_id="org:12")
         defaults = dict(name='Toimipisterekisteri')
         self.organization, _ = Organization.objects.get_or_create(defaults=defaults, **org_args)
@@ -105,14 +107,13 @@ class TprekImporter(Importer):
         e = 0
 
         isPositionOk = True
+
+        #Linux / Unix use a different way to gdal library and it get coordinates in reversed order
         try:
-            if os.name == 'nt':                  
+                          
                 n = info['location']['coordinates'][0]#latitude
                 e = info['location']['coordinates'][1]#longitude
-            else:
-                n = info['location']['coordinates'][1]#latitude
-                e = info['location']['coordinates'][0]#longitude
-           
+       
         except:
             isPositionOk == False
             POSITIONERROR.append(info['id'])
@@ -174,13 +175,14 @@ class TprekImporter(Importer):
                     setattr(obj, obj_field, val)
                     obj._changed_fields.append(obj_field)
                     obj._changed = True
-
-            #n = info['location']['coordinates'][0]#latitude
-            #e = info['location']['coordinates'][1]#longitude
+           
             position = None
             if n and e:
-                p = Point(e, n, srid=4326)  # GPS coordinate system (WGS 84)
-         
+                if os.name == 'nt':    
+                    p = Point(e, n, srid=4326)  # GPS coordinate system (WGS 84)
+                else:
+                    p = Point(n, e, srid=4326)  # GPS coordinate system (WGS 84)
+                
                 if p.within(self.bounding_box):
                     if self.target_srid != 4326:
                         p.transform(self.gps_to_target_ct)
@@ -252,7 +254,7 @@ class TprekImporter(Importer):
                
                 obj_listPage = self.pk_get('unit', page)
 
-                print( 'next: ', obj_listPage['next'])
+                #print( 'next: ', obj_listPage['next'])
 
                 if obj_listPage['next'] == None: 
                     pageNext == False
