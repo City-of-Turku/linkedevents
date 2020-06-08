@@ -15,7 +15,6 @@ CONFIG_FILE_NAME = "config_dev.toml"
 def get_git_revision_hash() -> str:
     """
     Retrieve the git hash for the underlying git repository or die trying
-
     We need a way to retrieve git revision hash for sentry reports
     I assume that if we have a git repository available we will
     have git-the-comamand as well
@@ -219,7 +218,7 @@ LANGUAGE_CODE = env('LANGUAGES')[0]
 TIME_ZONE = 'Europe/Helsinki'
 
 MUNIGEO_COUNTRY = 'country:fi'
-MUNIGEO_MUNI = 'kunta:helsinki'
+MUNIGEO_MUNI = 'kunta:turku'
 
 USE_I18N = True
 USE_L10N = True
@@ -510,4 +509,4 @@ if env('MAIL_MAILGUN_KEY'):
         'MAILGUN_SENDER_DOMAIN': env('MAIL_MAILGUN_DOMAIN'),
         'MAILGUN_API_URL': env('MAIL_MAILGUN_API'),
     }
-    EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
