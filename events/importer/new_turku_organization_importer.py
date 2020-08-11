@@ -93,7 +93,6 @@ def preprocess():
         'paiktieto':[dict(origin_id='12', data_source=return_ds[1], user_editable=True), dict(name='Paikkatieto')],
         'sanasto':[dict(origin_id='13', data_source=return_ds[1], user_editable=True), dict(name='Sanasto')],
         'virtuaalitapah':[dict(origin_id='14', data_source=return_ds[1], user_editable=True), dict(name='Virtuaalitapahtuma')],
-        'faketapahtuma':[dict(origin_id='15', data_source=return_ds[1], user_editable=True), dict(name='Testitapahtuma')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
     
@@ -107,7 +106,7 @@ def preprocess():
     ######################################
     org_arr = {
         'turku_org':[dict(origin_id='turku', data_source=return_ds[2], classification_id="org:3"), dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')],
-        'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[2], classification_id="org:11"), dict(name='Yksityishenkilöt')],
+        'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[3], classification_id="org:11"), dict(name='Yksityishenkilöt')],
         'org_virtual':[dict(origin_id='3000', data_source=return_ds[4], classification_id="org:14"), dict(name='Virtuaalitapahtumat')],
     }
     return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
@@ -127,29 +126,32 @@ def preprocess():
     return_place_org = [get_create_place(keys, values) for keys, values in place_arr.items()]
     rpo = return_place_org.__iter__()
 
-    return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
-        'data_source': rds.__next__(),
-        'organization': ro.__next__(),
-        'data_source_system': rds.__next__(),
-        'data_source_org': rds.__next__(),
-        'organization_class_1': rgc.__next__(),
-        'organization_class_2': rgc.__next__(),
-        'organization_class_3': rgc.__next__(),
-        'organization_class_4': rgc.__next__(),
-        'organization_class_5': rgc.__next__(),
-        'organization_class_6': rgc.__next__(),
-        'organization_class_7': rgc.__next__(),
-        'organization_class_8': rgc.__next__(),
-        'organization_class_9': rgc.__next__(),
-        'organization_class_10': rgc.__next__(),
-        'organization_class_11': rgc.__next__(),
-        'organization_class_12': rgc.__next__(),
-        'organization_class_13': rgc.__next__(),
-        'organization_class_14': rgc.__next__(),
-        'organization_1': ro.__next__(),
-        'organization_2': ro.__next__(),
-        'organization_virtual': rpo.__next__()
-    }
+    try:
+        return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
+            'data_source': rds.__next__(),
+            'organization': ro.__next__(),
+            'data_source_system': rds.__next__(),
+            'data_source_org': rds.__next__(),
+            'organization_class_1': rgc.__next__(),
+            'organization_class_2': rgc.__next__(),
+            'organization_class_3': rgc.__next__(),
+            'organization_class_4': rgc.__next__(),
+            'organization_class_5': rgc.__next__(),
+            'organization_class_6': rgc.__next__(),
+            'organization_class_7': rgc.__next__(),
+            'organization_class_8': rgc.__next__(),
+            'organization_class_9': rgc.__next__(),
+            'organization_class_10': rgc.__next__(),
+            'organization_class_11': rgc.__next__(),
+            'organization_class_12': rgc.__next__(),
+            'organization_class_13': rgc.__next__(),
+            'organization_class_14': rgc.__next__(),
+            'organization_1': ro.__next__(),
+            'organization_2': ro.__next__(),
+            'organization_virtual': rpo.__next__()
+        }
+    except: 
+        print("Stop iteration error, this will be a logger in the near future.")
 
 #class Thing(object):
 @register_importer
