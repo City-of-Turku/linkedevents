@@ -5,6 +5,7 @@
 
 #Dependencies
 import logging
+import os
 
 from django import db
 from django.conf import settings
@@ -66,7 +67,7 @@ def preprocess():
     datasources = {
         'system':[dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), dict(name='Järjestelmän sisältä luodut lähteet')],
         'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
-        'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki')],
+        'turku':[dict(id="turkuuuuu", user_editable=True), dict(name='Kuntakohtainen data Turuuuuun Kaupunki')],
         'yksilo':[dict(id="yksilo", user_editable=True), dict(name='Yksityishenkilöihin liittyvä yleisdata')],
         'virtual':[dict(id="virtual", user_editable=True), dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')]
     }
@@ -124,32 +125,30 @@ def preprocess():
     }
     return_place_org = [get_create_place(keys, values) for keys, values in place_arr.items()]
     rpo = return_place_org.__iter__()
-    try:
-        return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
-            'data_source_system': rds.__next__(),
-            'data_source_org': rds.__next__(),
-            'organization_class_1': rgc.__next__(),
-            'organization_class_2': rgc.__next__(),
-            'organization_class_3': rgc.__next__(),
-            'organization_class_4': rgc.__next__(),
-            'organization_class_5': rgc.__next__(),
-            'organization_class_6': rgc.__next__(),
-            'organization_class_7': rgc.__next__(),
-            'organization_class_8': rgc.__next__(),
-            'organization_class_9': rgc.__next__(),
-            'organization_class_10': rgc.__next__(),
-            'organization_class_11': rgc.__next__(),
-            'organization_class_12': rgc.__next__(),
-            'organization_class_13': rgc.__next__(),
-            'organization_class_14': rgc.__next__(),
-            'data_source': rds.__next__(),
-            'organization': ro.__next__(),
-            'organization_1': ro.__next__(),
-            'organization_2': ro.__next__(),
-            'organization_virtual': rpo.__next__()
-            }
-    except:
-        print("stop iteration error")
+
+    return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
+        'data_source': rds.__next__(),
+        'organization': ro.__next__(),
+        'data_source_system': rds.__next__(),
+        'data_source_org': rds.__next__(),
+        'organization_class_1': rgc.__next__(),
+        'organization_class_2': rgc.__next__(),
+        'organization_class_3': rgc.__next__(),
+        'organization_class_4': rgc.__next__(),
+        'organization_class_5': rgc.__next__(),
+        'organization_class_6': rgc.__next__(),
+        'organization_class_7': rgc.__next__(),
+        'organization_class_8': rgc.__next__(),
+        'organization_class_9': rgc.__next__(),
+        'organization_class_10': rgc.__next__(),
+        'organization_class_11': rgc.__next__(),
+        'organization_class_12': rgc.__next__(),
+        'organization_class_13': rgc.__next__(),
+        'organization_class_14': rgc.__next__(),
+        'organization_1': ro.__next__(),
+        'organization_2': ro.__next__(),
+        'organization_virtual': rpo.__next__()
+    }
 
 #class Thing(object):
 @register_importer
