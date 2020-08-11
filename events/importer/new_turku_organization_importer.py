@@ -67,7 +67,7 @@ def preprocess():
     datasources = {
         'system':[dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), dict(name='Järjestelmän sisältä luodut lähteet')],
         'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
-        'turku':[dict(id="turkuuuuu", user_editable=True), dict(name='Kuntakohtainen data Turuuuuun Kaupunki')],
+        'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki')],
         'yksilo':[dict(id="yksilo", user_editable=True), dict(name='Yksityishenkilöihin liittyvä yleisdata')],
         'virtual':[dict(id="virtual", user_editable=True), dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')]
     }
@@ -93,6 +93,7 @@ def preprocess():
         'paiktieto':[dict(origin_id='12', data_source=return_ds[1], user_editable=True), dict(name='Paikkatieto')],
         'sanasto':[dict(origin_id='13', data_source=return_ds[1], user_editable=True), dict(name='Sanasto')],
         'virtuaalitapah':[dict(origin_id='14', data_source=return_ds[1], user_editable=True), dict(name='Virtuaalitapahtuma')],
+        'faketapahtuma':[dict(origin_id='15', data_source=return_ds[1], user_editable=True), dict(name='Testitapahtuma')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
     
