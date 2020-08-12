@@ -54,10 +54,8 @@ def get_create_organizationclass(ob, args):
         pass
 
 def get_create_place(ob, args): #Function not in use yet.
-    b=args[0]
-    m = [x for x in b.items()]
     try:
-        placey, _ = Place.objects.get_or_create(id=str(m[1])+":"+str(m[0]), defaults=args[1], **args[0])
+        placey, _ = Place.objects.get_or_create(defaults=args[1], **args[0])
         return placey #sys_ds "return ds_args, defaults, etc"
     except:
         pass
@@ -116,7 +114,7 @@ def preprocess():
     ######################################
 
     place_arr = {
-        'place_org_virtual':[dict(origin_id='public', data_source=return_ds[4]),
+        'place_org_virtual':[dict(id=return_ds[4]+':public', origin_id='public', data_source=return_ds[4]),
         dict(data_source=return_ds[4],
         publisher=return_org[1],
         name='Virtuaalitapahtuma',
