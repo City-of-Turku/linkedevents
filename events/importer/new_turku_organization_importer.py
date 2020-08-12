@@ -119,10 +119,11 @@ def preprocess():
         'sivistys':[dict(origin_id='40', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Sivistystoimiala')],
         'vapaatoim':[dict(origin_id='44', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Vapaa-aikatoimiala')],
         'kaupunkiymprst':[dict(origin_id='61', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Kaupunkiympäristötoimiala')],
-        'tkukaupteatteri':[dict(origin_id='80', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Turun Kaupunginteatteri')]
+        'tkukaupteatteri':[dict(origin_id='80', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Turun Kaupunginteatteri')],
     }
     return_org_taso_2 = [get_create_organization(keys, values) for keys, values in org_taso_2.items()]
     rot2 = return_org_taso_2.__iter__()
+    
     '''
     org_taso_3 = {
         'matkpalvelukesk':[dict(origin_id='0719', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Matkailun palvelukeskus')],
