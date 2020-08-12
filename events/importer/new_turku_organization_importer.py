@@ -55,7 +55,7 @@ def get_create_organizationclass(ob, args):
 
 def get_create_place(ob, args): #Function not in use yet.
     try:
-        placey, _ = Place.objects.get_or_create(id=args[0], defaults=args[1])
+        placey, _ = Place.objects.get_or_create(id="test", defaults=args[1], **args[0])
         return placey #sys_ds "return ds_args, defaults, etc"
     except:
         pass
