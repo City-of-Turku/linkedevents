@@ -146,7 +146,6 @@ def preprocess():
             'data_source': rds.__next__(),
             'organization': ro.__next__(),
             'organization_1': ro.__next__(),
-            'organization_2': ro.__next__(),
             'organization_virtual': rpo.__next__()
         }
     except: 
