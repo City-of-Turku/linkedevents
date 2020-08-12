@@ -109,19 +109,35 @@ def preprocess():
         'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[3], classification_id="org:11"), dict(name='Yksityishenkilöt')],
         'org_virtual':[dict(origin_id='3000', data_source=return_ds[4], classification_id="org:14"), dict(name='Virtuaalitapahtumat')],
     }
-    
-
     return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
     ro = return_org.__iter__()
 
     org_taso_2 = {
+        'konsernipalv':[dict(origin_id='04', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Konsernihallinto ja palvelukeskukset')],
+        'vapaatoim':[dict(origin_id='12', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Varsinais-Suomen aluepelastuslaitos')],
+        'hyvinvointitoimi':[dict(origin_id='25', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Hyvinvointitoimiala')],
         'sivistys':[dict(origin_id='40', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Sivistystoimiala')],
-        'vapaatoim':[dict(origin_id='44', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Vapaa-aikatoimiala')]
+        'vapaatoim':[dict(origin_id='44', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Vapaa-aikatoimiala')],
+        'kaupunkiymprst':[dict(origin_id='61', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Kaupunkiympäristötoimiala')],
+        'tkukaupteatteri':[dict(origin_id='80', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Turun Kaupunginteatteri')],
     }
     return_org_taso_2 = [get_create_organization(keys, values) for keys, values in org_taso_2.items()]
     rot2 = return_org_taso_2.__iter__()
 
+    org_taso_3 = {
+        'matkpalvelukesk':[dict(origin_id='0719', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Matkailun palvelukeskus')],
+        'työllisyyspalvkesk':[dict(origin_id='0720', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Työllisyyspalvelukeskus')],
+        'amk':[dict(origin_id='4032', data_source=return_ds[2], parent=return_org_taso_2[3], classification_id="org:3"), dict(name='Ammatillinen koulutus')],
+        'lukiokoul':[dict(origin_id='4031', data_source=return_ds[2], parent=return_org_taso_2[3], classification_id="org:3"), dict(name='Lukiokoulutus')],
+        'kirjastopalv':[dict(origin_id='4453', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Kirjastopalvelut')],
+        'liikuntpalv':[dict(origin_id='4470', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Liikuntapalvelut')],
+        'museopalv':[dict(origin_id='4462', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Museopalvelut')],
+        'nuorisopalv':[dict(origin_id='4480', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Nuorisopalvelut')],
+        'turunkaupunginork':[dict(origin_id='4431', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Turun Kaupunginorkesteri')],
+    }
     ######################################
+    return_org_taso_3 = [get_create_organization(keys, values) for keys, values in org_taso_3.items()]
+    rot3 = return_org_taso_3.__iter__()
 
     place_arr = {
         'place_org_virtual':[dict(id='virtual:public', origin_id='public', data_source=return_ds[4]),
@@ -162,7 +178,21 @@ def preprocess():
             'organization_2': ro.__next__(),
             'internet_location': rpo.__next__(),
             'orgtaso2': rot2.__next__(),
-            'orgtaso2_1': rot2.__next__()
+            'orgtaso2_1': rot2.__next__(),
+            'orgtaso2_2': rot2.__next__(),
+            'orgtaso2_3': rot2.__next__(),
+            'orgtaso2_4': rot2.__next__(),
+            'orgtaso2_5': rot2.__next__(),
+            'orgtaso2_6': rot2.__next__(),
+            'orgtaso3': rot3.__next__(),
+            'orgtaso3_1': rot3.__next__(),
+            'orgtaso3_2': rot3.__next__(),
+            'orgtaso3_3': rot3.__next__(),
+            'orgtaso3_4': rot3.__next__(),
+            'orgtaso3_5': rot3.__next__(),
+            'orgtaso3_6': rot3.__next__(),
+            'orgtaso3_7': rot3.__next__(),
+            'orgtaso3_8': rot3.__next__(),
         }
     except: 
         print("Stop iteration error, this will be a logger in the near future.")
