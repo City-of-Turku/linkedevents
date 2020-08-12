@@ -116,7 +116,7 @@ def preprocess():
     place_arr = {
         'place_org_virtual':[dict(origin_id='public', data_source=return_ds[4]),
         dict(data_source=return_ds[4],
-        publisher=return_org[2],
+        publisher=return_org[1],
         name='Virtuaalitapahtuma',
         name_fi='Virtuaalitapahtuma',
         name_sv='Virtuell evenemang',
