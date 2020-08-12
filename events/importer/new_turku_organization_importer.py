@@ -114,7 +114,7 @@ def preprocess():
 
     org_taso_2 = {
         'konsernipalv':[dict(origin_id='04', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Konsernihallinto ja palvelukeskukset')],
-        'vapaatoim':[dict(origin_id='12', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Varsinais-Suomen aluepelastuslaitos')],
+        'varsaluepel':[dict(origin_id='12', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Varsinais-Suomen aluepelastuslaitos')],
         'hyvinvointitoimi':[dict(origin_id='25', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Hyvinvointitoimiala')],
         'sivistys':[dict(origin_id='40', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Sivistystoimiala')],
         'vapaatoim':[dict(origin_id='44', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Vapaa-aikatoimiala')],
@@ -123,8 +123,8 @@ def preprocess():
     }
     return_org_taso_2 = [get_create_organization(keys, values) for keys, values in org_taso_2.items()]
     rot2 = return_org_taso_2.__iter__()
-    
-    '''
+
+
     org_taso_3 = {
         'matkpalvelukesk':[dict(origin_id='0719', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Matkailun palvelukeskus')],
         'työllisyyspalvkesk':[dict(origin_id='0720', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Työllisyyspalvelukeskus')],
@@ -136,10 +136,11 @@ def preprocess():
         'nuorisopalv':[dict(origin_id='4480', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Nuorisopalvelut')],
         'turunkaupunginork':[dict(origin_id='4431', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Turun Kaupunginorkesteri')]
     }
+
     ######################################
     return_org_taso_3 = [get_create_organization(keys, values) for keys, values in org_taso_3.items()]
     rot3 = return_org_taso_3.__iter__()
-    '''
+
     place_arr = {
         'place_org_virtual':[dict(id='virtual:public', origin_id='public', data_source=return_ds[4]),
         dict(data_source=return_ds[4],
@@ -154,19 +155,6 @@ def preprocess():
 
     return_place_org = [get_create_place(keys, values) for keys, values in place_arr.items()]
     rpo = return_place_org.__iter__()
-
-
-    '''
-            'orgtaso3': rot3.__next__(),
-            'orgtaso3_1': rot3.__next__(),
-            'orgtaso3_2': rot3.__next__(),
-            'orgtaso3_3': rot3.__next__(),
-            'orgtaso3_4': rot3.__next__(),
-            'orgtaso3_5': rot3.__next__(),
-            'orgtaso3_6': rot3.__next__(),
-            'orgtaso3_7': rot3.__next__(),
-            'orgtaso3_8': rot3.__next__()
-    '''
 
     try:
         return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
@@ -197,7 +185,16 @@ def preprocess():
             'orgtaso2_3': rot2.__next__(),
             'orgtaso2_4': rot2.__next__(),
             'orgtaso2_5': rot2.__next__(),
-            'orgtaso2_6': rot2.__next__()
+            'orgtaso2_6': rot2.__next__(),
+            'orgtaso3': rot3.__next__(),
+            'orgtaso3_1': rot3.__next__(),
+            'orgtaso3_2': rot3.__next__(),
+            'orgtaso3_3': rot3.__next__(),
+            'orgtaso3_4': rot3.__next__(),
+            'orgtaso3_5': rot3.__next__(),
+            'orgtaso3_6': rot3.__next__(),
+            'orgtaso3_7': rot3.__next__(),
+            'orgtaso3_8': rot3.__next__(),
         }
     except: 
         print("Stop iteration error, this will be a logger in the near future.")
