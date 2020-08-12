@@ -13,7 +13,7 @@ from django.core.management import call_command
 from django.utils.module_loading import import_string
 from django_orghierarchy.models import Organization
 from django_orghierarchy.models import OrganizationClass
-from os.path import basename, splitext
+from os.path import abspath, join, dirname, exists, basename, splitext
 
 from events.models import DataSource, Place
 from .sync import ModelSyncher
