@@ -69,7 +69,7 @@ def preprocess():
         'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
         'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki')],
         'yksilo':[dict(id="yksilo", user_editable=True), dict(name='Yksityishenkilöihin liittyvä yleisdata')],
-        'virtual':[dict(id="virtual", user_editable=True), dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')]
+        'virtual':[dict(id="virtual", user_editable=True), dict(name='Virtuaalitapahtumat.')]
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
 
@@ -114,7 +114,7 @@ def preprocess():
     ######################################
 
     place_arr = {
-        'place_org_virtual':[dict(origin_id='3000', data_source=str(return_ds[4])+':place', classification_id="org:14"),
+        'place_org_virtual':[dict(origin_id='public', data_source=return_ds[4]),
         dict(data_source=return_ds[4],
         publisher=return_org[2],
         name='Virtuaalitapahtuma',
@@ -147,7 +147,7 @@ def preprocess():
             'data_source': rds.__next__(),
             'organization': ro.__next__(),
             'organization_1': ro.__next__(),
-            'organization_virtual': rpo.__next__()
+            'internet_location': rpo.__next__()
         }
     except: 
         print("Stop iteration error, this will be a logger in the near future.")
