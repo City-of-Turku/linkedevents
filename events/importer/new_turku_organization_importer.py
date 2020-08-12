@@ -108,12 +108,13 @@ def preprocess():
         'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[3], classification_id="org:11"), dict(name='Yksityishenkilöt')],
         'org_virtual':[dict(origin_id='3000', data_source=return_ds[4], classification_id="org:14"), dict(name='Virtuaalitapahtumat')],
     }
+
     return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
     ro = return_org.__iter__()
     ######################################
 
     place_arr = {
-        'place_org_virtual':[dict(origin_id='3000', data_source=return_ds[4]+':place', classification_id="org:14"),
+        'place_org_virtual':[dict(origin_id='3000', data_source=str(return_ds[4])+':place', classification_id="org:14"),
         dict(data_source=return_ds[4],
         publisher=return_org[2],
         name='Virtuaalitapahtuma',
