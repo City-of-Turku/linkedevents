@@ -19,6 +19,8 @@ from events.models import DataSource, Place
 from .sync import ModelSyncher
 from .base import Importer, register_importer
 
+if not exists(join(dirname(__file__), 'logs')):
+    mkdir(join(dirname(__file__), 'logs'))
 
 __setattr__ = setattr
 __iter__ = iter
@@ -30,40 +32,54 @@ logger = logging.getLogger(__name__)
 curFileExt = basename(__file__)
 curFile = splitext(curFileExt)[0]
 
-# -> logger TO BE MADE handling here.
+logFile = \
+    logging.FileHandler(
+        '%s' % (join(dirname(__file__), 'logs', curFile+'.logs'))
+    )
+logFile.setFormatter(
+    logging.Formatter(
+        '[%(asctime)s] <%(name)s> (%(lineno)d): %(message)s'
+    )
+)
+logFile.setLevel(logging.DEBUG)
+
+
+logger.addHandler(
+    logFile
+)
+
 
 def get_create_ds(ob, args):
     try:
         ds, _ = DataSource.objects.get_or_create(defaults=args[1], **args[0])
-        return ds #sys_ds "return ds_args, defaults, etc"
+        return ds
     except:
-        pass
+        logger.warn("DataSource get_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_organization(ob, args):
     try:
         org, _ = Organization.objects.get_or_create(defaults=args[1], **args[0])
-        return org #sys_ds "return ds_args, defaults, etc"
+        return org
     except:
-        pass
+        logger.warn("Organization get_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_organizationclass(ob, args):
     try:
         orgclass, _ = OrganizationClass.objects.get_or_create(defaults=args[1], **args[0])
-        return orgclass #sys_ds "return ds_args, defaults, etc"
+        return orgclass
     except:
-        pass
+        logger.warn("OrganizationClass get_or_create did NOT pass: "+ob+" correctly.")
 
-def get_create_place(ob, args): #Function not in use yet.
+def get_create_place(ob, args):
     try:
         placey, _ = Place.objects.get_or_create(defaults=args[1], **args[0])
-        return placey #sys_ds "return ds_args, defaults, etc"
+        return placey
     except:
-        pass
+        logger.warn("Place get_or_create did NOT pass: "+ob+" correctly.")
 
 def preprocess():
-    #DataSources
-    ###################################### 
-    # -> ds_arr contains all top level datasource objects; no data_source defined. 
+    #DataSource
+    # -> datasources contains all top level datasource objects; no data_source defined. 
     datasources = {
         'system':[dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), dict(name='Järjestelmän sisältä luodut lähteet')],
         'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
@@ -73,11 +89,8 @@ def preprocess():
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
 
-    # -> ds_sub contains all objects with a data_source component.
-    # -> I can't really format this better for example inside the functions at the top because
-    # -> return_ds[1] has to be defined within this scope so I can't have a text based list with dict constructed at the top.
-    # -> return_ds[1] = org.
-
+    #OrganizationClass
+    # -> ds_orgs_class contains all objects with a data_source component.
     ds_orgs_class = {
         'valt_toim':[dict(origin_id='1', data_source=return_ds[1], user_editable=True), dict(name='Valtiollinen toimija')],
         'maak_toim':[dict(origin_id='2', data_source=return_ds[1], user_editable=True), dict(name='Maakunnallinen toimija')],
@@ -95,15 +108,12 @@ def preprocess():
         'virtuaalitapah':[dict(origin_id='14', data_source=return_ds[1], user_editable=True), dict(name='Virtuaalitapahtuma')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
-    
-    # ds_sub needs a datasource get value, hence why return_ds[0] -
+    # ds_orgs_class needs a datasource get value, hence why return_ds[0] -
     # has to be used after the iteration and two separate iterations are required.
     rds = return_ds.__iter__()
     rgc = return_orgclass_ds.__iter__()
-    ######################################
 
     #Organizations
-    ######################################
     org_arr = {
         'turku_org':[dict(origin_id='853', data_source=return_ds[2], classification_id="org:3"), dict(name='Turun kaupunki')],
         'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[3], classification_id="org:11"), dict(name='Yksityishenkilöt')],
@@ -112,7 +122,8 @@ def preprocess():
     return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
     ro = return_org.__iter__()
 
-    org_taso_2 = {
+    #Organization level 2 and level 3 are both part of the new linkedevents organization model.
+    org_level_2 = {
         'konsernipalv':[dict(origin_id='04', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Konsernihallinto ja palvelukeskukset')],
         'varsaluepel':[dict(origin_id='12', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Varsinais-Suomen aluepelastuslaitos')],
         'hyvinvointitoimi':[dict(origin_id='25', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Hyvinvointitoimiala')],
@@ -121,11 +132,10 @@ def preprocess():
         'kaupunkiymprst':[dict(origin_id='61', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Kaupunkiympäristötoimiala')],
         'tkukaupteatteri':[dict(origin_id='80', data_source=return_ds[2], parent=return_org[0], classification_id="org:3"), dict(name='Turun Kaupunginteatteri')],
     }
-    return_org_taso_2 = [get_create_organization(keys, values) for keys, values in org_taso_2.items()]
-    rot2 = return_org_taso_2.__iter__()
+    return_org_level_2 = [get_create_organization(keys, values) for keys, values in org_level_2.items()]
+    rot2 = return_org_level_2.__iter__()
 
-
-    org_taso_3 = {
+    org_level_3 = {
         'matkpalvelukesk':[dict(origin_id='0719', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Matkailun palvelukeskus')],
         'työllisyyspalvkesk':[dict(origin_id='0720', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Työllisyyspalvelukeskus')],
         'amk':[dict(origin_id='4032', data_source=return_ds[2], parent=return_org_taso_2[3], classification_id="org:3"), dict(name='Ammatillinen koulutus')],
@@ -136,11 +146,10 @@ def preprocess():
         'nuorisopalv':[dict(origin_id='4480', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Nuorisopalvelut')],
         'turunkaupunginork':[dict(origin_id='4431', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Turun Kaupunginorkesteri')]
     }
+    return_org_level_3 = [get_create_organization(keys, values) for keys, values in org_level_3.items()]
+    rot3 = return_org_level_3.__iter__()
 
-    ######################################
-    return_org_taso_3 = [get_create_organization(keys, values) for keys, values in org_taso_3.items()]
-    rot3 = return_org_taso_3.__iter__()
-
+    #Place
     place_arr = {
         'place_org_virtual':[dict(id='virtual:public', origin_id='public', data_source=return_ds[4]),
         dict(data_source=return_ds[4],
@@ -151,7 +160,6 @@ def preprocess():
         name_en='Virtual event',
         description='Toistaiseksi kaikki virtuaalitapahtumat merkitään tähän paikkatietoon.')]
     }
-
 
     return_place_org = [get_create_place(keys, values) for keys, values in place_arr.items()]
     rpo = return_place_org.__iter__()
@@ -197,9 +205,9 @@ def preprocess():
             'orgtaso3_8': rot3.__next__(),
         }
     except: 
-        print("Stop iteration error, this will be a logger in the near future.")
+        logger.warn("Stop iteration error when returning preprocess function items.")
 
-#class Thing(object):
+
 @register_importer
 class OrganizationImporter(Importer):
     #name and supported_languages are dependencies that the OrganizationImporter class requires.
@@ -208,3 +216,4 @@ class OrganizationImporter(Importer):
     def setup(self):
         for k, v in preprocess().items():
             __setattr__(self, k, v)
+            logger.info("OrganizationImporter attribute created: "+k)
