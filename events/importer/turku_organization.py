@@ -136,15 +136,15 @@ def preprocess():
     rot2 = return_org_level_2.__iter__()
 
     org_level_3 = {
-        'matkpalvelukesk':[dict(origin_id='0719', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Matkailun palvelukeskus')],
-        'työllisyyspalvkesk':[dict(origin_id='0720', data_source=return_ds[2], parent=return_org_taso_2[0], classification_id="org:3"), dict(name='Työllisyyspalvelukeskus')],
-        'amk':[dict(origin_id='4032', data_source=return_ds[2], parent=return_org_taso_2[3], classification_id="org:3"), dict(name='Ammatillinen koulutus')],
-        'lukiokoul':[dict(origin_id='4031', data_source=return_ds[2], parent=return_org_taso_2[3], classification_id="org:3"), dict(name='Lukiokoulutus')],
-        'kirjastopalv':[dict(origin_id='4453', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Kirjastopalvelut')],
-        'liikuntpalv':[dict(origin_id='4470', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Liikuntapalvelut')],
-        'museopalv':[dict(origin_id='4462', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Museopalvelut')],
-        'nuorisopalv':[dict(origin_id='4480', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Nuorisopalvelut')],
-        'turunkaupunginork':[dict(origin_id='4431', data_source=return_ds[2], parent=return_org_taso_2[4], classification_id="org:3"), dict(name='Turun Kaupunginorkesteri')]
+        'matkpalvelukesk':[dict(origin_id='0719', data_source=return_ds[2], parent=return_org_level_2[0], classification_id="org:3"), dict(name='Matkailun palvelukeskus')],
+        'työllisyyspalvkesk':[dict(origin_id='0720', data_source=return_ds[2], parent=return_org_level_2[0], classification_id="org:3"), dict(name='Työllisyyspalvelukeskus')],
+        'amk':[dict(origin_id='4032', data_source=return_ds[2], parent=return_org_level_2[3], classification_id="org:3"), dict(name='Ammatillinen koulutus')],
+        'lukiokoul':[dict(origin_id='4031', data_source=return_ds[2], parent=return_org_level_2[3], classification_id="org:3"), dict(name='Lukiokoulutus')],
+        'kirjastopalv':[dict(origin_id='4453', data_source=return_ds[2], parent=return_org_level_2[4], classification_id="org:3"), dict(name='Kirjastopalvelut')],
+        'liikuntpalv':[dict(origin_id='4470', data_source=return_ds[2], parent=return_org_level_2[4], classification_id="org:3"), dict(name='Liikuntapalvelut')],
+        'museopalv':[dict(origin_id='4462', data_source=return_ds[2], parent=return_org_level_2[4], classification_id="org:3"), dict(name='Museopalvelut')],
+        'nuorisopalv':[dict(origin_id='4480', data_source=return_ds[2], parent=return_org_level_2[4], classification_id="org:3"), dict(name='Nuorisopalvelut')],
+        'turunkaupunginork':[dict(origin_id='4431', data_source=return_ds[2], parent=return_org_level_2[4], classification_id="org:3"), dict(name='Turun Kaupunginorkesteri')]
     }
     return_org_level_3 = [get_create_organization(keys, values) for keys, values in org_level_3.items()]
     rot3 = return_org_level_3.__iter__()
