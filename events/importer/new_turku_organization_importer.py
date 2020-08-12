@@ -105,8 +105,11 @@ def preprocess():
     #Organizations
     ######################################
     org_arr = {
+        'turku_org':[dict(origin_id='853', data_source=return_ds[2], classification_id="org:3"), dict(name='Turun kaupunki')],
         'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[3], classification_id="org:11"), dict(name='Yksityishenkilöt')],
         'org_virtual':[dict(origin_id='3000', data_source=return_ds[4], classification_id="org:14"), dict(name='Virtuaalitapahtumat')],
+        'sivistys':[dict(origin_id='40', data_source=return_ds[2], parent=return_ds[2], classification_id="org:3"), dict(name='Sivistystoimiala')],
+        'vapaatoim':[dict(origin_id='44', data_source=return_ds[2], parent=return_ds[2], classification_id="org:3"), dict(name='Vapaa-aikatoimiala')],
     }
 
     return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
@@ -123,6 +126,9 @@ def preprocess():
         name_en='Virtual event',
         description='Toistaiseksi kaikki virtuaalitapahtumat merkitään tähän paikkatietoon.')]
     }
+
+
+
     return_place_org = [get_create_place(keys, values) for keys, values in place_arr.items()]
     rpo = return_place_org.__iter__()
 
@@ -147,6 +153,8 @@ def preprocess():
             'data_source': rds.__next__(),
             'organization': ro.__next__(),
             'organization_1': ro.__next__(),
+            'organization_2': ro.__next__(),
+            'organization_3': ro.__next__(),
             'internet_location': rpo.__next__()
         }
     except: 
