@@ -105,7 +105,6 @@ def preprocess():
     #Organizations
     ######################################
     org_arr = {
-        'turku_org':[dict(origin_id='turku', data_source=return_ds[2], classification_id="org:3"), dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')],
         'ykshenkilöt':[dict(origin_id='2000', data_source=return_ds[3], classification_id="org:11"), dict(name='Yksityishenkilöt')],
         'org_virtual':[dict(origin_id='3000', data_source=return_ds[4], classification_id="org:14"), dict(name='Virtuaalitapahtumat')],
     }
@@ -114,7 +113,7 @@ def preprocess():
     ######################################
 
     place_arr = {
-        'place_org_virtual':[dict(origin_id='3000', data_source=return_ds[4], classification_id="org:14"),
+        'place_org_virtual':[dict(origin_id='3000', data_source=return_ds[4]+':place', classification_id="org:14"),
         dict(data_source=return_ds[4],
         publisher=return_org[2],
         name='Virtuaalitapahtuma',
