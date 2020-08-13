@@ -271,14 +271,15 @@ class TurkuOriginalImporter(Importer):
         #EventLink to be made. Probably not necessary as a function but rather as a loop.
 
 
-    def _import_child_event(self, lang, eventTku, eventImageUrl):
+    def _import_child_event(self, lang, eventTku):
         eventMother = None
         eventImage = None
         eventRecurring = None
 
         sourceEventSuperId = eventTku['drupal_nid_super']
         sourceEventId = eventTku['drupal_nid']
-        sourceEventImageUrl = eventImageUrl
+        #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
+
  
         '''
         #sourceEventLang = 'fi'
@@ -340,15 +341,13 @@ class TurkuOriginalImporter(Importer):
                 temp.save()
 
                 #EventLink save TO BE MADE here.
-            #self.syncher.finish(force=self.options['force'])
-
+            #self.syncher.finish(force=self.options['force'])W
 
     def with_value(self, data : dict, value : object, default : object):
         item = data.get(value, default)
         if not item:
             return default
         return item
-     
 
 
     def _import_event(self, lang, event_el, events, event_image_url):
@@ -638,7 +637,7 @@ class TurkuOriginalImporter(Importer):
                 free_offer['price'] = {'fi': free_offer_price}
                 free_offer['description'] = ''
                 free_offer['info_url'] =  {'fi': free_offer_buy_tickets}
-            
+
             eventItem['offers'] = [free_offer]
             return eventItem
 
@@ -675,9 +674,11 @@ class TurkuOriginalImporter(Importer):
             json_event = json_mother_event['event']
             if json_event['event_image_ext_url']:
                 event_image_url = json_event['event_image_ext_url']['src']
+            else:
+                event_image_url = ""
             if json_event['event_type'] == "Single event" or json_event['event_type'] == "Event series":
                 event = self._import_event(lang, json_event, events, event_image_url)
-            
+
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
     def saveChildElement(self, url, lang):
@@ -711,11 +712,8 @@ class TurkuOriginalImporter(Importer):
             json_event = json_event['event']
             eventTku = self._get_eventTku(json_event)
 
-            if json_event['event_image_ext_url']:
-                eventImgUrl = json_event['event_image_ext_url']['src']
-
             if eventTku['event_type'] == "Recurring event (in series)":
-                motherFound = self._import_child_event(lang, eventTku, eventImgUrl)
+                motherFound = self._import_child_event(lang, eventTku)
                 #self.syncher.finish(force=self.options['force'])
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
