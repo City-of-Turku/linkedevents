@@ -65,10 +65,10 @@ def get_create_organization(ob, args):
 
 def get_create_organizationclass(ob, args):
     try:
-        orgclass, _ = OrganizationClass.objects.get_or_create(defaults=args[1], **args[0])
+        orgclass, _ = OrganizationClass.objects.update_or_create(defaults=args[1], **args[0])
         return orgclass
     except:
-        logger.warn("OrganizationClass get_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("OrganizationClass update_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_place(ob, args):
     try:
@@ -106,7 +106,7 @@ def preprocess():
         'paiktietoo':[dict(origin_id='12', data_source=return_ds[1]), dict(name='Paikkatieto')],
         'sanastoo':[dict(origin_id='13', data_source=return_ds[1]), dict(name='Sanasto')],
         'virtuaalitapahh':[dict(origin_id='14', data_source=return_ds[1]), dict(name='Virtuaalitapahtuma')],
-        'testclasss':[dict(origin_id='15', data_source=return_ds[1]), dict(name='Testclass')],
+        'testclasss':[dict(origin_id='15', data_source=return_ds[1]), dict(name='Testclass TEST EDIT')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
     # ds_orgs_class needs a datasource get value, hence why return_ds[0] -
