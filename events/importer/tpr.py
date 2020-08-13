@@ -193,8 +193,8 @@ class TprekImporter(Importer):
 
             try:
                 picture_url = info.get('picture_url', '').strip()#this is right (same level than Helsinki json)
-                if picture_url:
-                    self.set_image(obj, {'url': picture_url})
+                #if picture_url:
+                #    self.set_image(obj, {'url': picture_url})
             except:
                 NONEVALUES.append('unit ID: ' + str(info['id']) + ' picture_url field is empty!')
                 pass
