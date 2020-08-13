@@ -65,10 +65,10 @@ def get_create_organization(ob, args):
 
 def get_create_organizationclass(ob, args):
     try:
-        orgclass, _ = OrganizationClass.objects.update_or_create(defaults=args[1], **args[0])
+        orgclass, _ = OrganizationClass.objects.get_or_create(defaults=args[1], **args[0])
         return orgclass
     except:
-        logger.warn("OrganizationClass update_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("OrganizationClass get_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_place(ob, args):
     try:
@@ -92,21 +92,21 @@ def preprocess():
     #OrganizationClass
     # -> ds_orgs_class contains all objects with a data_source component.
     ds_orgs_class = {
-        'valt_toim':[dict(origin_id='1', data_source=return_ds[1], user_editable=True), dict(name='Valtiollinen toimija')],
-        'maak_toim':[dict(origin_id='2', data_source=return_ds[1], user_editable=True), dict(name='Maakunnallinen toimija')],
+        'valttoim':[dict(origin_id='1', data_source=return_ds[1], user_editable=True), dict(name='Valtiollinen toimija')],
+        'maaktoim':[dict(origin_id='2', data_source=return_ds[1], user_editable=True), dict(name='Maakunnallinen toimija')],
         'kunta':[dict(origin_id='3', data_source=return_ds[1], user_editable=True), dict(name='Kunta')],
-        'kunnan_liik':[dict(origin_id='4', data_source=return_ds[1], user_editable=True), dict(name='Kunnan liikelaitos')],
-        'valt_liik':[dict(origin_id='5', data_source=return_ds[1], user_editable=True), dict(name='Valtion liikelaitos')],
-        'yritys':[dict(origin_id='6', data_source=return_ds[1], user_editable=True), dict(name='Yritys')],
-        'säätiö':[dict(origin_id='7', data_source=return_ds[1], user_editable=True), dict(name='Säätiö')],
-        'seurakunta':[dict(origin_id='8', data_source=return_ds[1], user_editable=True), dict(name='Seurakunta')],
-        'yhdseur':[dict(origin_id='9', data_source=return_ds[1], user_editable=True), dict(name='Yhdistys tai seura')],
-        'muuyht':[dict(origin_id='10', data_source=return_ds[1], user_editable=True), dict(name='Muu yhteisö')],
-        'ykshenk':[dict(origin_id='11', data_source=return_ds[1], user_editable=True), dict(name='Yksityishenkilö')],
-        'paiktieto':[dict(origin_id='12', data_source=return_ds[1], user_editable=True), dict(name='Paikkatieto')],
-        'sanasto':[dict(origin_id='13', data_source=return_ds[1], user_editable=True), dict(name='Sanasto')],
-        'virtuaalitapah':[dict(origin_id='14', data_source=return_ds[1], user_editable=True), dict(name='Virtuaalitapahtuma')],
-        'testclass':[dict(origin_id='15', data_source=return_ds[1], user_editable=True), dict(name='Testclass')],
+        'kunnanliik':[dict(origin_id='4', data_source=return_ds[1], user_editable=True), dict(name='Kunnan liikelaitos')],
+        'valtliik':[dict(origin_id='5', data_source=return_ds[1], user_editable=True), dict(name='Valtion liikelaitos')],
+        'yrityss':[dict(origin_id='6', data_source=return_ds[1], user_editable=True), dict(name='Yritys')],
+        'saatioo':[dict(origin_id='7', data_source=return_ds[1], user_editable=True), dict(name='Säätiö')],
+        'seurakuntaa':[dict(origin_id='8', data_source=return_ds[1], user_editable=True), dict(name='Seurakunta')],
+        'yhdseurr':[dict(origin_id='9', data_source=return_ds[1], user_editable=True), dict(name='Yhdistys tai seura')],
+        'muuyhtt':[dict(origin_id='10', data_source=return_ds[1], user_editable=True), dict(name='Muu yhteisö')],
+        'ykshenkk':[dict(origin_id='11', data_source=return_ds[1], user_editable=True), dict(name='Yksityishenkilö')],
+        'paiktietoo':[dict(origin_id='12', data_source=return_ds[1], user_editable=True), dict(name='Paikkatieto')],
+        'sanastoo':[dict(origin_id='13', data_source=return_ds[1], user_editable=True), dict(name='Sanasto')],
+        'virtuaalitapahh':[dict(origin_id='14', data_source=return_ds[1], user_editable=True), dict(name='Virtuaalitapahtuma')],
+        'testclasss':[dict(origin_id='15', data_source=return_ds[1], user_editable=True), dict(name='Testclass')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
     # ds_orgs_class needs a datasource get value, hence why return_ds[0] -
