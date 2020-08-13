@@ -84,7 +84,7 @@ def preprocess():
     datasources = {
         'system':[dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), dict(name='Järjestelmän sisältä luodut lähteet')],
         'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
-        'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki TEST')],
+        'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki')],
         'yksilo':[dict(id="yksilo", user_editable=True), dict(name='Yksityishenkilöihin liittyvä yleisdata')],
         'virtual':[dict(id="virtual", user_editable=True), dict(name='Virtuaalitapahtumat.')]
     }
