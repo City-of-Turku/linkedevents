@@ -51,31 +51,31 @@ logger.addHandler(
 
 def get_create_ds(ob, args):
     try:
-        ds, _ = DataSource.objects.get_or_create(defaults=args[1], **args[0])
+        ds, _ = DataSource.objects.update_or_create(defaults=args[1], **args[0])
         return ds
     except:
-        logger.warn("DataSource get_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("DataSource update_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_organization(ob, args):
     try:
-        org, _ = Organization.objects.get_or_create(defaults=args[1], **args[0])
+        org, _ = Organization.objects.update_or_create(defaults=args[1], **args[0])
         return org
     except:
-        logger.warn("Organization get_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("Organization update_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_organizationclass(ob, args):
     try:
-        orgclass, _ = OrganizationClass.objects.get_or_create(defaults=args[1], **args[0])
+        orgclass, _ = OrganizationClass.objects.update_or_create(defaults=args[1], **args[0])
         return orgclass
     except:
-        logger.warn("OrganizationClass get_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("OrganizationClass update_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_place(ob, args):
     try:
-        placey, _ = Place.objects.get_or_create(defaults=args[1], **args[0])
+        placey, _ = Place.objects.update_or_create(defaults=args[1], **args[0])
         return placey
     except:
-        logger.warn("Place get_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("Place update_or_create did NOT pass: "+ob+" correctly.")
 
 def preprocess():
     #DataSource
@@ -83,7 +83,7 @@ def preprocess():
     datasources = {
         'system':[dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), dict(name='Järjestelmän sisältä luodut lähteet')],
         'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
-        'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki')],
+        'turku':[dict(id="turku", user_editable=True), dict(name='Kuntakohtainen data Turun Kaupunki TEST')],
         'yksilo':[dict(id="yksilo", user_editable=True), dict(name='Yksityishenkilöihin liittyvä yleisdata')],
         'virtual':[dict(id="virtual", user_editable=True), dict(name='Virtuaalitapahtumat.')]
     }
