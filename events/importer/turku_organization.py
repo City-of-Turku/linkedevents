@@ -1,7 +1,8 @@
-# -> Dev notes: 11/08/2020:
+# -> Dev notes: 13/08/2020:
 # 
-# Add turku organization version 2 prototype.
-# Logger will be added later.
+# Turku Organization importer for importing all Turku Organization data such as Datasources, Organizations, Organization Classes and support for Virtual Events.
+# Contains the latest Turku Linkedevents Organization Model.
+# Logger implementation added.
 
 #Dependencies
 import logging
@@ -54,28 +55,28 @@ def get_create_ds(ob, args):
         ds, _ = DataSource.objects.update_or_create(defaults=args[1], **args[0])
         return ds
     except:
-        logger.warn("DataSource update_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("DataSource update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
 def get_create_organization(ob, args):
     try:
         org, _ = Organization.objects.update_or_create(defaults=args[1], **args[0])
         return org
     except:
-        logger.warn("Organization update_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("Organization update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
 def get_create_organizationclass(ob, args):
     try:
         orgclass, _ = OrganizationClass.objects.update_or_create(defaults=args[1], **args[0])
         return orgclass
     except:
-        logger.warn("OrganizationClass update_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("OrganizationClass update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
 def get_create_place(ob, args):
     try:
         placey, _ = Place.objects.update_or_create(defaults=args[1], **args[0])
         return placey
     except:
-        logger.warn("Place update_or_create did NOT pass: "+ob+" correctly.")
+        logger.warn("Place update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
 def preprocess():
     #DataSource
