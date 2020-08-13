@@ -64,6 +64,7 @@ def get_create_organization(ob, args):
         logger.warn("Organization update_or_create did NOT pass: "+ob+" correctly.")
 
 def get_create_organizationclass(ob, args):
+    logger.info(args[1], args[0])
     try:
         orgclass, _ = OrganizationClass.objects.get_or_create(defaults=args[1], **args[0])
         return orgclass
