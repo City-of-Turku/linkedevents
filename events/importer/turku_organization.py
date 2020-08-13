@@ -106,7 +106,6 @@ def preprocess():
         'paiktietoo':[dict(origin_id='12', data_source=return_ds[1]), dict(name='Paikkatieto')],
         'sanastoo':[dict(origin_id='13', data_source=return_ds[1]), dict(name='Sanasto')],
         'virtuaalitapahh':[dict(origin_id='14', data_source=return_ds[1]), dict(name='Virtuaalitapahtuma')],
-        'testclasss':[dict(origin_id='15', data_source=return_ds[1]), dict(name='Testclass TEST EDIT')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
     # ds_orgs_class needs a datasource get value, hence why return_ds[0] -
