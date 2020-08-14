@@ -731,10 +731,11 @@ class TurkuOriginalImporter(Importer):
 
             socialEventFb = eventTku['facebook_url']
             socialEventTw = eventTku['twitter_url']
+
             if socialEventFb:
                 logger.info(socialEventFb)
                 logger.info("eventFacebook exists, trying to save it...")
-                 try:
+                try:
                     EventLink.objects.update_or_create(
                         name="extlink_facebook", link=eventFacebook, event_id=temp.id, language_id="fi"
                     )
