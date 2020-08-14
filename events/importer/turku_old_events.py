@@ -335,26 +335,6 @@ class TurkuOriginalImporter(Importer):
                 temp.save(force_insert=True)
 
 
-                if eventFacebook:
-                    logger.info("eventFacebook exists, trying to save it...")
-
-                    try:
-                        EventLink.objects.update_or_create(
-                            name="extlink_facebook", link=eventFacebook, event_id=temp.id, language_id="fi"
-                        )
-                    except:
-                        logger.warn("eventFacebook could not be saved.")
-
-                if eventTwitter:
-                    logger.info("eventTwitter exists, trying to save it...")
-                    try:
-                        EventLink.objects.update_or_create(
-                            name="extlink_twitter", link=eventFacebook, event_id=temp.id, language_id="fi"
-                        )
-                    except:
-                        logger.warn("eventTwitter could not be saved.")
-                
-
             elif eventMother.super_event_type == Event.SuperEventType.RECURRING:
 
                 Event.objects.update_or_create(
@@ -750,9 +730,24 @@ class TurkuOriginalImporter(Importer):
             eventTku = self._get_eventTku(json_event)
 
             socialEventFb = eventTku['facebook_url']
-
+            socialEventTw = eventTku['twitter_url']
             if socialEventFb:
                 logger.info(socialEventFb)
+                logger.info("eventFacebook exists, trying to save it...")
+                 try:
+                    EventLink.objects.update_or_create(
+                        name="extlink_facebook", link=eventFacebook, event_id=temp.id, language_id="fi"
+                    )
+                except:
+                    logger.warn("eventFacebook could not be saved...")
+            if socialEventTw:
+                logger.info("eventTwitter exists, trying to save it...")
+                try:
+                    EventLink.objects.update_or_create(
+                        name="extlink_twitter", link=eventFacebook, event_id=temp.id, language_id="fi"
+                    )
+                except:
+                    logger.warn("eventTwitter could not be saved...")
 
             if eventTku['event_type'] == "Recurring event (in series)":
                 motherFound = self._import_child_event(lang, eventTku)
