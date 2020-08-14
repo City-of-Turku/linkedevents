@@ -260,10 +260,10 @@ class TurkuOriginalImporter(Importer):
 
 
     @staticmethod
-    def _get_eventTku(event_el): # -> This reads our JSON dump and fills the eventTku with our data
-        eventTku = recur_dict()
-        eventTku = event_el
-        return eventTku
+    def _get_eventTurku(event_el): # -> This reads our JSON dump and fills the eventTurku with our data
+        eventTurku = recur_dict()
+        eventTurku = event_el
+        return eventTurku
 
     def _cache_super_event_id(self, sourceEventSuperId):
         superid = (self.data_source.name + ':' + sourceEventSuperId)
@@ -285,18 +285,18 @@ class TurkuOriginalImporter(Importer):
 
 
     def _import_event(self, lang, currentEvent, events, event_image_url, type_of_event):
-        eventTurku = self._get_eventTku(event_el)
+        eventTurku = self._get_eventTurku(event_el)
 
-        start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-        end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
+        start_time = self.dt_parse(self.timeToTimestamp(str(eventTurku['start_date'])))
+        end_time = self.dt_parse(self.timeToTimestamp(str(eventTurku['end_date'])))
 
         # Import only at most one year old events
         if end_time < datetime.now().replace(tzinfo=LOCAL_TZ) - timedelta(days=365):
             return {'start_time': start_time, 'end_time': end_time}
 
         # -> We don't want to import hobbies at this time.
-        if not bool(int(eventTku['is_hobby'])): 
-            eid = int(eventTku['drupal_nid'])
+        if not bool(int(eventTurku['is_hobby'])): 
+            eid = int(eventTurku['drupal_nid'])
             eventItem = events[eid]
             eventItem['id'] = '%s:%s' % (self.data_source.id, eid)
             eventItem['origin_id'] = eid
@@ -331,12 +331,12 @@ class TurkuOriginalImporter(Importer):
 
             location_extra_info = ''
 
-            if self.with_value(eventTku, 'address_extension', ''):
-                location_extra_info += '%s, ' % bleach.clean(self.with_value(eventTku, 'address_extension', ''), tags=[], strip=True)
-            if self.with_value(eventTku, 'city_district', ''):
-                location_extra_info += '%s, ' % bleach.clean(self.with_value(eventTku, 'city_district', ''), tags=[], strip=True)
-            if self.with_value(eventTku, 'place', ''):
-                location_extra_info += '%s' % bleach.clean(self.with_value(eventTku, 'place', ''), tags=[], strip=True)
+            if self.with_value(eventTurku, 'address_extension', ''):
+                location_extra_info += '%s, ' % bleach.clean(self.with_value(eventTurku, 'address_extension', ''), tags=[], strip=True)
+            if self.with_value(eventTurku, 'city_district', ''):
+                location_extra_info += '%s, ' % bleach.clean(self.with_value(eventTurku, 'city_district', ''), tags=[], strip=True)
+            if self.with_value(eventTurku, 'place', ''):
+                location_extra_info += '%s' % bleach.clean(self.with_value(eventTurku, 'place', ''), tags=[], strip=True)
 
 
             if type_of_event == "recurring":
@@ -352,8 +352,8 @@ class TurkuOriginalImporter(Importer):
                 event_image_ext_url = event_image_url
 
                 #event_image_license 1 or 2 (1 is 'event_only' and 2 is 'cc_by' in Linked Events) NOTE! CHECK VALUES IN DRUPAL!
-                if eventTku['event_image_license']:
-                    image_license = eventTku['event_image_license']
+                if eventTurku['event_image_license']:
+                    image_license = eventTurku['event_image_license']
                     if image_license == '1':
                         event_image_license = self.event_only_license
                     elif image_license == '2':
@@ -391,17 +391,17 @@ class TurkuOriginalImporter(Importer):
             event_keywords = eventItem.get('keywords', set())
             event_audience = eventItem.get('audience', set())
 
-            if eventTku['event_categories'] != None:
-                eventTku['event_categories'] =eventTku['event_categories'] + ','
-                categories = eventTku['event_categories'].split(',')
+            if eventTurku['event_categories'] != None:
+                eventTurku['event_categories'] =eventTurku['event_categories'] + ','
+                categories = eventTurku['event_categories'].split(',')
                 for name in categories:
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         event_keywords.add(Keyword.objects.get(id= ysoId))
 
-            if eventTku['keywords'] != None:
-                eventTku['keywords'] =eventTku['keywords'] + ','
-                keywords = eventTku['keywords'].split(',')
+            if eventTurku['keywords'] != None:
+                eventTurku['keywords'] =eventTurku['keywords'] + ','
+                keywords = eventTurku['keywords'].split(',')
                 for name in keywords:
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         try:                
@@ -413,9 +413,9 @@ class TurkuOriginalImporter(Importer):
 
             eventItem['keywords'] = event_keywords
 
-            if eventTku['target_audience'] != None:
-                eventTku['target_audience'] =eventTku['target_audience'] + ','
-                audience = eventTku['target_audience'].split(',')
+            if eventTurku['target_audience'] != None:
+                eventTurku['target_audience'] =eventTurku['target_audience'] + ','
+                audience = eventTurku['target_audience'].split(',')
                 for name in audience:
                     if name in TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID[name]
@@ -425,12 +425,12 @@ class TurkuOriginalImporter(Importer):
 
             tprNo = ''
 
-            if eventTku.get('event_categories', None):
-                node_type = eventTku['event_categories'][0]
+            if eventTurku.get('event_categories', None):
+                node_type = eventTurku['event_categories'][0]
                 if node_type == 'Virtual events':
-                    eventItem ['location']['id'] = VIRTUAL_LOCATION_ID
-                elif str(eventTku['palvelukanava_code']):
-                    tprNo = str(eventTku['palvelukanava_code'])
+                    eventItem ['location']['id'] = "virtual:public"
+                elif str(eventTurku['palvelukanava_code']):
+                    tprNo = str(eventTurku['palvelukanava_code'])
                     if tprNo == '10123':    tprNo = '148'
                     elif tprNo == '10132':  return
                     elif tprNo == '10174':  return
@@ -446,10 +446,10 @@ class TurkuOriginalImporter(Importer):
                     #This json address data is made by hand and it could be anything but a normal format;
                     # 'Piispankatu 4, Turku' is modified to Linked Events Place Id mode like
                     # 'osoite:piispankatu_4_turku'
-                    if eventTku['address']:
+                    if eventTurku['address']:
                         import re
-                        event_address = copy(eventTku['address'])
-                        event_address_name = copy(eventTku['address'])
+                        event_address = copy(eventTurku['address'])
+                        event_address_name = copy(eventTurku['address'])
                         event_name = ""
                         event_postal_code = None
                         regex = re.search(r'\d{4,6}', event_address_name, re.IGNORECASE)
@@ -531,9 +531,9 @@ class TurkuOriginalImporter(Importer):
             # jos eroja äititapahtumaan  
             
             #This is the super event match foreign key
-            if eventTku['drupal_nid_super']:
-                eventItem['super_event_id'] = eventTku['drupal_nid_super']
-                del eventTku['drupal_nid_super']
+            if eventTurku['drupal_nid_super']:
+                eventItem['super_event_id'] = eventTurku['drupal_nid_super']
+                del eventTurku['drupal_nid_super']
             '''
 
             # Add a default offer
@@ -544,19 +544,19 @@ class TurkuOriginalImporter(Importer):
                 'info_url': None,
             }
 
-            eventOffer_is_free = bool(int(eventTku['free_event']))
+            eventOffer_is_free = bool(int(eventTurku['free_event']))
             #Fill event_offer table information if events is not free price event
             if not eventOffer_is_free:
-                if eventTku['event_price']: 
+                if eventTurku['event_price']: 
                     ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
-                    price = str(eventTku['event_price'])                 
+                    price = str(eventTurku['event_price'])                 
                     price = bleach.clean(price, tags= ok_tags, strip=True)
                     free_offer_price = clean_text(price, True)
                 else: 
                     free_offer_price = 'No price'
 
-                if str(eventTku['buy_tickets_url']): 
-                    free_offer_buy_tickets = eventTku['buy_tickets_url'] 
+                if str(eventTurku['buy_tickets_url']): 
+                    free_offer_buy_tickets = eventTurku['buy_tickets_url'] 
                 else:
                     free_offer_buy_tickets = '' 
             
@@ -626,14 +626,14 @@ class TurkuOriginalImporter(Importer):
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
 
-    def _import_child_event(self, lang, eventTku):
+    def _import_child_event(self, lang, eventTurku):
         eventMother = None
         eventImage = None
         eventRecurring = None
 
-        sourceEventSuperId = eventTku['drupal_nid_super']
-        sourceEventId = eventTku['drupal_nid']
-        #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
+        sourceEventSuperId = eventTurku['drupal_nid_super']
+        sourceEventId = eventTurku['drupal_nid']
+        #sourceEventImageUrl = eventTurku['event_image_ext_url']['src']
 
         if sourceEventSuperId:
             logger.info(str(sourceEventSuperId))
@@ -641,8 +641,8 @@ class TurkuOriginalImporter(Importer):
         if sourceEventId:
             logger.info(str(sourceEventId))
 
-        eventFacebook = eventTku['facebook_url']
-        eventTwitter = eventTku['twitter_url']
+        eventFacebook = eventTurku['facebook_url']
+        eventTwitter = eventTurku['twitter_url']
 
         if eventFacebook:
             logger.info(eventFacebook)
@@ -651,9 +651,9 @@ class TurkuOriginalImporter(Importer):
 
         '''
         #sourceEventLang = 'fi'
-        #sourceEventLinkWeb = eventTku['website_url']
-        #sourceEventLinkFace = eventTku['facebook_url']
-        #sourceEventLinkTwit = eventTku['twitter_url']
+        #sourceEventLinkWeb = eventTurku['website_url']
+        #sourceEventLinkFace = eventTurku['facebook_url']
+        #sourceEventLinkTwit = eventTurku['twitter_url']
         '''
 
         superId = (self.data_source.id + ':' + sourceEventSuperId)
@@ -680,8 +680,8 @@ class TurkuOriginalImporter(Importer):
                 temp = copy(eventMother)
                 temp.id = eventMother.id
                 temp.super_event_type = Event.SuperEventType.RECURRING
-                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
+                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTurku['start_date'])))
+                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTurku['end_date'])))
                 temp.super_event_id = usableSuperEventId
                 temp.origin_id = str(temp.id).split(':')[1]
                 temp.save(force_insert=True)
@@ -701,8 +701,8 @@ class TurkuOriginalImporter(Importer):
                 temp = copy(eventMother)
                 temp.id = sourceId
                 temp.super_event_type = None
-                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
+                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTurku['start_date'])))
+                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTurku['end_date'])))
                 temp.super_event_id = usableSuperEventId
                 temp.origin_id = str(temp.id).split(':')[1]
                 temp.save()
@@ -736,11 +736,11 @@ class TurkuOriginalImporter(Importer):
 
         for json_event in json_root_event:
             json_event = json_event['event']
-            eventTku = self._get_eventTku(json_event)
+            eventTurku = self._get_eventTurku(json_event)
 
-            if eventTku['event_type'] == "Recurring event (in series)":
+            if eventTurku['event_type'] == "Recurring event (in series)":
                 logger.info("_import_child_event called.")
-                motherFound = self._import_child_event(lang, eventTku)
+                motherFound = self._import_child_event(lang, eventTurku)
                 #self.syncher.finish(force=self.options['force'])
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
