@@ -321,16 +321,25 @@ class TurkuOriginalImporter(Importer):
                 temp.origin_id = str(temp.id).split(':')[1]
                 temp.save(force_insert=True)
 
-  
+
                 if eventFacebook:
-                    EventLink.objects.update_or_create(
-                        name="extlink_facebook", link=eventFacebook, event_id=temp.id, language_id="fi"
-                    )
+                    logger.info("eventFacebook exists, trying to save it...")
+
+                    try:
+                        EventLink.objects.update_or_create(
+                            name="extlink_facebook", link=eventFacebook, event_id=temp.id, language_id="fi"
+                        )
+                    except:
+                        logger.warn("eventFacebook could not be saved.")
 
                 if eventTwitter:
-                    EventLink.objects.update_or_create(
-                        name="extlink_twitter", link=eventFacebook, event_id=temp.id, language_id="fi"
-                    )
+                    logger.info("eventTwitter exists, trying to save it...")
+                    try:
+                        EventLink.objects.update_or_create(
+                            name="extlink_twitter", link=eventFacebook, event_id=temp.id, language_id="fi"
+                        )
+                    except:
+                        logger.warn("eventTwitter could not be saved.")
                 
 
             elif eventMother.super_event_type == Event.SuperEventType.RECURRING:
