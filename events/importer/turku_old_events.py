@@ -179,20 +179,20 @@ class TurkuOriginalImporter(Importer):
 
         ds_args = dict(origin_id='3', data_source=self.org_data_source)
         defaults = dict(name='Kunta')
-        self.organizationclass, _ =  OrganizationClass.objects.get_or_create(defaults=defaults, **ds_args)
+        self.organizationclass, _ =  OrganizationClass.objects.update_or_create(defaults=defaults, **ds_args)
 
-        org_args = dict(origin_id='853', data_source=self.org_data_source, classification_id="org:3")
+        org_args = dict(origin_id='853', data_source=self.data_source, classification_id="org:3")
         defaults = dict(name='Turku')
-        self.organization, _ = Organization.objects.get_or_create(defaults=defaults, **org_args)
+        self.organization, _ = Organization.objects.update_or_create(defaults=defaults, **org_args)
 
         ds_args4 = dict(id='virtual', user_editable=True)
         defaults4 = dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')
-        self.data_source_virtual, _ = DataSource.objects.get_or_create(defaults=defaults4, **ds_args4)
+        self.data_source_virtual, _ = DataSource.objects.update_or_create(defaults=defaults4, **ds_args4)
 
 
         org_args4 = dict(origin_id='3000', data_source=self.data_source_virtual, classification_id="org:14")
         defaults4 = dict(name='Virtuaalitapahtumat')        
-        self.organization_virtual, _ = Organization.objects.get_or_create(defaults=defaults4, **org_args4)
+        self.organization_virtual, _ = Organization.objects.update_or_create(defaults=defaults4, **org_args4)
 
 
         defaults5 = dict(data_source=self.data_source_virtual,
@@ -280,6 +280,9 @@ class TurkuOriginalImporter(Importer):
         sourceEventId = eventTku['drupal_nid']
         #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
 
+        eventFacebook = eventTku['facebook_url']
+        eventTwitter = eventTku['twitter_url']
+
  
         '''
         #sourceEventLang = 'fi'
@@ -317,7 +320,19 @@ class TurkuOriginalImporter(Importer):
                 temp.super_event_id = usableSuperEventId
                 temp.origin_id = str(temp.id).split(':')[1]
                 temp.save(force_insert=True)
+
   
+                if eventFacebook:
+                    EventLink.objects.update_or_create(
+                        name="extlink_facebook", link=eventFacebook, event_id=temp.id, language_id="fi"
+                    )
+
+                if eventTwitter:
+                    EventLink.objects.update_or_create(
+                        name="extlink_twitter", link=eventFacebook, event_id=temp.id, language_id="fi"
+                    )
+                
+
             elif eventMother.super_event_type == Event.SuperEventType.RECURRING:
 
                 Event.objects.update_or_create(
