@@ -572,8 +572,8 @@ class TurkuOriginalImporter(Importer):
         maxTries = 5
         for tryNumber in range(0, maxTries):            
             response = requests.get(url, headers={"User-Agent":"Mozilla/5.0"})
-            if response.statusCode != 200:
-                logger.warning("Turku Drupal orig API reported HTTP %d" % response.statusCode)
+            if response.status_code != 200:
+                logger.warning("Turku Drupal orig API reported HTTP %d" % response.status_code)
             if self.cache:
                 self.cache.delete_url(url)
                 continue
