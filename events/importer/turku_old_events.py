@@ -279,9 +279,13 @@ class TurkuOriginalImporter(Importer):
         sourceEventSuperId = eventTku['drupal_nid_super']
         sourceEventId = eventTku['drupal_nid']
         #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
-        
 
-        logger.info("This is for debugging: ", sourceEventSuperId, sourceEventId)
+
+        if sourceEventSuperId:
+            logger.info(str(sourceEventSuperId))
+
+        if sourceEventId:
+            logger.info(str(sourceEventId))
 
         eventFacebook = eventTku['facebook_url']
         eventTwitter = eventTku['twitter_url']
