@@ -749,6 +749,11 @@ class TurkuOriginalImporter(Importer):
             json_event = json_event['event']
             eventTku = self._get_eventTku(json_event)
 
+            socialEventFb = eventTku['facebook_url']
+
+            if socialEventFb:
+                logger.info(socialEventFb)
+
             if eventTku['event_type'] == "Recurring event (in series)":
                 motherFound = self._import_child_event(lang, eventTku)
                 #self.syncher.finish(force=self.options['force'])
