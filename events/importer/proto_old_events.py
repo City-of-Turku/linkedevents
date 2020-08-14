@@ -595,29 +595,29 @@ class TurkuOriginalImporter(Importer):
         event_image_url = None
 
         # -> Loops through each event.
-        for jsonEvent in jsonRootEvent:
-            currentEvent = jsonEvent['event']
+        for json_event in jsonRootEvent:
+            currentEvent = json_event['event']
 
 
             # -> JSON exceptions
             if currentEvent['event_image_ext_url']:
-                event_image_url = jsonEvent['event_image_ext_url']['src']
+                event_image_url = json_event['event_image_ext_url']['src']
             else:
                 event_image_url = ""
 
             
             # -> We start by trying to find all Event series.
-            if jsonEvent['event_type'] == "Event series":
+            if json_event['event_type'] == "Event series":
                 type_of_event = "recurring"
                 logger.info("Importing Event Series...")
                 event = self._import_event(lang, currentEvent, events, event_image_url, type_of_event)
 
-            elif jsonEvent['event_type'] == "Recurring event (in series)":
+            elif json_event['event_type'] == "Recurring event (in series)":
                 type_of_event = "child"
                 logger.info("Importing Child Event...")
                 event = self._import_event(lang, currentEvent, events, event_image_url, type_of_event)
 
-            elif jsonEvent['event_type'] == "Single event":
+            elif json_event['event_type'] == "Single event":
                 type_of_event = "single"
                 logger.info("Importing Single Event...")
                 event = self._import_event(lang, currentEvent, events, event_image_url, type_of_event)
