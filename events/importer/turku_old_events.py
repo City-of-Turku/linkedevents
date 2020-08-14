@@ -283,6 +283,12 @@ class TurkuOriginalImporter(Importer):
         eventFacebook = eventTku['facebook_url']
         eventTwitter = eventTku['twitter_url']
 
+        if eventFacebook:
+            logger.info(eventFacebook)
+        if eventTwitter:
+            logger.info(eventTwitter)
+
+
  
         '''
         #sourceEventLang = 'fi'
