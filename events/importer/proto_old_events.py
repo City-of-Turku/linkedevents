@@ -284,7 +284,7 @@ class TurkuOriginalImporter(Importer):
         return item
 
 
-    def _import_event(self, lang, currentEvent, events, event_image_url, type_of_event)
+    def _import_event(self, lang, currentEvent, events, event_image_url, type_of_event):
         eventTurku = self._get_eventTku(event_el)
 
         start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
