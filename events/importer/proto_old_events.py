@@ -1,7 +1,3 @@
-#Documentation will be rewritten in the near future.
-#Improved code integrated with previous code version + extra.
-#08/08/2020
-
 
 #Dependencies
 import logging
@@ -57,9 +53,9 @@ logger.addHandler(
 )
 
 
-VIRTUAL_LOCATION_ID = "virtual:public"
-TKUDRUPAL_BASE_URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
-KEYWORD_LIST = []
+virtualPublic = "virtual:public"
+drupalUrl = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
+keywordsList = []
 
 
 TURKU_KEYWORD_IDS = {
@@ -143,16 +139,38 @@ TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
 }
 
 
-LANGUAGES_TURKU_OLD =  ['fi', 'sv' , 'en']
+languagesList =  ['fi', 'sv' , 'en']
 CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku', 'aura', 'marttila', 'kaarina', 'lieto', 'paimio', 'sauvo']
 LOCAL_TZ = timezone('Europe/Helsinki')
-
 
 def set_deleted_false(obj):
     obj.deleted = False
     obj.save(update_fields=['deleted'])
     return True
 
+
+#It is easier to keep track of and access Events if we store them into lists.
+umbrellaEvents = [] # Kattotapahtumat (Umbrella)
+singleEvents = [] # Yksittäiset tapahtumat (Single events)
+recurringEvents = [] # Sarjatapahtumat (Äidit) (SERIES)
+childEvents = [] # Sarjatapahtuman lapset (Child)
+
+
+# Logic of the program:
+
+# Umbrellas are imported only if they contain SOMETHING, it can be anything.
+# Umbrellas are always 'top level' meaning there SHOULDN'T be anything. For example it is prohibited -
+# to make an Umbrella event that contains another Umbrella event.
+
+# Single events CAN have an Umbrella or can be underneath an Umbrella event. They are not within Series because -
+# Single events don't contain any events because only 'Series' and 'Umbrellas' contain sub events.
+
+# Recurring events are mother events, meaning they are of the type: "Series".
+# Recurring events are not imported at all if they DON'T contain anything.
+# Recurring events don't necessarily need an Umbrella event.
+
+# Child events are events within Series. Child events CAN'T contain events and they can't be Umbrella events.
+# Child events that don't find their mother event are not imported.
 
 class APIBrokenError(Exception):
     pass
@@ -161,7 +179,7 @@ class APIBrokenError(Exception):
 @register_importer
 class TurkuOriginalImporter(Importer):
     name = curFile
-    supported_languages = LANGUAGES_TURKU_OLD #LANGUAGES
+    supported_languages = languagesList #LANGUAGES
     languages_to_detect = []
     current_tick_index = 0
     kwcache = {}
@@ -182,18 +200,17 @@ class TurkuOriginalImporter(Importer):
         self.organizationclass, _ =  OrganizationClass.objects.update_or_create(defaults=defaults, **ds_args)
 
         org_args = dict(origin_id='853', data_source=self.data_source, classification_id="org:3")
-        defaults = dict(name='Turku')
+        defaults = dict(name='Turun kaupunki')
         self.organization, _ = Organization.objects.update_or_create(defaults=defaults, **org_args)
 
         ds_args4 = dict(id='virtual', user_editable=True)
-        defaults4 = dict(name='Virtuaalitapahtumat (ei paikkaa, vain URL)')
+        defaults4 = dict(name='Virtuaalitapahtumat')
         self.data_source_virtual, _ = DataSource.objects.update_or_create(defaults=defaults4, **ds_args4)
 
 
         org_args4 = dict(origin_id='3000', data_source=self.data_source_virtual, classification_id="org:14")
         defaults4 = dict(name='Virtuaalitapahtumat')        
         self.organization_virtual, _ = Organization.objects.update_or_create(defaults=defaults4, **org_args4)
-
 
         defaults5 = dict(data_source=self.data_source_virtual,
                         publisher=self.organization_virtual,
@@ -202,7 +219,7 @@ class TurkuOriginalImporter(Importer):
                         name_sv='Virtuell evenemang',
                         name_en='Virtual event',
                         description='Toistaiseksi kaikki virtuaalitapahtumat merkitään tähän paikkatietoon.',)
-        self.internet_location, _ = Place.objects.update_or_create(id=VIRTUAL_LOCATION_ID, defaults=defaults5)
+        self.internet_location, _ = Place.objects.update_or_create(id="virtual:public", defaults=defaults5)
 
         try:
             self.event_only_license = License.objects.get(id='event_only')
@@ -241,124 +258,24 @@ class TurkuOriginalImporter(Importer):
             self.cache = None
 
 
+
     @staticmethod
     def _get_eventTku(event_el): # -> This reads our JSON dump and fills the eventTku with our data
         eventTku = recur_dict()
         eventTku = event_el
         return eventTku
 
-
     def _cache_super_event_id(self, sourceEventSuperId):
         superid = (self.data_source.name + ':' + sourceEventSuperId)
         one_super_event = Event.objects.get(id=superid)
         return one_super_event
 
-
-    def dt_parse(self, dt_str): 
-        """Convert a string to UTC datetime""" # -> Times are in UTC+02:00 timezone
+    def dt_parse(self, dt_str):
+        """Convert a string to UTC datetime"""
+        # Times are in UTC+02:00 timezone
         return LOCAL_TZ.localize(
                 dateutil.parser.parse(dt_str),
                 is_dst=None).astimezone(pytz.utc)
-
-
-    def timeToTimestamp(self, origTime):
-        timestamp = time.mktime(time.strptime(origTime, '%d.%m.%Y %H.%M'))
-        dt_object = datetime.fromtimestamp(timestamp)
-        return str(dt_object)
-
-
-    #def import_eventlink(self, typeSocial):
-        #EventLink to be made. Probably not necessary as a function but rather as a loop.
-
-
-    def _import_child_event(self, lang, eventTku):
-        eventMother = None
-        eventImage = None
-        eventRecurring = None
-
-        sourceEventSuperId = eventTku['drupal_nid_super']
-        sourceEventId = eventTku['drupal_nid']
-        #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
-
-
-        if sourceEventSuperId:
-            logger.info(str(sourceEventSuperId))
-
-        if sourceEventId:
-            logger.info(str(sourceEventId))
-
-        eventFacebook = eventTku['facebook_url']
-        eventTwitter = eventTku['twitter_url']
-
-        if eventFacebook:
-            logger.info(eventFacebook)
-        if eventTwitter:
-            logger.info(eventTwitter)
-
-
- 
-        '''
-        #sourceEventLang = 'fi'
-        #sourceEventLinkWeb = eventTku['website_url']
-        #sourceEventLinkFace = eventTku['facebook_url']
-        #sourceEventLinkTwit = eventTku['twitter_url']
-        '''
-
-        superId = (self.data_source.id + ':' + sourceEventSuperId)
-        sourceId = (self.data_source.id + ':' + sourceEventId)
-
-        try:
-            eventMother = Event.objects.get(id=superId)
-        except:
-            return
-
-        try:
-            eventRecurring = Event.objects.get(super_event_id = eventMother.id, super_event_type = Event.SuperEventType.RECURRING)
-        except:
-            pass
-
-        if eventRecurring:
-            eventMother = eventRecurring
-
-        usableSuperEventId = eventMother.id
-
-        if not eventMother.deleted:
-            if eventMother.super_event_type == Event.SuperEventType.UMBRELLA:
-
-                temp = copy(eventMother)
-                temp.id = eventMother.id + 's'
-                temp.super_event_type = Event.SuperEventType.RECURRING
-                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
-                temp.super_event_id = usableSuperEventId
-                temp.origin_id = str(temp.id).split(':')[1]
-                temp.save(force_insert=True)
-
-
-            elif eventMother.super_event_type == Event.SuperEventType.RECURRING:
-
-                Event.objects.update_or_create(
-                    id = eventMother.id,
-                    defaults = {
-                    'date_published' : datetime.now(),
-                    'provider': 'Turku',
-                    'provider_fi': 'Turku',
-                    'provider_sv': 'Åbo',
-                    'provider_en': 'Turku',
-                    'deleted': False} 
-                    )
-
-                temp = copy(eventMother)
-                temp.id = sourceId + 'ss'
-                temp.super_event_type = None
-                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
-                temp.super_event_id = usableSuperEventId
-                temp.origin_id = str(temp.id).split(':')[1]
-                temp.save()
-
-                #EventLink save TO BE MADE here.
-            #self.syncher.finish(force=self.options['force'])W
 
     def with_value(self, data : dict, value : object, default : object):
         item = data.get(value, default)
@@ -367,16 +284,18 @@ class TurkuOriginalImporter(Importer):
         return item
 
 
-    def _import_event(self, lang, event_el, events, event_image_url):
-        eventTku = self._get_eventTku(event_el)
+    def _import_event(self, lang, currentEvent, events, event_image_url, type_of_event)
+        eventTurku = self._get_eventTku(event_el)
+
         start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
         end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
 
-        # -> Import only at most one year old events.
+        # Import only at most one year old events
         if end_time < datetime.now().replace(tzinfo=LOCAL_TZ) - timedelta(days=365):
             return {'start_time': start_time, 'end_time': end_time}
 
-        if not bool(int(eventTku['is_hobby'])):
+        # -> We don't want to import hobbies at this time.
+        if not bool(int(eventTku['is_hobby'])): 
             eid = int(eventTku['drupal_nid'])
             eventItem = events[eid]
             eventItem['id'] = '%s:%s' % (self.data_source.id, eid)
@@ -394,18 +313,18 @@ class TurkuOriginalImporter(Importer):
 
             ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
 
-            eventItem['name'] = {"fi": eventTku['title_fi'], "sv": eventTku['title_sv'], "en": eventTku['title_en']}
+            eventItem['name'] = {"fi": eventTurku['title_fi'], "sv": eventTurku['title_sv'], "en": eventTurku['title_en']}
 
             eventItem['description'] = {
-                "fi": bleach.clean(self.with_value(eventTku, 'description_markup_fi', ''),   tags=[],   strip=True),
-                "sv": bleach.clean(self.with_value(eventTku, 'description_markup_sv', ''),   tags=[],   strip=True),
-                "en": bleach.clean(self.with_value(eventTku, 'description_markup_en', ''),   tags=[],   strip=True)
+                "fi": bleach.clean(self.with_value(eventTurku, 'description_markup_fi', ''),   tags=[],   strip=True),
+                "sv": bleach.clean(self.with_value(eventTurku, 'description_markup_sv', ''),   tags=[],   strip=True),
+                "en": bleach.clean(self.with_value(eventTurku, 'description_markup_en', ''),   tags=[],   strip=True)
             }
 
             eventItem['short_description'] = {
-                "fi": bleach.clean(self.with_value(eventTku, 'lead_paragraph_markup_fi', ''),   tags=[],   strip=True),
-                "sv": bleach.clean(self.with_value(eventTku, 'lead_paragraph_markup_sv', ''),   tags=[],   strip=True),
-                "en": bleach.clean(self.with_value(eventTku, 'lead_paragraph_markup_en', ''),   tags=[],   strip=True)
+                "fi": bleach.clean(self.with_value(eventTurku, 'lead_paragraph_markup_fi', ''),   tags=[],   strip=True),
+                "sv": bleach.clean(self.with_value(eventTurku, 'lead_paragraph_markup_sv', ''),   tags=[],   strip=True),
+                "en": bleach.clean(self.with_value(eventTurku, 'lead_paragraph_markup_en', ''),   tags=[],   strip=True)
             }
 
             eventItem['provider'] = {"fi": 'Turku', "sv": 'Åbo', "en": 'Turku'}
@@ -419,16 +338,10 @@ class TurkuOriginalImporter(Importer):
             if self.with_value(eventTku, 'place', ''):
                 location_extra_info += '%s' % bleach.clean(self.with_value(eventTku, 'place', ''), tags=[], strip=True)
 
-            if location_extra_info.strip().endswith(','):
-                location_extra_info = location_extra_info.strip()[:-1]
 
-            eventItem['location_extra_info'] = {
-                "fi": location_extra_info if location_extra_info else None,
-                "sv": location_extra_info if location_extra_info else None,
-                "en": location_extra_info if location_extra_info else None
-            }
+            if type_of_event == "recurring":
+                eventItem['super_event_type'] = Event.SuperEventType.RECURRING
 
-            eventItem['super_event_type'] = Event.SuperEventType.UMBRELLA
 
             event_image_ext_url = ''
             image_license = ''
@@ -459,10 +372,10 @@ class TurkuOriginalImporter(Importer):
                         return
                 eventItem[field_name] = val
 
-            eventItem['date_published'] = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
+            eventItem['date_published'] = self.dt_parse(self.timeToTimestamp(str(eventTurku['start_date'])))
             
-            set_attr('start_time', self.dt_parse(self.timeToTimestamp(str(eventTku['start_date']))))
-            set_attr('end_time', self.dt_parse(self.timeToTimestamp(str(eventTku['end_date']))))
+            set_attr('start_time', self.dt_parse(self.timeToTimestamp(str(eventTurku['start_date']))))
+            set_attr('end_time', self.dt_parse(self.timeToTimestamp(str(eventTurku['end_date']))))
 
 
             event_in_language = eventItem.get('in_language', set())
@@ -656,44 +569,143 @@ class TurkuOriginalImporter(Importer):
             return eventItem
 
     def _recur_fetch_paginated_url(self, url, lang, events):
-        max_tries = 5
-        for try_number in range(0, max_tries):            
+        maxTries = 5
+        for tryNumber in range(0, maxTries):            
             response = requests.get(url, headers={"User-Agent":"Mozilla/5.0"})
-            if response.status_code != 200:
-                logger.warning("tku Drupal orig API reported HTTP %d" % response.status_code)
-                time.sleep(2)
+            if response.statusCode != 200:
+                logger.warning("Turku Drupal orig API reported HTTP %d" % response.statusCode)
             if self.cache:
                 self.cache.delete_url(url)
                 continue
             try:
-                root_doc = response.json()
-                time.sleep(2)
+                rootDoc = response.json()
             except ValueError:
-                logger.warning("tku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
+                logger.warning("Turku Drupal orig API returned invalid JSON (try {} of {})".format(tryNumber + 1, maxTries))
                 if self.cache:
                     self.cache.delete_url(url)
-                    time.sleep(1)
                     continue
             break
         else:
-            logger.error("tku Drupal orig API broken again, giving up")
+            logger.error("Turku Drupal orig API broken again, giving up")
             raise APIBrokenError()
 
-        json_root_event = root_doc['events']
+        jsonRootEvent = rootDoc['events']
 
         earliest_end_time = None
         event_image_url = None
 
-        for json_mother_event in json_root_event:
-            json_event = json_mother_event['event']
-            if json_event['event_image_ext_url']:
+        # -> Loops through each event.
+        for jsonEvent in jsonRootEvent:
+            currentEvent = jsonEvent['event']
+
+
+            # -> JSON exceptions
+            if currentEvent['event_image_ext_url']:
                 event_image_url = json_event['event_image_ext_url']['src']
             else:
                 event_image_url = ""
-            if json_event['event_type'] == "Single event" or json_event['event_type'] == "Event series":
-                event = self._import_event(lang, json_event, events, event_image_url)
 
+            
+            # -> We start by trying to find all Event series.
+            if json_event['event_type'] == "Event series":
+                type_of_event = "recurring"
+                logger.info("Importing Event Series...")
+                event = self._import_event(lang, currentEvent, events, event_image_url, type_of_event)
+
+            elif json_event['event_type'] == "Recurring event (in series)":
+                type_of_event = "child"
+                logger.info("Importing Child Event...")
+                event = self._import_event(lang, currentEvent, events, event_image_url, type_of_event)
+
+            elif json_event['event_type'] == "Single event":
+                type_of_event = "single"
+                logger.info("Importing Single Event...")
+                event = self._import_event(lang, currentEvent, events, event_image_url, type_of_event)
+            else:
+                logger.info("Event had no event_type and therefore wasn't imported.")
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
+
+
+    def _import_child_event(self, lang, eventTku):
+        eventMother = None
+        eventImage = None
+        eventRecurring = None
+
+        sourceEventSuperId = eventTku['drupal_nid_super']
+        sourceEventId = eventTku['drupal_nid']
+        #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
+
+        if sourceEventSuperId:
+            logger.info(str(sourceEventSuperId))
+
+        if sourceEventId:
+            logger.info(str(sourceEventId))
+
+        eventFacebook = eventTku['facebook_url']
+        eventTwitter = eventTku['twitter_url']
+
+        if eventFacebook:
+            logger.info(eventFacebook)
+        if eventTwitter:
+            logger.info(eventTwitter)
+
+        '''
+        #sourceEventLang = 'fi'
+        #sourceEventLinkWeb = eventTku['website_url']
+        #sourceEventLinkFace = eventTku['facebook_url']
+        #sourceEventLinkTwit = eventTku['twitter_url']
+        '''
+
+        superId = (self.data_source.id + ':' + sourceEventSuperId)
+        sourceId = (self.data_source.id + ':' + sourceEventId)
+
+        try:
+            eventMother = Event.objects.get(id=superId)
+        except:
+            return
+
+        try:
+            eventRecurring = Event.objects.get(super_event_id = eventMother.id, super_event_type = Event.SuperEventType.RECURRING)
+        except:
+            pass
+
+        if eventRecurring:
+            eventMother = eventRecurring
+
+        usableSuperEventId = eventMother.id
+
+        if not eventMother.deleted:
+            if eventMother.super_event_type == Event.SuperEventType.UMBRELLA:
+
+                temp = copy(eventMother)
+                temp.id = eventMother.id
+                temp.super_event_type = Event.SuperEventType.RECURRING
+                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
+                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
+                temp.super_event_id = usableSuperEventId
+                temp.origin_id = str(temp.id).split(':')[1]
+                temp.save(force_insert=True)
+
+            elif eventMother.super_event_type == Event.SuperEventType.RECURRING:
+
+                Event.objects.update_or_create(
+                    id = eventMother.id,
+                    defaults = {
+                    'date_published' : datetime.now(),
+                    'provider': 'Turku',
+                    'provider_fi': 'Turku',
+                    'provider_sv': 'Åbo',
+                    'provider_en': 'Turku',
+                    'deleted': False} 
+                    )
+                temp = copy(eventMother)
+                temp.id = sourceId
+                temp.super_event_type = None
+                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
+                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
+                temp.super_event_id = usableSuperEventId
+                temp.origin_id = str(temp.id).split(':')[1]
+                temp.save()
 
     def saveChildElement(self, url, lang):
         max_tries = 5
@@ -715,7 +727,7 @@ class TurkuOriginalImporter(Importer):
                     continue
             break
         else:
-            logger.error("tku Drupal orig API broken again, giving up")
+            logger.error("Turku Drupal orig API broken again, giving up")
             raise APIBrokenError()
 
         json_root_event = root_doc['events']
@@ -726,20 +738,20 @@ class TurkuOriginalImporter(Importer):
             json_event = json_event['event']
             eventTku = self._get_eventTku(json_event)
 
-
             if eventTku['event_type'] == "Recurring event (in series)":
+                logger.info("_import_child_event called.")
                 motherFound = self._import_child_event(lang, eventTku)
                 #self.syncher.finish(force=self.options['force'])
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
-    
-    def import_events(self):
-        import requests
-        logger.info("Importing old Turku events")
-        events = recur_dict()
 
-        url = TKUDRUPAL_BASE_URL
-        
+
+
+    # -> MAIN.
+    def import_events(self):
+        logger.info("Importing old Turku events...")
+        events = recur_dict()
+        url = drupalUrl
         lang = self.supported_languages
 
         try:
@@ -748,10 +760,8 @@ class TurkuOriginalImporter(Importer):
             return
 
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
-
         qs = Event.objects.filter(end_time__gte=datetime.now(), data_source='turku')
         self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
-
 
         for event in event_list:
             try:
@@ -759,7 +769,9 @@ class TurkuOriginalImporter(Importer):
                 self.syncher.mark(obj)
             except:
                 ...
+
         self.syncher.finish(force=True)
+
         try:
             self.saveChildElement(url, lang)
         except APIBrokenError:
