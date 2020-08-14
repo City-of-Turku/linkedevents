@@ -277,12 +277,16 @@ class TurkuOriginalImporter(Importer):
                 dateutil.parser.parse(dt_str),
                 is_dst=None).astimezone(pytz.utc)
 
+    def timeToTimestamp(self, origTime):
+        timestamp = time.mktime(time.strptime(origTime, '%d.%m.%Y %H.%M'))
+        dt_object = datetime.fromtimestamp(timestamp)
+        return str(dt_object)
+
     def with_value(self, data : dict, value : object, default : object):
         item = data.get(value, default)
         if not item:
             return default
         return item
-
 
     def _import_event(self, lang, event_el, events, event_image_url, type_of_event):
         eventTurku = self._get_eventTurku(event_el)
