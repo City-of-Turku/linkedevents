@@ -171,7 +171,7 @@ class TurkuOriginalImporter(Importer):
                                     if lang[0] not in self.supported_languages]
         ds_args = dict(id='turku')
         defaults = dict(name='Kuntakohtainen data Turun Kaupunki')
-        self.data_source, _ = DataSource.objects.get_or_create(
+        self.data_source, _ = DataSource.objects.update_or_create(
             defaults=defaults, **ds_args)
         self.tpr_data_source = DataSource.objects.get(id='tpr')
         self.org_data_source = DataSource.objects.get(id='org')
@@ -202,7 +202,7 @@ class TurkuOriginalImporter(Importer):
                         name_sv='Virtuell evenemang',
                         name_en='Virtual event',
                         description='Toistaiseksi kaikki virtuaalitapahtumat merkitään tähän paikkatietoon.',)
-        self.internet_location, _ = Place.objects.get_or_create(id=VIRTUAL_LOCATION_ID, defaults=defaults5)
+        self.internet_location, _ = Place.objects.update_or_create(id=VIRTUAL_LOCATION_ID, defaults=defaults5)
 
         try:
             self.event_only_license = License.objects.get(id='event_only')
