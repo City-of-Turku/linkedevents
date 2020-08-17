@@ -697,7 +697,7 @@ class TurkuOriginalImporter(Importer):
                             logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
                             logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
                             logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            eventItem['super_event_id'] = str(v)
+                            eventItem['super_event'] = str(v)
             return eventItem
 
     def _recur_fetch_paginated_url(self, url, lang, events):
