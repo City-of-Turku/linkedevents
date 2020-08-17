@@ -682,9 +682,9 @@ class TurkuOriginalImporter(Importer):
             eventItem['offers'] = [free_offer]
 
             if eventType == "mother":
-                eventItem['super_event_type'] = ""
-            elif eventType == "child":
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
+            elif eventType == "child":
+                eventItem['super_event_type'] = ""
             else:
                 eventItem['super_event_type'] = ""
 
