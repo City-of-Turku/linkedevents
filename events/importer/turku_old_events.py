@@ -296,13 +296,10 @@ class TurkuOriginalImporter(Importer):
             logger.info(eventTwitter)
 
 
- 
-        '''
         #sourceEventLang = 'fi'
         #sourceEventLinkWeb = eventTku['website_url']
         #sourceEventLinkFace = eventTku['facebook_url']
         #sourceEventLinkTwit = eventTku['twitter_url']
-        '''
 
         superId = (self.data_source.id + ':' + sourceEventSuperId)
         sourceId = (self.data_source.id + ':' + sourceEventId)
