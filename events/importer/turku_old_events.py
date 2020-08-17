@@ -817,6 +817,8 @@ class TurkuOriginalImporter(Importer):
                             logger.info("Saving child!!")
                             try:
                                 child = Event.objects.get(origin_id=k)
+                                print(child)
+                                print(child.id)
                             except:
                                 pass
                             if child:
