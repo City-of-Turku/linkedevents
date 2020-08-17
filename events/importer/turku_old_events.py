@@ -831,7 +831,7 @@ class TurkuOriginalImporter(Importer):
                                         'provider_sv': 'Åbogfdsgfdsg',
                                         'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
                                         'deleted': False,
-                                        'super_event_id' : child.super_event.id} 
+                                        'super_event' : child.super_event} 
                                         )
                             except:
                                 pass
