@@ -824,7 +824,7 @@ class TurkuOriginalImporter(Importer):
                                 Event.objects.update_or_create(
                                     id=child.id,
                                     defaults = {
-                                    'super_event' : v} 
+                                    'super_event_id' : v} 
                                 )
 
 
