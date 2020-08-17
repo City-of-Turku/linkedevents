@@ -799,6 +799,24 @@ class TurkuOriginalImporter(Importer):
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
+    def saveChildElement(drupal_url):
+
+        json_event = drupal_url['events']:
+
+        for curEvent in json_event:
+            for x in childList:
+                for k, v in x.items():
+                    if curEvent['drupal_nid'] == k:
+                        #get child.
+                        logger.info("Saving child!!")
+                        child = Event.objects.get(origin_id=k)
+                        Event.objects.update_or_create(
+                            id=child.id,
+                            defaults = {
+                            'super_event_id' : v} 
+                        )
+
+
     def import_events(self):
         import requests
         logger.info("Importing old Turku events...")
@@ -829,44 +847,14 @@ class TurkuOriginalImporter(Importer):
         #Update childrens super_event_id
         print("Syncher finished... trying to save children.")
 
-        json_root_event = drupal_json_response['events']
+        url = drupal_json_response
 
-        for json_child_event in json_root_event: # ->  We don't want to fetch the page twice.
-            json_event = json_child_event['event']
-            for x in childList:
-                for child, mother in x.items():
-                    if child == json_event['drupal_nid']:
-                        try:
+        try:
+            self.saveChildElement(url)
+        except APIBrokenError:
+            return
 
-                            sourceEventSuperId = str(mother)
-                            sourceChildId = str(child)
-
-                            superId = (self.data_source.id + ':' + sourceEventSuperId)
-                            childId = (self.data_source.id + ':' + sourceChildId)
-
-                            eventMother = Event.objects.get(id=superId)
-                            eventChild = Event.objects.get(id=childId)
-
-                            Event.objects.update_or_create(
-                                id = eventChild.id,
-                                defaults = {
-                                'date_published' : datetime.now(),
-                                'provider': 'Turku',
-                                'provider_fi': 'Turku',
-                                'provider_sv': 'Åbo',
-                                'provider_en': 'Turku',
-                                'deleted': False,
-                                'super_event_id': mother} 
-                                )
-
-                            
-                            #if eventMother:
-                            #    logger.info("UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, ")
-                            #    eventMother.super_event_id == str(mother)
-                            #    eventMother.save()
-                        except:
-                            pass
-
+        self.syncher.finish(force=True)
 
         #try:
         #    self.saveChildElement(url, lang)
