@@ -146,7 +146,9 @@ TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
 LANGUAGES_TURKU_OLD =  ['fi', 'sv' , 'en']
 CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku', 'aura', 'marttila', 'kaarina', 'lieto', 'paimio', 'sauvo']
 LOCAL_TZ = timezone('Europe/Helsinki')
-
+drupal_json_response = []
+mothersList = [] 
+childList = []
 
 def set_deleted_false(obj):
     obj.deleted = False
@@ -712,6 +714,7 @@ class TurkuOriginalImporter(Importer):
                 continue
             try:
                 root_doc = response.json()
+                drupal_json_response = response
                 time.sleep(2)
             except ValueError:
                 logger.warning("tku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
@@ -745,8 +748,6 @@ class TurkuOriginalImporter(Importer):
         
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
         '''
-        mothersList = [] 
-        childList = []
 
         #Preprocess Children and Mothers.
         for json_mother_event in json_root_event:
@@ -778,7 +779,6 @@ class TurkuOriginalImporter(Importer):
                     event_image_url = json_event['event_image_ext_url']['src']
                 else:
                     event_image_url = ""
-                
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
         #Process #2: Add Children.
@@ -796,7 +796,6 @@ class TurkuOriginalImporter(Importer):
                             event_image_url = ""
 
                         event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
-
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
@@ -819,8 +818,6 @@ class TurkuOriginalImporter(Importer):
         qs = Event.objects.filter(end_time__gte=datetime.now(), data_source='turku')
         self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
 
-
-
         for event in event_list:
             try:
                 obj = self.save_event(event)
@@ -828,6 +825,23 @@ class TurkuOriginalImporter(Importer):
             except:
                 ...
         self.syncher.finish(force=True)
+
+        #Update childrens super_event_id
+        for event in event_list:
+            for json_child_event in drupal_json_response: # ->  We don't want to fetch the page twice.
+                json_event = json_child_event['event']
+                for x in childList:
+                    for child, mother in x.items():
+                        if child == json_event['drupal_nid']:
+                            try:
+                                eventMother = Event.objects.get(id=mother)
+                            except:
+                                pass
+                            if eventMother:
+                                logger.info("UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, ")
+                                eventMother.super_event_id == str(mother)
+                                eventMother.save()
+
 
         #try:
         #    self.saveChildElement(url, lang)
