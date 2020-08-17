@@ -818,6 +818,10 @@ class TurkuOriginalImporter(Importer):
                                     child = Event.objects.get(origin_id=k)
                                 except Exception as ex: print(ex)
 
+                                try:
+                                    mother = Event.objects.get(origin_id=v)
+                                except Exception as ex: print(ex)
+
                                 if child:
                                     Event.objects.update_or_create(
                                         id = child.id,
@@ -828,7 +832,7 @@ class TurkuOriginalImporter(Importer):
                                         'provider_sv': 'Åbogfdsgfdsg',
                                         'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
                                         'deleted': False,
-                                        'super_event' : child.super_event} 
+                                        'super_event_id' : mother.id} 
                                         )
                             except Exception as ex: print(ex)
 
