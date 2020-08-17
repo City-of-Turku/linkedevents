@@ -689,6 +689,8 @@ class TurkuOriginalImporter(Importer):
             if eventType == "child":
                 eventItem['super_event_type'] = ""
 
+            if eventType == "single":
+                eventItem['super_event_type'] = ""
             #if eventType == "child":
             #    logger.info("this is a child")
             #    eventItem['super_event_type'] = ""
@@ -768,7 +770,22 @@ class TurkuOriginalImporter(Importer):
                         if curMotherToBeFound in mothersList:
                             childList.append({curChildNid : curMotherToBeFound})
 
-        #Process #1: Add Mothers.
+        #Process #1: Add Singles.
+        for json_mother_event in json_root_event:
+            json_event = json_mother_event['event']
+            event_type = "single"
+
+            if json_event['event_image_ext_url']:
+                event_image_url = json_event['event_image_ext_url']['src']
+            else:
+                event_image_url = ""
+
+            if json_event['event_type'] == 'Single event':
+                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
+
+
+
+        #Process #2: Add Mothers.
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
             event_type = "mother"
@@ -781,7 +798,7 @@ class TurkuOriginalImporter(Importer):
                     event_image_url = ""
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
-        #Process #2: Add Children.
+        #Process #3: Add Children.
         for json_child_event in json_root_event:
             json_event = json_child_event['event']
             event_type = "child"
@@ -874,6 +891,7 @@ class TurkuOriginalImporter(Importer):
             return
 
         self.syncher.finish(force=True)
+
 
         #try:
         #    self.saveChildElement(url, lang)
