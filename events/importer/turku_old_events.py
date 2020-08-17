@@ -758,7 +758,7 @@ class TurkuOriginalImporter(Importer):
                             mothersList.append(curMotherToBeFound)
 
                         if curMotherToBeFound in mothersList:
-                            childList.append(curChildNid : curMotherToBeFound})
+                            childList.append({curChildNid : curMotherToBeFound})
 
         #Process #1: Add Mothers.
         for json_mother_event in json_root_event:
@@ -775,13 +775,13 @@ class TurkuOriginalImporter(Importer):
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
         #Process #2: Add Children.
-        for json_mother_event in json_root_event:
-            json_event = json_mother_event['event']
+        for json_child_event in json_root_event:
+            json_event = json_child_event['event']
             event_type = "child"
 
             for k, v in childList.items():
                 if json_event['drupal_nid'] == str(k): #-> If event is a child.
-                    
+
                     if json_event['event_image_ext_url']:
                         event_image_url = json_event['event_image_ext_url']['src']
                     else:
