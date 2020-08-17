@@ -147,7 +147,7 @@ LANGUAGES_TURKU_OLD =  ['fi', 'sv' , 'en']
 CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku', 'aura', 'marttila', 'kaarina', 'lieto', 'paimio', 'sauvo']
 LOCAL_TZ = timezone('Europe/Helsinki')
 drupal_json_response = []
-mothersList = [] 
+mothersList = []
 childList = []
 
 def set_deleted_false(obj):
@@ -714,8 +714,8 @@ class TurkuOriginalImporter(Importer):
                 continue
             try:
                 root_doc = response.json()
+                global drupal_json_response
                 drupal_json_response = root_doc
-                print(drupal_json_response)
                 time.sleep(2)
             except ValueError:
                 logger.warning("tku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
