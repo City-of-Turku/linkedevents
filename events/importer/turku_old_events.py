@@ -715,6 +715,7 @@ class TurkuOriginalImporter(Importer):
             try:
                 root_doc = response.json()
                 drupal_json_response = root_doc
+                print(drupal_json_response)
                 time.sleep(2)
             except ValueError:
                 logger.warning("tku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
