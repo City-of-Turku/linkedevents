@@ -685,9 +685,10 @@ class TurkuOriginalImporter(Importer):
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
             elif eventType == "child":
                 eventItem['super_event_type'] = ""
-                for child, mother in childList.items():
-                    if child == eventItem['origin_id']:
-                        eventItem['super_event_id'] == str(mother)
+                for x in childList:
+                    for child, mother in x.items():
+                        if child == eventItem['origin_id']:
+                            eventItem['super_event_id'] == str(mother)
             else:
                 eventItem['super_event_type'] = ""
 
@@ -779,15 +780,16 @@ class TurkuOriginalImporter(Importer):
             json_event = json_child_event['event']
             event_type = "child"
 
-            for k, v in childList.items():
-                if json_event['drupal_nid'] == str(k): #-> If event is a child.
+            for x in childList:
+                for k, v in x.items():
+                    if json_event['drupal_nid'] == str(k): #-> If event is a child.
 
-                    if json_event['event_image_ext_url']:
-                        event_image_url = json_event['event_image_ext_url']['src']
-                    else:
-                        event_image_url = ""
+                        if json_event['event_image_ext_url']:
+                            event_image_url = json_event['event_image_ext_url']['src']
+                        else:
+                            event_image_url = ""
 
-                    event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
+                        event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
