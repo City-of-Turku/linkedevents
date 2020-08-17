@@ -819,15 +819,13 @@ class TurkuOriginalImporter(Importer):
                                 child = Event.objects.get(origin_id=k)
                                 print(child)
                                 print(child.id)
-                            except:
-                                pass
-                            if child:
-                                logger.info("CHILD UPDATE OR CREATE CALLED!!!!!!")
+
                                 Event.objects.update_or_create(
                                     id=child.id,
-                                    defaults = {
-                                    'super_event_id' : v} 
-                                )
+                                    super_event_id = v
+                                    )
+                            except:
+                                pass
 
 
     def import_events(self):
