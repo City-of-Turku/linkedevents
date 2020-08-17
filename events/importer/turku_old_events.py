@@ -408,7 +408,7 @@ class TurkuOriginalImporter(Importer):
             eventItem['publisher'] = self.organization
             eventItem['end_time'] = end_time
 
-            typeOfEvent = eventTku['event_type']
+            #typeOfEvent = eventTku['event_type']
 
             event_categories = eventItem.get('event_categories', set())
 
@@ -683,14 +683,12 @@ class TurkuOriginalImporter(Importer):
 
             if eventType == "mother":
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
-            elif eventType == "child":
+            if eventType == "child":
                 eventItem['super_event_type'] = ""
                 for x in childList:
-                    for child, mother in x.items():
-                        if child == eventItem['origin_id']:
-                            eventItem['super_event_id'] == str(mother)
-            else:
-                eventItem['super_event_type'] = ""
+                    for k, v in x.items():
+                        if k == eventItem['origin_id']:
+                            eventItem['super_event_id'] = str(v)
 
             return eventItem
 
