@@ -832,7 +832,7 @@ class TurkuOriginalImporter(Importer):
                                         'provider_sv': 'Åbogfdsgfdsg',
                                         'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
                                         'deleted': False,
-                                        'super_event_id' : mother} 
+                                        'super_event' : mother} 
                                         )
                             except Exception as ex: print(ex)
 
