@@ -801,7 +801,7 @@ class TurkuOriginalImporter(Importer):
 
     def saveChildElement(drupal_url):
 
-        json_event = drupal_url['events']:
+        json_event = drupal_url['events']
 
         for curEvent in json_event:
             for x in childList:
