@@ -806,15 +806,16 @@ class TurkuOriginalImporter(Importer):
         json_root_event = drupal_url['events']
 
         for json_child_event in json_root_event:
-            print(json_child_event)
+            #print(json_child_event)
             for curEventElement in json_child_event:
+                print(curEventElement['drupal_nid'])
                 #print(curEventElement['drupal_nid'])
                 for x in childList:
                     for k, v in x.items():
-                        if curEventElement['drupal_nid'] == k:
+                        if curEventElement['drupal_nid'] == str(k):
                             #get child.
                             logger.info("Saving child!!")
-                            child = Event.objects.get(origin_id=k)
+                            child = Event.objects.get(origin_id=str(k))
                             Event.objects.update_or_create(
                                 id=child.id,
                                 defaults = {
