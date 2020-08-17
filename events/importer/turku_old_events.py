@@ -833,6 +833,8 @@ class TurkuOriginalImporter(Importer):
             print(drupal_json_response)
             print(len(drupal_json_response))
 
+            print(drupal_json_response[0])
+
             for json_child_event in drupal_json_response: # ->  We don't want to fetch the page twice.
                 json_event = json_child_event['event']
                 for x in childList:
