@@ -812,15 +812,20 @@ class TurkuOriginalImporter(Importer):
                 #print(curEventElement['drupal_nid'])
                 for x in childList:
                     for k, v in x.items():
-                        if json_event['drupal_nid'] == str(k):
+                        if json_event['drupal_nid'] == k:
                             #get child.
                             logger.info("Saving child!!")
-                            child = Event.objects.get(origin_id=str(k))
-                            Event.objects.update_or_create(
-                                id=child.id,
-                                defaults = {
-                                'super_event_id' : v} 
-                            )
+                            try:
+                                child = Event.objects.get(origin_id=k)
+                            except:
+                                pass
+                            if child:
+                                logger.info("CHILD UPDATE OR CREATE CALLED!!!!!!")
+                                Event.objects.update_or_create(
+                                    id=child.id,
+                                    defaults = {
+                                    'super_event' : v} 
+                                )
 
 
     def import_events(self):
