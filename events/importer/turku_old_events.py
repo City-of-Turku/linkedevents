@@ -801,8 +801,6 @@ class TurkuOriginalImporter(Importer):
 
     def saveChildElement(self, drupal_url):
         
-        #print(drupal_url)
-
         json_root_event = drupal_url['events']
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
@@ -818,8 +816,7 @@ class TurkuOriginalImporter(Importer):
                             try:
                                 try:
                                     child = Event.objects.get(origin_id=k)
-                                except:
-                                    pass
+                                except Exception as ex: print(ex)
 
                                 if child:
                                     Event.objects.update_or_create(
@@ -833,9 +830,7 @@ class TurkuOriginalImporter(Importer):
                                         'deleted': False,
                                         'super_event' : child.super_event} 
                                         )
-                            except:
-                                pass
-
+                            except Exception as ex: print(ex)
 
     def import_events(self):
         import requests
