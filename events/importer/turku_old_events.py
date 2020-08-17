@@ -816,20 +816,23 @@ class TurkuOriginalImporter(Importer):
                             #get child.
                             logger.info("Saving child!!")
                             try:
-                                child = Event.objects.get(origin_id=k)
-                                print(child)
-                                print(child.id)
-                                Event.objects.update_or_create(
-                                    id = child.id,
-                                    defaults = {
-                                    'date_published' : datetime.now(),
-                                    'provider': 'Turkugfdsgfdgsdf',
-                                    'provider_fi': 'Turkugfdsgfsdgfsd',
-                                    'provider_sv': 'Åbogfdsgfdsg',
-                                    'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
-                                    'deleted': False,
-                                    'super_event': 'test'} 
-                                    )
+                                try:
+                                    child = Event.objects.get(origin_id=k)
+                                except:
+                                    pass
+
+                                if child:
+                                    Event.objects.update_or_create(
+                                        id = child.id,
+                                        defaults = {
+                                        'date_published' : datetime.now(),
+                                        'provider': 'Turkugfdsgfdgsdf',
+                                        'provider_fi': 'Turkugfdsgfsdgfsd',
+                                        'provider_sv': 'Åbogfdsgfdsg',
+                                        'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
+                                        'deleted': False,
+                                        'super_event_id' : child.super_event} 
+                                        )
                             except:
                                 pass
 
