@@ -819,11 +819,16 @@ class TurkuOriginalImporter(Importer):
                                 child = Event.objects.get(origin_id=k)
                                 print(child)
                                 print(child.id)
-
-                                child.super_event_id = v
-
-                                child.save()
-
+                                Event.objects.update_or_create(
+                                    id = child.id,
+                                    defaults = {
+                                    'date_published' : datetime.now(),
+                                    'provider': 'Turkugfdsgfdgsdf',
+                                    'provider_fi': 'Turkugfdsgfsdgfsd',
+                                    'provider_sv': 'Åbogfdsgfdsg',
+                                    'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
+                                    'deleted': False} 
+                                    )
                             except:
                                 pass
 
