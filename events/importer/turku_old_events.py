@@ -714,7 +714,7 @@ class TurkuOriginalImporter(Importer):
                 continue
             try:
                 root_doc = response.json()
-                drupal_json_response = response
+                drupal_json_response = root_doc
                 time.sleep(2)
             except ValueError:
                 logger.warning("tku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
@@ -832,8 +832,6 @@ class TurkuOriginalImporter(Importer):
             print("Does this print anything?")
             print(drupal_json_response)
             print(len(drupal_json_response))
-
-            print(drupal_json_response[0])
 
             for json_child_event in drupal_json_response: # ->  We don't want to fetch the page twice.
                 json_event = json_child_event['event']
