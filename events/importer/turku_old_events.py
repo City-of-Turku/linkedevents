@@ -801,14 +801,14 @@ class TurkuOriginalImporter(Importer):
 
     def saveChildElement(self, drupal_url):
         
-        print(drupal_url)
+        #print(drupal_url)
 
         json_root_event = drupal_url['events']
 
         for json_child_event in json_root_event:
             print(json_child_event)
             for curEventElement in json_child_event:
-                print(curEventElement['drupal_nid'])
+                #print(curEventElement['drupal_nid'])
                 for x in childList:
                     for k, v in x.items():
                         if curEventElement['drupal_nid'] == k:
