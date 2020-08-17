@@ -800,21 +800,23 @@ class TurkuOriginalImporter(Importer):
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
     def saveChildElement(self, drupal_url):
+        
+        json_root_event = drupal_url['events']
 
-        json_event = drupal_url['events']
-
-        for curEvent in json_event:
-            for x in childList:
-                for k, v in x.items():
-                    if curEvent['drupal_nid'] == k:
-                        #get child.
-                        logger.info("Saving child!!")
-                        child = Event.objects.get(origin_id=k)
-                        Event.objects.update_or_create(
-                            id=child.id,
-                            defaults = {
-                            'super_event_id' : v} 
-                        )
+        for json_mother_event in json_root_event:
+            json_event = json_mother_event['event']
+            for curEventElement in json_event:
+                for x in childList:
+                    for k, v in x.items():
+                        if curEventElement['drupal_nid'] == k:
+                            #get child.
+                            logger.info("Saving child!!")
+                            child = Event.objects.get(origin_id=k)
+                            Event.objects.update_or_create(
+                                id=child.id,
+                                defaults = {
+                                'super_event_id' : v} 
+                            )
 
 
     def import_events(self):
