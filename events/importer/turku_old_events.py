@@ -390,7 +390,7 @@ class TurkuOriginalImporter(Importer):
             event_Link.save()
 
 
-    def _import_event(self, lang, event_el, events, event_image_url, eventType):
+    def _import_event(self, lang, event_el, events, event_image_url, eventType, mothersList, childList):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
         end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
@@ -685,6 +685,9 @@ class TurkuOriginalImporter(Importer):
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
             elif eventType == "child":
                 eventItem['super_event_type'] = ""
+                for child, mother in childList.items():
+                    if child == eventItem['origin_id']:
+                        eventItem['super_event_id'] == str(mother)
             else:
                 eventItem['super_event_type'] = ""
 
@@ -755,7 +758,7 @@ class TurkuOriginalImporter(Importer):
                             mothersList.append(curMotherToBeFound)
 
                         if curMotherToBeFound in mothersList:
-                            childList.append(curChildNid)
+                            childList.append(curChildNid : curMotherToBeFound})
 
         #Process #1: Add Mothers.
         for json_mother_event in json_root_event:
@@ -769,21 +772,22 @@ class TurkuOriginalImporter(Importer):
                 else:
                     event_image_url = ""
                 
-                event = self._import_event(lang, json_event, events, event_image_url, event_type)
+                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
         #Process #2: Add Children.
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
             event_type = "child"
 
-            if json_event['drupal_nid'] in childList: #-> If event is a child.
+            for k, v in childList.items():
+                if json_event['drupal_nid'] == str(k): #-> If event is a child.
+                    
+                    if json_event['event_image_ext_url']:
+                        event_image_url = json_event['event_image_ext_url']['src']
+                    else:
+                        event_image_url = ""
 
-                if json_event['event_image_ext_url']:
-                    event_image_url = json_event['event_image_ext_url']['src']
-                else:
-                    event_image_url = ""
-
-                event = self._import_event(lang, json_event, events, event_image_url, event_type)
+                    event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
