@@ -830,9 +830,11 @@ class TurkuOriginalImporter(Importer):
         print("Syncher finished... trying to save children.")
         for event in event_list:
             print("Does this print anything?")
+            print(drupal_json_response)
+            print(len(drupal_json_response))
+
             for json_child_event in drupal_json_response: # ->  We don't want to fetch the page twice.
                 json_event = json_child_event['event']
-                logger.info("yes???")
                 for x in childList:
                     for child, mother in x.items():
                         if child == json_event['drupal_nid']:
