@@ -687,19 +687,18 @@ class TurkuOriginalImporter(Importer):
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
 
             if eventType == "child":
-                logger.info("this is a child")
                 eventItem['super_event_type'] = ""
-                for x in childList:
-                    print("WSDAOPFKASDOPFKOPDASKOPFDKSF SDOAK FOPSD KAOPFSD KAOPF KDSOPAF KSDOPAF KDOP ")
-                    for k, v in x.items():
-                        if k == eventTku['drupal_nid']:
-                            logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw" + str(v))
-                            eventItem['super_event'] = str(v)
+
+            #if eventType == "child":
+            #    logger.info("this is a child")
+            #    eventItem['super_event_type'] = ""
+            #    for x in childList:
+            #        print("WSDAOPFKASDOPFKOPDASKOPFDKSF SDOAK FOPSD KAOPFSD KAOPF KDSOPAF KSDOPAF KDOP ")
+            #        for k, v in x.items():
+            #            if k == eventTku['drupal_nid']:
+            #                eventItem['super_event'] = str(v)
+
+
             return eventItem
 
     def _recur_fetch_paginated_url(self, url, lang, events):
