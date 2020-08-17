@@ -820,9 +820,10 @@ class TurkuOriginalImporter(Importer):
                                 print(child)
                                 print(child.id)
 
-                                Event.objects.update_or_create(
-                                    id=child.id,
-                                    defaults={'super_event_id' : v})
+                                child.super_event_id = v
+
+                                child.save()
+
                             except:
                                 pass
 
