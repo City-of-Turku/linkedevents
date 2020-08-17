@@ -842,12 +842,12 @@ class TurkuOriginalImporter(Importer):
                         if child == json_event['drupal_nid']:
                             try:
                                 eventMother = Event.objects.get(id=mother)
+                                if eventMother:
+                                    logger.info("UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, ")
+                                    eventMother.super_event_id == str(mother)
+                                    eventMother.save()
                             except:
                                 pass
-                            if eventMother:
-                                logger.info("UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, UPDATING SUPER EVENT ID FOR CHILD, ")
-                                eventMother.super_event_id == str(mother)
-                                eventMother.save()
 
 
         #try:
