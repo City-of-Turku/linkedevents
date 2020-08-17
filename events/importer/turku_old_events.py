@@ -270,7 +270,7 @@ class TurkuOriginalImporter(Importer):
     #def import_eventlink(self, typeSocial):
         #EventLink to be made. Probably not necessary as a function but rather as a loop.
 
-
+    '''
     def _import_child_event(self, lang, eventTku):
         eventMother = None
         eventImage = None
@@ -359,6 +359,8 @@ class TurkuOriginalImporter(Importer):
 
                 #EventLink save TO BE MADE here.
             #self.syncher.finish(force=self.options['force'])W
+    '''
+
 
     def with_value(self, data : dict, value : object, default : object):
         item = data.get(value, default)
@@ -391,8 +393,7 @@ class TurkuOriginalImporter(Importer):
             event_Link.save()
 
 
-
-    def _import_event(self, lang, event_el, events, event_image_url):
+    def _import_event(self, lang, event_el, events, event_image_url, eventType):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
         end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
@@ -784,7 +785,7 @@ class TurkuOriginalImporter(Importer):
                     event_image_url = json_event['event_image_ext_url']['src']
                 else:
                     event_image_url = ""
-                    
+
                 event = self._import_event(lang, json_event, events, event_image_url, event_type)
 
 
