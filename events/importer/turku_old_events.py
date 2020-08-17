@@ -688,8 +688,9 @@ class TurkuOriginalImporter(Importer):
                 logger.info("this is a child")
                 eventItem['super_event_type'] = ""
                 for x in childList:
+                    print("WSDAOPFKASDOPFKOPDASKOPFDKSF SDOAK FOPSD KAOPFSD KAOPF KDSOPAF KSDOPAF KDOP ")
                     for k, v in x.items():
-                        if k == eventItem['origin_id']:
+                        if k == eventTku['drupal_nid']:
                             logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw")
                             logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw")
                             logger.info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWw")
