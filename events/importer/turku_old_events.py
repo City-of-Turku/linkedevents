@@ -799,7 +799,7 @@ class TurkuOriginalImporter(Importer):
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
-    def saveChildElement(drupal_url):
+    def saveChildElement(self, drupal_url):
 
         json_event = drupal_url['events']
 
