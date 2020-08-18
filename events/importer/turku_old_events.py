@@ -806,30 +806,38 @@ class TurkuOriginalImporter(Importer):
                                         )
                             except Exception as ex: print(ex)
 
-
             if json_event['facebook_url']:
                 originid = json_event['drupal_nid']
-                qevnt = Event.objects.get(origin_id=originid)
-                myLang = Language.objects.get(id="fi")
-                event_Link = EventLink(
-                    name="facebook_url",
-                    event_id=qevnt.id,
-                    language_id=myLang.id,
-                    link=json_event['facebook_url']
-                )
-                event_Link.save()
-                
+                print("this is the origin id, : " + originid)
+                try:
+                    qevnt = Event.objects.get(origin_id=originid)
+                except:
+                    pass
+                if qevnt:
+                    myLang = Language.objects.get(id="fi")
+                    event_Link = EventLink(
+                        name="facebook_url",
+                        event_id=qevnt.id,
+                        language_id=myLang.id,
+                        link=json_event['facebook_url']
+                    )
+                    event_Link.save()
+
             if json_event['twitter_url']:
                 originid = json_event['drupal_nid']
-                qevnt = Event.objects.get(origin_id=originid)
-                myLang = Language.objects.get(id="fi")
-                event_Link = EventLink(
-                    name="twitter_url",
-                    event_id=qevnt.id,
-                    language_id=myLang.id,
-                    link=json_event['twitter_url']
-                )
-                event_Link.save()
+                try:
+                    qevnt = Event.objects.get(origin_id=originid)
+                except:
+                    pass
+                if qevnt:
+                    myLang = Language.objects.get(id="fi")
+                    event_Link = EventLink(
+                        name="twitter_url",
+                        event_id=qevnt.id,
+                        language_id=myLang.id,
+                        link=json_event['twitter_url']
+                    )
+                    event_Link.save()
 
     def import_events(self):
         import requests
