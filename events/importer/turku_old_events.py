@@ -564,32 +564,38 @@ class TurkuOriginalImporter(Importer):
             '''
 
 
-            # Add a default offer
-            free_offer = {
-                'is_free': True,
-                'price': None,
-                'description': None,
-                'info_url': None,
-                }
+            if eventType == "mother" or eventType == "single":
 
-            eventOffer_is_free = bool(int(eventTku['free_event']))
-            #Fill event_offer table information if events is not free price event
-            if not eventOffer_is_free:
-                if eventTku['event_price']: 
-                    ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
-                    price = str(eventTku['event_price'])                 
-                    price = bleach.clean(price, tags= ok_tags, strip=True)
-                    free_offer_price = clean_text(price, True)
+                # Add a default offer
+                free_offer = {
+                    'is_free': True,
+                    'price': None,
+                    'description': None,
+                    'info_url': None,
+                    }
 
-                if str(eventTku['buy_tickets_url']): 
-                    free_offer_buy_tickets = eventTku['buy_tickets_url'] 
+                eventOffer_is_free = bool(int(eventTku['free_event']))
+                #Fill event_offer table information if events is not free price event
+                if not eventOffer_is_free:
 
-                free_offer['is_free'] = False
-                free_offer['price'] = {'fi': free_offer_price}
-                free_offer['description'] = None
-                free_offer['info_url'] =  {'fi': free_offer_buy_tickets}
+                    free_offer['is_free'] = False
+                    if eventTku['event_price']: 
+                        ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
+                        price = str(eventTku['event_price'])                 
+                        price = bleach.clean(price, tags= ok_tags, strip=True)
+                        free_offer_price = clean_text(price, True)
 
-            eventItem['offers'] = [free_offer]
+                        free_offer['price'] = {'fi': free_offer_price}
+                        free_offer['info_url'] =  {'fi': None}
+
+
+                    if str(eventTku['buy_tickets_url']): 
+                        free_offer_buy_tickets = eventTku['buy_tickets_url']
+                        free_offer['info_url'] =  {'fi': free_offer_buy_tickets}
+
+                    free_offer['description'] = None
+
+                eventItem['offers'] = [free_offer]
 
 
             if eventType == "mother":
