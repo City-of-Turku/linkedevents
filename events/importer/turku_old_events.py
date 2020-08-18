@@ -597,6 +597,10 @@ class TurkuOriginalImporter(Importer):
 
                 eventItem['offers'] = [free_offer]
 
+            eventItem['info_url'] = eventTku['website_url']
+            eventItem['info_url_fi'] = eventTku['website_url']
+            eventItem['info_url_sv'] = eventTku['website_url']
+            eventItem['info_url_en'] = eventTku['website_url']
 
             if eventType == "mother":
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
@@ -774,6 +778,7 @@ class TurkuOriginalImporter(Importer):
                                     'location_extra_info_fi' : mother.location_extra_info_fi,
                                     'location_extra_info_sv' : mother.location_extra_info_sv,
                                     'location_extra_info_en' : mother.location_extra_info_en,
+                                    'website_url' : mother.website_url,
                                     'super_event' : mother}
                                     )
                             except Exception as ex: print(ex)
@@ -804,6 +809,8 @@ class TurkuOriginalImporter(Importer):
                                 #except Exception as ex: print(ex)
                             except Exception as ex: print(ex)
 
+
+            #Facebook urls for either singles or mother events.
             if json_event['facebook_url']:
                 originid = json_event['drupal_nid']
                 #get event object
@@ -844,6 +851,10 @@ class TurkuOriginalImporter(Importer):
                     logger.info("TWITTER!!")
                 except:
                     pass
+
+            #Add facebook and twitter url for children:
+            #try
+
 
     def import_events(self):
         import requests
