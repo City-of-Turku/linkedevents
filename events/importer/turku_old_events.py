@@ -739,8 +739,9 @@ class TurkuOriginalImporter(Importer):
                 for x in childList:
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k:
-                            #get child.
-                            logger.info("Saving child!!")
+                            
+                            # -> 
+                            logger.info("Saving child!")
                             try:
                                 try:
                                     child = Event.objects.get(origin_id=k)
@@ -758,9 +759,12 @@ class TurkuOriginalImporter(Importer):
                                         'provider_fi': mother.provider_fi,
                                         'provider_sv': mother.provider_sv,
                                         'provider_en': mother.provider_en,
+                                        'description': mother.description,
+                                        'short_description': mother.short_description,
                                         'super_event' : mother}
                                         )
                             except Exception as ex: print(ex)
+                            
 
 
     def import_events(self):
