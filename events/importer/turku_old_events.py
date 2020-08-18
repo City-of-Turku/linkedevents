@@ -821,7 +821,6 @@ class TurkuOriginalImporter(Importer):
                         language_id=myLang.id,
                         link=json_event['facebook_url']
                     )
-                    event_Link.save()
                     if json_event['twitter_url']:
                         originid = json_event['drupal_nid']
                         myLang = Language.objects.get(id="fi")
@@ -831,7 +830,7 @@ class TurkuOriginalImporter(Importer):
                             language_id=myLang.id,
                             link=json_event['twitter_url']
                         )
-                        event_Link.save()
+                    event_Link.save()
 
     def import_events(self):
         import requests
