@@ -563,13 +563,14 @@ class TurkuOriginalImporter(Importer):
                 del eventTku['drupal_nid_super']
             '''
 
+
             # Add a default offer
             free_offer = {
                 'is_free': True,
                 'price': None,
                 'description': None,
                 'info_url': None,
-            }
+                }
 
             eventOffer_is_free = bool(int(eventTku['free_event']))
             #Fill event_offer table information if events is not free price event
@@ -579,20 +580,17 @@ class TurkuOriginalImporter(Importer):
                     price = str(eventTku['event_price'])                 
                     price = bleach.clean(price, tags= ok_tags, strip=True)
                     free_offer_price = clean_text(price, True)
-                else: 
-                    free_offer_price = 'No price'
 
                 if str(eventTku['buy_tickets_url']): 
                     free_offer_buy_tickets = eventTku['buy_tickets_url'] 
-                else:
-                    free_offer_buy_tickets = '' 
 
                 free_offer['is_free'] = False
                 free_offer['price'] = {'fi': free_offer_price}
-                free_offer['description'] = ''
+                free_offer['description'] = None
                 free_offer['info_url'] =  {'fi': free_offer_buy_tickets}
 
             eventItem['offers'] = [free_offer]
+
 
             if eventType == "mother":
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
@@ -779,7 +777,7 @@ class TurkuOriginalImporter(Importer):
                                 try:
                                     mother = Event.objects.get(origin_id=v)
                                 except Exception as ex: print(ex)
-                                # -> Get object from Offer once we have the Event.
+                                # -> Get object from Offer once we have the Event object.
                                 try:
                                     motherOffer = Offer.objects.get(event_id=mother.id)
                                 except Exception as ex: print(ex)
