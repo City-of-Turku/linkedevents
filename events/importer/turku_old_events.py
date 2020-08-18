@@ -811,11 +811,14 @@ class TurkuOriginalImporter(Importer):
                 #get event object
                 try:
                     eventObj = Event.objects.get(origin_id=originid)
+                    print(eventObj.id)
                 except Exception as ex: print(ex)
                 try:
                     myLang = Language.objects.get(id="fi")
                 except:
                     pass
+                
+
                 if eventObj:
                     EventLink.objects.update_or_create(
                         name="extlink_facebook",
