@@ -439,6 +439,8 @@ class TurkuOriginalImporter(Importer):
 
             eventItem['keywords'] = event_keywords
 
+            eventItem['info_url'] = eventTku['website_url']
+
             if eventTku['target_audience'] != None:
                 eventTku['target_audience'] =eventTku['target_audience'] + ','
                 audience = eventTku['target_audience'].split(',')
@@ -596,11 +598,6 @@ class TurkuOriginalImporter(Importer):
                     free_offer['description'] = None
 
                 eventItem['offers'] = [free_offer]
-
-            eventItem['info_url'] = eventTku['website_url']
-            eventItem['info_url_fi'] = eventTku['website_url']
-            eventItem['info_url_sv'] = eventTku['website_url']
-            eventItem['info_url_en'] = eventTku['website_url']
 
             if eventType == "mother":
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
