@@ -789,7 +789,7 @@ class TurkuOriginalImporter(Importer):
 
                                 if childOffer and motherOffer:
                                     Offer.objects.update_or_create(
-                                        event_id=child,
+                                        event_id=child.id,
                                         price=motherOffer.price,
                                         info_url=motherOffer.info_url,
                                         description=motherOffer.description,
