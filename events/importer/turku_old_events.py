@@ -767,7 +767,6 @@ class TurkuOriginalImporter(Importer):
                                         'short_description_fi': mother.short_description_fi,
                                         'short_description_sv': mother.short_description_sv,
                                         'short_description_en': mother.short_description_en,
-                                        'short_description_en': mother.short_description_en,
                                         'super_event' : mother}
                                         )
                             except Exception as ex: print(ex)
