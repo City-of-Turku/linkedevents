@@ -14,7 +14,7 @@ import pytz
 import bleach
 from datetime import datetime, timedelta
 from django.utils.html import strip_tags 
-from events.models import Event, Keyword, DataSource, Place, License, Image, Language, EventLink
+from events.models import Event, Keyword, DataSource, Place, License, Image, Language, EventLink, Offer
 from django_orghierarchy.models import Organization, OrganizationClass
 from pytz import timezone
 from django.conf import settings
@@ -770,8 +770,32 @@ class TurkuOriginalImporter(Importer):
                                         'super_event' : mother}
                                         )
                             except Exception as ex: print(ex)
-                            
+                            try:
+                                logger.info("Updating childs Offer values.")
+                                # -> Get object from Event.
+                                try:
+                                    child = Event.objects.get(origin_id=k)
+                                except Exception as ex: print(ex)
+                                try:
+                                    mother = Event.objects.get(origin_id=v)
+                                except Exception as ex: print(ex)
+                                # -> Get object from Offer once we have the Event.
+                                try:
+                                    motherOffer = Offer.objects.get(event_id=mother.id)
+                                except Exception as ex: print(ex)
+                                try:
+                                    childOffer = Offer.objects.get(event_id=child.id)
+                                except Exception as ex: print(ex)
 
+                                if childOffer and motherOffer:
+                                    Offer.objects.update_or_create(
+                                        event_id=childOffer,
+                                        price=motherOffer.price,
+                                        info_url=motherOffer.info_url,
+                                        description=motherOffer.description,
+                                        is_free=motherOffer.is_free
+                                        )
+                            except Exception as ex: print(ex)
 
     def import_events(self):
         import requests
