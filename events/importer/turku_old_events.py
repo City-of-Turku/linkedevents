@@ -810,24 +810,21 @@ class TurkuOriginalImporter(Importer):
                 originid = json_event['drupal_nid']
                 #get event object
                 try:
-                    eventObj = Event.objects.get(origin_id=originid)
-                    print(eventObj.id)
-                except Exception as ex: print(ex)
-                try:
                     myLang = Language.objects.get(id="fi")
                 except:
                     pass
-                
+                try:
+                    eventObj = Event.objects.get(origin_id=originid)
+                    print(eventObj.id)
 
-                if eventObj:
                     EventLink.objects.update_or_create(
                         name="extlink_facebook",
                         event_id=eventObj.id,
                         language_id=myLang.id,
                         link=json_event['facebook_url']
                         )
-                    logger.info("FACEBOOK")
-            
+                    logger.info("FACEBOOK!!")
+
 
     def import_events(self):
         import requests
