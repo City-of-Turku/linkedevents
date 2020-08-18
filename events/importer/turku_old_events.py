@@ -824,6 +824,8 @@ class TurkuOriginalImporter(Importer):
                         link=json_event['facebook_url']
                         )
                     logger.info("FACEBOOK!!")
+                except:
+                    pass
 
 
     def import_events(self):
