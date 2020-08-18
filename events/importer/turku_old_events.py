@@ -439,7 +439,7 @@ class TurkuOriginalImporter(Importer):
 
             eventItem['keywords'] = event_keywords
 
-            eventItem['info_url'] = "test"
+
 
             if eventTku['target_audience'] != None:
                 eventTku['target_audience'] =eventTku['target_audience'] + ','
@@ -450,6 +450,9 @@ class TurkuOriginalImporter(Importer):
                         event_audience.add(Keyword.objects.get(id= ysoId))
 
             eventItem['audience'] = event_audience
+
+
+            eventItem['info_url'] = {"fi": eventTku['website_url'], "sv": eventTku['website_url'], "en": eventTku['website_url']}
 
             tprNo = ''
 
