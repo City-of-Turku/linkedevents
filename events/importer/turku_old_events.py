@@ -824,14 +824,7 @@ class TurkuOriginalImporter(Importer):
                         link=json_event['facebook_url']
                         )
                     logger.info("FACEBOOK")
-                '''
-                event_Link = EventLink(
-                name="twitter_url",
-                event_id=qevnt.id,
-                language_id=myLang.id,
-                link=eventTku['twitter_url']
-            )
-            event_Link.save()
+            
 
     def import_events(self):
         import requests
