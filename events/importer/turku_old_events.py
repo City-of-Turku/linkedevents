@@ -818,7 +818,7 @@ class TurkuOriginalImporter(Importer):
                     pass
                 if eventObj:
                     EventLink.objects.update_or_create(
-                        name="facebook_url",
+                        name="extlink_facebook",
                         event_id=eventObj.id,
                         language_id=myLang.id,
                         link=json_event['facebook_url']
