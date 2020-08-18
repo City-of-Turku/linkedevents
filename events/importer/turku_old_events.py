@@ -787,11 +787,12 @@ class TurkuOriginalImporter(Importer):
                                 try:
                                     motherOffer = Offer.objects.get(event_id=mother.id)
                                 except Exception as ex: print(ex)
-                                try:
-                                    childOffer = Offer.objects.get(event_id=child.id)
-                                except Exception as ex: print(ex)
 
-                                if childOffer and motherOffer:
+                                #try:
+                                #    childOffer = Offer.objects.get(event_id=child.id)
+                                #except Exception as ex: print(ex)
+
+                                if motherOffer:
                                     Offer.objects.update_or_create(
                                         event_id=child.id,
                                         price=motherOffer.price,
@@ -799,6 +800,7 @@ class TurkuOriginalImporter(Importer):
                                         description=motherOffer.description,
                                         is_free=motherOffer.is_free
                                         )
+
                             except Exception as ex: print(ex)
 
     def import_events(self):
