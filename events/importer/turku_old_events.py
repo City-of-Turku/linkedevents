@@ -753,30 +753,29 @@ class TurkuOriginalImporter(Importer):
                                     mother = Event.objects.get(origin_id=v)
                                 except Exception as ex: print(ex)
 
-                                if child:
-                                    Event.objects.update_or_create(
-                                        id = child.id,
-                                        defaults = {
-                                        'date_published' : datetime.now(),
-                                        'provider' : mother.provider,
-                                        'provider_fi' : mother.provider_fi,
-                                        'provider_sv' : mother.provider_sv,
-                                        'provider_en' : mother.provider_en,
-                                        'description' : mother.description,
-                                        'description_fi' : mother.description_fi,
-                                        'description_sv' : mother.description_sv,
-                                        'description_en' : mother.description_en,
-                                        'short_description' : mother.short_description,
-                                        'short_description_fi' : mother.short_description_fi,
-                                        'short_description_sv' : mother.short_description_sv,
-                                        'short_description_en' : mother.short_description_en,
-                                        'location_id' : mother.location_id,
-                                        'location_extra_info' : mother.location_extra_info,
-                                        'location_extra_info_fi' : mother.location_extra_info_fi,
-                                        'location_extra_info_sv' : mother.location_extra_info_sv,
-                                        'location_extra_info_en' : mother.location_extra_info_en,
-                                        'super_event' : mother}
-                                        )
+                                Event.objects.update_or_create(
+                                    id = child.id,
+                                    defaults = {
+                                    'date_published' : datetime.now(),
+                                    'provider' : mother.provider,
+                                    'provider_fi' : mother.provider_fi,
+                                    'provider_sv' : mother.provider_sv,
+                                    'provider_en' : mother.provider_en,
+                                    'description' : mother.description,
+                                    'description_fi' : mother.description_fi,
+                                    'description_sv' : mother.description_sv,
+                                    'description_en' : mother.description_en,
+                                    'short_description' : mother.short_description,
+                                    'short_description_fi' : mother.short_description_fi,
+                                    'short_description_sv' : mother.short_description_sv,
+                                    'short_description_en' : mother.short_description_en,
+                                    'location_id' : mother.location_id,
+                                    'location_extra_info' : mother.location_extra_info,
+                                    'location_extra_info_fi' : mother.location_extra_info_fi,
+                                    'location_extra_info_sv' : mother.location_extra_info_sv,
+                                    'location_extra_info_en' : mother.location_extra_info_en,
+                                    'super_event' : mother}
+                                    )
                             except Exception as ex: print(ex)
                             try:
                                 logger.info("Updating childs Offer values.")
@@ -790,20 +789,19 @@ class TurkuOriginalImporter(Importer):
                                 # -> Get object from Offer once we have the Event object.
                                 try:
                                     motherOffer = Offer.objects.get(event_id=mother.id)
+
+                                    Offer.objects.update_or_create(
+                                            event_id=child.id,
+                                            price=motherOffer.price,
+                                            info_url=motherOffer.info_url,
+                                            description=motherOffer.description,
+                                            is_free=motherOffer.is_free
+                                            )
                                 except Exception as ex: print(ex)
 
                                 #try:
                                 #    childOffer = Offer.objects.get(event_id=child.id)
                                 #except Exception as ex: print(ex)
-
-                                if motherOffer:
-                                    Offer.objects.update_or_create(
-                                        event_id=child.id,
-                                        price=motherOffer.price,
-                                        info_url=motherOffer.info_url,
-                                        description=motherOffer.description,
-                                        is_free=motherOffer.is_free
-                                        )
                             except Exception as ex: print(ex)
 
             if json_event['facebook_url']:
@@ -826,7 +824,26 @@ class TurkuOriginalImporter(Importer):
                     logger.info("FACEBOOK!!")
                 except:
                     pass
+            if json_event['twitter_url']:
+                originid = json_event['drupal_nid']
+                #get event object
+                try:
+                    myLang = Language.objects.get(id="fi")
+                except:
+                    pass
+                try:
+                    eventObj = Event.objects.get(origin_id=originid)
+                    print(eventObj.id)
 
+                    EventLink.objects.update_or_create(
+                        name="extlink_twitter",
+                        event_id=eventObj.id,
+                        language_id=myLang.id,
+                        link=json_event['twitter_url']
+                        )
+                    logger.info("TWITTER!!")
+                except:
+                    pass
 
     def import_events(self):
         import requests
