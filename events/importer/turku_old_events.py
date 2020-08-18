@@ -775,7 +775,6 @@ class TurkuOriginalImporter(Importer):
                                     'location_extra_info_fi' : mother.location_extra_info_fi,
                                     'location_extra_info_sv' : mother.location_extra_info_sv,
                                     'location_extra_info_en' : mother.location_extra_info_en,
-                                    'website_url' : mother.website_url,
                                     'super_event' : mother}
                                     )
                             except Exception as ex: print(ex)
