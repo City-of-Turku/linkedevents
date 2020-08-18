@@ -808,29 +808,30 @@ class TurkuOriginalImporter(Importer):
 
             if json_event['facebook_url']:
                 originid = json_event['drupal_nid']
-                print("this is the origin id, : " + originid)
+                #get event object
                 try:
-                    qevnt = Event.objects.get(origin_id=originid)
+                    eventObj = Event.objects.get(origin_id=originid)
+                except Exception as ex: print(ex)
+                try:
+                    myLang = Language.objects.get(id="fi")
                 except:
                     pass
-                if qevnt:
-                    myLang = Language.objects.get(id="fi")
-                    event_Link = EventLink(
+                if eventObj:
+                    EventLink.objects.update_or_create(
                         name="facebook_url",
-                        event_id=qevnt.id,
+                        event_id=eventObj.id,
                         language_id=myLang.id,
                         link=json_event['facebook_url']
-                    )
-                    if json_event['twitter_url']:
-                        originid = json_event['drupal_nid']
-                        myLang = Language.objects.get(id="fi")
-                        event_Link = EventLink(
-                            name="twitter_url",
-                            event_id=qevnt.id,
-                            language_id=myLang.id,
-                            link=json_event['twitter_url']
                         )
-                    event_Link.save()
+                    logger.info("FACEBOOK")
+                '''
+                event_Link = EventLink(
+                name="twitter_url",
+                event_id=qevnt.id,
+                language_id=myLang.id,
+                link=eventTku['twitter_url']
+            )
+            event_Link.save()
 
     def import_events(self):
         import requests
