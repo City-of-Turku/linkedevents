@@ -272,95 +272,6 @@ class TurkuOriginalImporter(Importer):
     #def import_eventlink(self, typeSocial):
         #EventLink to be made. Probably not necessary as a function but rather as a loop.
 
-    '''
-    def _import_child_event(self, lang, eventTku):
-        eventMother = None
-        eventImage = None
-        eventRecurring = None
-
-        sourceEventSuperId = eventTku['drupal_nid_super']
-        sourceEventId = eventTku['drupal_nid']
-        #sourceEventImageUrl = eventTku['event_image_ext_url']['src']
-
-
-        if sourceEventSuperId:
-            logger.info(str(sourceEventSuperId))
-
-        if sourceEventId:
-            logger.info(str(sourceEventId))
-
-        eventFacebook = eventTku['facebook_url']
-        eventTwitter = eventTku['twitter_url']
-
-        if eventFacebook:
-            logger.info(eventFacebook)
-        if eventTwitter:
-            logger.info(eventTwitter)
-
-
-        #sourceEventLang = 'fi'
-        #sourceEventLinkWeb = eventTku['website_url']
-        #sourceEventLinkFace = eventTku['facebook_url']
-        #sourceEventLinkTwit = eventTku['twitter_url']
-
-        superId = (self.data_source.id + ':' + sourceEventSuperId)
-        sourceId = (self.data_source.id + ':' + sourceEventId)
-
-        try:
-            eventMother = Event.objects.get(id=superId)
-        except:
-            return
-
-        try:
-            eventRecurring = Event.objects.get(super_event_id = eventMother.id, super_event_type = Event.SuperEventType.RECURRING)
-        except:
-            pass
-
-        if eventRecurring:
-            eventMother = eventRecurring
-
-        usableSuperEventId = eventMother.id
-
-        if not eventMother.deleted:
-            if eventMother.super_event_type == Event.SuperEventType.UMBRELLA:
-
-                temp = copy(eventMother)
-                temp.id = eventMother.id + 's'
-                temp.super_event_type = Event.SuperEventType.RECURRING
-                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
-                temp.super_event_id = usableSuperEventId
-                temp.origin_id = str(temp.id).split(':')[1]
-                temp.save(force_insert=True)
-
-
-            elif eventMother.super_event_type == Event.SuperEventType.RECURRING:
-
-                Event.objects.update_or_create(
-                    id = eventMother.id,
-                    defaults = {
-                    'date_published' : datetime.now(),
-                    'provider': 'Turku',
-                    'provider_fi': 'Turku',
-                    'provider_sv': 'Åbo',
-                    'provider_en': 'Turku',
-                    'deleted': False} 
-                    )
-
-                temp = copy(eventMother)
-                temp.id = sourceId + 'ss'
-                temp.super_event_type = None
-                temp.start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-                temp.end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
-                temp.super_event_id = usableSuperEventId
-                temp.origin_id = str(temp.id).split(':')[1]
-                
-
-                #EventLink save TO BE MADE here.
-            #self.syncher.finish(force=self.options['force'])W
-    '''
-
-
     def with_value(self, data : dict, value : object, default : object):
         item = data.get(value, default)
         if not item:
@@ -675,7 +586,7 @@ class TurkuOriginalImporter(Importer):
                     free_offer_buy_tickets = eventTku['buy_tickets_url'] 
                 else:
                     free_offer_buy_tickets = '' 
-            
+
                 free_offer['is_free'] = False
                 free_offer['price'] = {'fi': free_offer_price}
                 free_offer['description'] = ''
@@ -817,7 +728,7 @@ class TurkuOriginalImporter(Importer):
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
     def saveChildElement(self, drupal_url):
-        
+
         json_root_event = drupal_url['events']
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
@@ -834,7 +745,6 @@ class TurkuOriginalImporter(Importer):
                                 try:
                                     child = Event.objects.get(origin_id=k)
                                 except Exception as ex: print(ex)
-
                                 try:
                                     mother = Event.objects.get(origin_id=v)
                                 except Exception as ex: print(ex)
@@ -844,14 +754,14 @@ class TurkuOriginalImporter(Importer):
                                         id = child.id,
                                         defaults = {
                                         'date_published' : datetime.now(),
-                                        'provider': 'Turkugfdsgfdgsdf',
-                                        'provider_fi': 'Turkugfdsgfsdgfsd',
-                                        'provider_sv': 'Åbogfdsgfdsg',
-                                        'provider_en': 'Turkufdsgfdsgfdsgfdgfsd',
-                                        'deleted': False,
-                                        'super_event' : mother} 
+                                        'provider': mother.provider,
+                                        'provider_fi': mother.provider_fi,
+                                        'provider_sv': mother.provider_sv,
+                                        'provider_en': mother.provider_en,
+                                        'super_event' : mother}
                                         )
                             except Exception as ex: print(ex)
+
 
     def import_events(self):
         import requests
