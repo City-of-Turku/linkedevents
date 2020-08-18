@@ -833,7 +833,7 @@ class TurkuOriginalImporter(Importer):
                 self.syncher.mark(obj)
             except:
                 ...
-        self.syncher.finish(force=True)
+        #self.syncher.finish(force=True)
 
         #Update childrens super_event_id
         print("Syncher finished... trying to save children.")
