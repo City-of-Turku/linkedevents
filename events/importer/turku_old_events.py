@@ -184,7 +184,7 @@ class TurkuOriginalImporter(Importer):
         self.organizationclass, _ =  OrganizationClass.objects.update_or_create(defaults=defaults, **ds_args)
 
         org_args = dict(origin_id='853', data_source=self.data_source, classification_id="org:3")
-        defaults = dict(name='Turku')
+        defaults = dict(name='Turun kaupunki')
         self.organization, _ = Organization.objects.update_or_create(defaults=defaults, **org_args)
 
         ds_args4 = dict(id='virtual', user_editable=True)
