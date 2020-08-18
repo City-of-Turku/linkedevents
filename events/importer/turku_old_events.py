@@ -439,7 +439,7 @@ class TurkuOriginalImporter(Importer):
 
             eventItem['keywords'] = event_keywords
 
-            eventItem['info_url'] = eventTku['website_url']
+            eventItem['info_url'] = "test"
 
             if eventTku['target_audience'] != None:
                 eventTku['target_audience'] =eventTku['target_audience'] + ','
