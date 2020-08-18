@@ -822,15 +822,22 @@ class TurkuOriginalImporter(Importer):
         except APIBrokenError:
             return
 
-        event_list = sorted(events.values(), key=lambda x: x['end_time'])
 
+        logger.info("Test phase 1")
+        event_list = sorted(events.values(), key=lambda x: x['end_time'])
+        logger.info("Test phase 2")
         qs = Event.objects.filter(end_time__gte=datetime.now(), data_source='turku')
+        logger.info("Test phase 3")
         self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
+        logger.info("Test phase 4")
 
         for event in event_list:
             try:
+                logger.info("Test phase 5")
                 obj = self.save_event(event)
+                logger.info("Test phase 6")
                 self.syncher.mark(obj)
+                logger.info("Test phase 7")
             except:
                 ...
         #self.syncher.finish(force=True)
@@ -847,7 +854,7 @@ class TurkuOriginalImporter(Importer):
 
         self.syncher.finish(force=True)
 
-
+        
         #try:
         #    self.saveChildElement(url, lang)
         #except APIBrokenError:
