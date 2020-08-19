@@ -673,26 +673,41 @@ class TurkuOriginalImporter(Importer):
                         if curMotherToBeFound in mothersList:
                             childList.append({curChildNid : curMotherToBeFound})
 
-        #Process #1: Add Singles.
+        # -> Process Singles, Mothers and Children
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
-            event_type = "single"
 
             if json_event['event_image_ext_url']:
                 event_image_url = json_event['event_image_ext_url']['src']
             else:
                 event_image_url = ""
 
+            event_type = None # -> Default None.
+
             if json_event['event_type'] == 'Single event':
+                event_type = "single"
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
+            if json_event['drupal_nid'] in mothersList:
+                event_type = "mother"
+
+            for x in childList:
+                for k, v in x.items():
+                    if json_event['drupal_nid'] == str(k): #-> If event is a child.
+                        event_type = "child"
+
+            if event_type != None:
+                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
+
+        now = datetime.now().replace(tzinfo=LOCAL_TZ)
+
+        '''
         #Process #2: Add Mothers.
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
             event_type = "mother"
 
             if json_event['drupal_nid'] in mothersList: #-> If event is a mother.
-
                 if json_event['event_image_ext_url']:
                     event_image_url = json_event['event_image_ext_url']['src']
                 else:
@@ -707,16 +722,14 @@ class TurkuOriginalImporter(Importer):
             for x in childList:
                 for k, v in x.items():
                     if json_event['drupal_nid'] == str(k): #-> If event is a child.
-
                         if json_event['event_image_ext_url']:
                             event_image_url = json_event['event_image_ext_url']['src']
                         else:
                             event_image_url = ""
-
                         event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
-
+        '''
     def saveChildElement(self, drupal_url):
 
         json_root_event = drupal_url['events']
