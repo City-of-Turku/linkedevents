@@ -745,54 +745,55 @@ class TurkuOriginalImporter(Importer):
                             # -> 
                             logger.info("Saving child!")
                             try:
+                                #try:
+                                child = Event.objects.get(origin_id=k)
+                                #except Exception as ex: print(ex)
+                                #try:
+                                mother = Event.objects.get(origin_id=v)
+                                #except Exception as ex: print(ex)
                                 try:
-                                    child = Event.objects.get(origin_id=k)
-                                except Exception as ex: print(ex)
-                                try:
-                                    mother = Event.objects.get(origin_id=v)
-                                except Exception as ex: print(ex)
-
-                                Event.objects.update_or_create(
-                                    id = child.id,
-                                    defaults = {
-                                    'date_published' : datetime.now(),
-                                    'provider' : mother.provider,
-                                    'provider_fi' : mother.provider_fi,
-                                    'provider_sv' : mother.provider_sv,
-                                    'provider_en' : mother.provider_en,
-                                    'description' : mother.description,
-                                    'description_fi' : mother.description_fi,
-                                    'description_sv' : mother.description_sv,
-                                    'description_en' : mother.description_en,
-                                    'short_description' : mother.short_description,
-                                    'short_description_fi' : mother.short_description_fi,
-                                    'short_description_sv' : mother.short_description_sv,
-                                    'short_description_en' : mother.short_description_en,
-                                    'location_id' : mother.location_id,
-                                    'location_extra_info' : mother.location_extra_info,
-                                    'location_extra_info_fi' : mother.location_extra_info_fi,
-                                    'location_extra_info_sv' : mother.location_extra_info_sv,
-                                    'location_extra_info_en' : mother.location_extra_info_en,
-                                    'info_url' : mother.info_url,
-                                    'info_url_fi' : mother.info_url_fi,
-                                    'info_url_sv' : mother.info_url_fi,
-                                    'info_url_en' : mother.info_url_fi,
-                                    'super_event' : mother}
-                                    )
+                                    Event.objects.update_or_create(
+                                        id = child.id,
+                                        defaults = {
+                                        'date_published' : mother.date_published,
+                                        'provider' : mother.provider,
+                                        'provider_fi' : mother.provider_fi,
+                                        'provider_sv' : mother.provider_sv,
+                                        'provider_en' : mother.provider_en,
+                                        'description' : mother.description,
+                                        'description_fi' : mother.description_fi,
+                                        'description_sv' : mother.description_sv,
+                                        'description_en' : mother.description_en,
+                                        'short_description' : mother.short_description,
+                                        'short_description_fi' : mother.short_description_fi,
+                                        'short_description_sv' : mother.short_description_sv,
+                                        'short_description_en' : mother.short_description_en,
+                                        'location_id' : mother.location_id,
+                                        'location_extra_info' : mother.location_extra_info,
+                                        'location_extra_info_fi' : mother.location_extra_info_fi,
+                                        'location_extra_info_sv' : mother.location_extra_info_sv,
+                                        'location_extra_info_en' : mother.location_extra_info_en,
+                                        'info_url' : mother.info_url,
+                                        'info_url_fi' : mother.info_url_fi,
+                                        'info_url_sv' : mother.info_url_fi,
+                                        'info_url_en' : mother.info_url_fi,
+                                        'super_event' : mother}
+                                        )
+                                except:
+                                    pass
                             except Exception as ex: print(ex)
                             try:
                                 logger.info("Updating childs Offer values.")
                                 # -> Get object from Event.
-                                try:
-                                    child = Event.objects.get(origin_id=k)
-                                except Exception as ex: print(ex)
-                                try:
-                                    mother = Event.objects.get(origin_id=v)
-                                except Exception as ex: print(ex)
+                                #try:
+                                child = Event.objects.get(origin_id=k)
+                                #except Exception as ex: print(ex)
+                                #try:
+                                mother = Event.objects.get(origin_id=v)
+                                #except Exception as ex: print(ex)
                                 # -> Get object from Offer once we have the Event object.
                                 try:
                                     motherOffer = Offer.objects.get(event_id=mother.id)
-
                                     Offer.objects.update_or_create(
                                             event_id=child.id,
                                             price=motherOffer.price,
