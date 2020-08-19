@@ -794,7 +794,50 @@ class TurkuOriginalImporter(Importer):
                                 #except Exception as ex: print(ex)
                             except Exception as ex: print(ex)
 
+            def fb_tw(ft):
+                originid = json_event['drupal_nid']
+                # -> Get Language object.
+                ft_name = "extlink_"+ft
+                ft_link = ft+"_url"
+                try:
+                    myLang = Language.objects.get(id="fi")
+                except:
+                    pass
+                try:
+                    eventObj = Event.objects.get(origin_id=originid)
+                    EventLink.objects.update_or_create(
+                        name=ft_name,
+                        event_id=eventObj.id,
+                        language_id=myLang.id,
+                        link=json_event[ft+'_url']
+                        )
 
+                    # ->  Add children of the mother to the EventLink table...
+                    for x in mothersList:
+                        if x == json_event['drupal_nid']:
+                            for g in childList:
+                                for k, v in g.items():
+                                    if v == x:
+                                        try:
+                                        # -> k is the child of the mother. Add k into EventLink...
+                                            eventChildObj = Event.objects.get(origin_id=k)
+                                            EventLink.objects.update_or_create(
+                                                name=ft_name,
+                                                event_id=eventChildObj.id,
+                                                language_id=myLang.id,
+                                                link=json_event[ft_link]
+                                                )
+                                        except:
+                                            pass
+                except:
+                    pass
+            if json_event['facebook_url']:
+                fb_tw('facebook')
+
+            if json_event['twitter_url']:
+                fb_tw('twitter')
+            
+            '''
             #Facebook urls for either singles or mother events.
             if json_event['facebook_url']:
                 originid = json_event['drupal_nid']
@@ -875,7 +918,7 @@ class TurkuOriginalImporter(Importer):
                                             pass
                 except:
                     pass
-            
+            '''
 
             '''
             # -> Add children of the mothers into the sociallinks table (inheritance).
