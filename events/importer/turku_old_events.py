@@ -249,12 +249,10 @@ class TurkuOriginalImporter(Importer):
         eventTku = event_el
         return eventTku
 
-
     def _cache_super_event_id(self, sourceEventSuperId):
         superid = (self.data_source.name + ':' + sourceEventSuperId)
         one_super_event = Event.objects.get(id=superid)
         return one_super_event
-
 
     def dt_parse(self, dt_str): 
         """Convert a string to UTC datetime""" # -> Times are in UTC+02:00 timezone
@@ -262,15 +260,10 @@ class TurkuOriginalImporter(Importer):
                 dateutil.parser.parse(dt_str),
                 is_dst=None).astimezone(pytz.utc)
 
-
     def timeToTimestamp(self, origTime):
         timestamp = time.mktime(time.strptime(origTime, '%d.%m.%Y %H.%M'))
         dt_object = datetime.fromtimestamp(timestamp)
         return str(dt_object)
-
-
-    #def import_eventlink(self, typeSocial):
-        #EventLink to be made. Probably not necessary as a function but rather as a loop.
 
     def with_value(self, data : dict, value : object, default : object):
         item = data.get(value, default)
@@ -295,8 +288,6 @@ class TurkuOriginalImporter(Importer):
             eventItem['data_source'] = self.data_source
             eventItem['publisher'] = self.organization
             eventItem['end_time'] = end_time
-
-            #typeOfEvent = eventTku['event_type']
 
             event_categories = eventItem.get('event_categories', set())
 
@@ -340,9 +331,6 @@ class TurkuOriginalImporter(Importer):
                 "sv": location_extra_info if location_extra_info else None,
                 "en": location_extra_info if location_extra_info else None
             }
-
-
-            #eventItem['super_event_type'] = Event.SuperEventType.UMBRELLA
 
             event_image_ext_url = ''
             image_license = ''
@@ -421,10 +409,7 @@ class TurkuOriginalImporter(Importer):
                     +" with Event Name: " +str(eventTku['title_fi'])
                     )
 
-
             eventItem['keywords'] = event_keywords
-
-
 
             if eventTku['target_audience'] != None:
                 eventTku['target_audience'] =eventTku['target_audience'] + ','
@@ -541,18 +526,6 @@ class TurkuOriginalImporter(Importer):
                             place.save()
                         eventItem ['location']['id'] = tpr
 
-            '''
-            #NOTE! Tarkistetaan heti aluksi onko tapahtuma äitielementti, sillä aluksi ei lueta lapsielemettejä ollenkaan sisää
-            # vasta näiden jälkeen käydäään lapset läpi ja vain täydennetään niiden tietoja drupal-lähteestä, 
-            # jos eroja äititapahtumaan  
-            
-            #This is the super event match foreign key
-            if eventTku['drupal_nid_super']:
-                eventItem['super_event_id'] = eventTku['drupal_nid_super']
-                del eventTku['drupal_nid_super']
-            '''
-
-
             if eventType == "mother" or eventType == "single":
 
                 # Add a default offer
@@ -594,15 +567,6 @@ class TurkuOriginalImporter(Importer):
 
             if eventType == "single":
                 eventItem['super_event_type'] = ""
-            #if eventType == "child":
-            #    logger.info("this is a child")
-            #    eventItem['super_event_type'] = ""
-            #    for x in childList:
-            #        print("WSDAOPFKASDOPFKOPDASKOPFDKSF SDOAK FOPSD KAOPFSD KAOPF KDSOPAF KSDOPAF KDOP ")
-            #        for k, v in x.items():
-            #            if k == eventTku['drupal_nid']:
-            #                eventItem['super_event'] = str(v)
-
 
             return eventItem
 
@@ -612,7 +576,6 @@ class TurkuOriginalImporter(Importer):
             response = requests.get(url, headers={"User-Agent":"Mozilla/5.0"})
             if response.status_code != 200:
                 logger.warning("tku Drupal orig API reported HTTP %d" % response.status_code)
-                time.sleep(2)
             if self.cache:
                 self.cache.delete_url(url)
                 continue
@@ -620,12 +583,10 @@ class TurkuOriginalImporter(Importer):
                 root_doc = response.json()
                 global drupal_json_response
                 drupal_json_response = root_doc
-                time.sleep(2)
             except ValueError:
                 logger.warning("tku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
                 if self.cache:
                     self.cache.delete_url(url)
-                    time.sleep(1)
                     continue
             break
         else:
@@ -637,24 +598,7 @@ class TurkuOriginalImporter(Importer):
         earliest_end_time = None
         event_image_url = None
 
-        '''
-        #This section of the code loops through all the events in the drupal JSON.
-        for json_mother_event in json_root_event:
-            json_event = json_mother_event['event']
-            if json_event['event_image_ext_url']:
-                event_image_url = json_event['event_image_ext_url']['src']
-            else:
-                event_image_url = ""
-            #if json_event['event_type'] == "Single event" or json_event['event_type'] == "Event series":
-            #Needs a logic to import mother events if their children can find it in the JSON.
-            evntMother = [x for x in json_root_event if x['drupal_nid_super'] == json_event['drupal_nid']] 
-            if json_event['event_type'] == "Single event":
-                event = self._import_event(lang, json_event, events, event_image_url)
-        
-        now = datetime.now().replace(tzinfo=LOCAL_TZ)
-        '''
-
-        #Preprocess Children and Mothers.
+        # -> Preprocess Children and Mothers.
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
 
@@ -701,44 +645,14 @@ class TurkuOriginalImporter(Importer):
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
-        '''
-        #Process #2: Add Mothers.
-        for json_mother_event in json_root_event:
-            json_event = json_mother_event['event']
-            event_type = "mother"
 
-            if json_event['drupal_nid'] in mothersList: #-> If event is a mother.
-                if json_event['event_image_ext_url']:
-                    event_image_url = json_event['event_image_ext_url']['src']
-                else:
-                    event_image_url = ""
-                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
-
-        #Process #3: Add Children.
-        for json_child_event in json_root_event:
-            json_event = json_child_event['event']
-            event_type = "child"
-
-            for x in childList:
-                for k, v in x.items():
-                    if json_event['drupal_nid'] == str(k): #-> If event is a child.
-                        if json_event['event_image_ext_url']:
-                            event_image_url = json_event['event_image_ext_url']['src']
-                        else:
-                            event_image_url = ""
-                        event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
-
-        now = datetime.now().replace(tzinfo=LOCAL_TZ)
-        '''
     def saveChildElement(self, drupal_url):
-
         json_root_event = drupal_url['events']
+
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
-            #print(json_event['drupal_nid'])
 
             if json_event['drupal_nid']:
-                #print(curEventElement['drupal_nid'])
                 for x in childList:
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k:
@@ -785,12 +699,8 @@ class TurkuOriginalImporter(Importer):
                             try:
                                 logger.info("Updating childs Offer values.")
                                 # -> Get object from Event.
-                                #try:
                                 child = Event.objects.get(origin_id=k)
-                                #except Exception as ex: print(ex)
-                                #try:
                                 mother = Event.objects.get(origin_id=v)
-                                #except Exception as ex: print(ex)
                                 # -> Get object from Offer once we have the Event object.
                                 try:
                                     motherOffer = Offer.objects.get(event_id=mother.id)
@@ -802,10 +712,6 @@ class TurkuOriginalImporter(Importer):
                                             is_free=motherOffer.is_free
                                             )
                                 except Exception as ex: print(ex)
-
-                                #try:
-                                #    childOffer = Offer.objects.get(event_id=child.id)
-                                #except Exception as ex: print(ex)
                             except Exception as ex: print(ex)
 
             def fb_tw(ft):
@@ -825,7 +731,6 @@ class TurkuOriginalImporter(Importer):
                         language_id=myLang.id,
                         link=json_event[ft+'_url']
                         )
-
                     # ->  Add children of the mother to the EventLink table...
                     for x in mothersList:
                         if x == json_event['drupal_nid']:
@@ -845,126 +750,12 @@ class TurkuOriginalImporter(Importer):
                                             pass
                 except:
                     pass
+
             if json_event['facebook_url']:
                 fb_tw('facebook')
 
             if json_event['twitter_url']:
                 fb_tw('twitter')
-            
-            '''
-            #Facebook urls for either singles or mother events.
-            if json_event['facebook_url']:
-                originid = json_event['drupal_nid']
-                #get event object
-                try:
-                    myLang = Language.objects.get(id="fi")
-                except:
-                    pass
-                try:
-                    eventObj = Event.objects.get(origin_id=originid)
-                    print(eventObj.id)
-
-                    EventLink.objects.update_or_create(
-                        name="extlink_facebook",
-                        event_id=eventObj.id,
-                        language_id=myLang.id,
-                        link=json_event['facebook_url']
-                        )
-                    logger.info("FACEBOOK!!")
-
-                    # ->  Add children of the mother to the EventLink table...
-                    for x in mothersList:
-                        if x == json_event['drupal_nid']:
-                            for g in childList:
-                                for k, v in g.items():
-                                    if v == x:
-                                        try:
-                                        # -> k is the child of the mother. Add k into EventLink
-                                            eventChildObj = Event.objects.get(origin_id=k)
-                                            EventLink.objects.update_or_create(
-                                                name="extlink_facebook",
-                                                event_id=eventChildObj.id,
-                                                language_id=myLang.id,
-                                                link=json_event['facebook_url']
-                                                )
-                                            logger.info("FACEBOOK CHILD!!!")
-                                        except:
-                                            pass
-                except:
-                    pass
-            if json_event['twitter_url']:
-                originid = json_event['drupal_nid']
-                #get event object
-                try:
-                    myLang = Language.objects.get(id="fi")
-                except:
-                    pass
-                try:
-                    eventObj = Event.objects.get(origin_id=originid)
-                    print(eventObj.id)
-
-                    EventLink.objects.update_or_create(
-                        name="extlink_twitter",
-                        event_id=eventObj.id,
-                        language_id=myLang.id,
-                        link=json_event['twitter_url']
-                        )
-                    logger.info("TWITTER!!")
-
-                    # ->  Add children of the mother to the EventLink table...
-
-                    for x in mothersList:
-                        if x == json_event['drupal_nid']:
-                            for g in childList:
-                                for k, v in g.items():
-                                    if v == x:
-                                        try:
-                                        # -> k is the child of the mother. Add k into EventLink
-                                            eventChildObj = Event.objects.get(origin_id=k)
-                                            EventLink.objects.get_or_create(
-                                                name="extlink_twitter",
-                                                event_id=eventChildObj.id,
-                                                language_id=myLang.id,
-                                                link=json_event['twitter_url']
-                                                )
-                                            logger.info("TWITTER CHILD!!!")
-                                        except:
-                                            pass
-                except:
-                    pass
-            '''
-
-            '''
-            # -> Add children of the mothers into the sociallinks table (inheritance).
-            if json_event['event_type'] == 'Recurring event (in series)':
-                superid = json_event['drupal_nid_super']
-                try:
-                    myLang = Language.objects.get(id="fi")
-                except:
-                    pass
-                try:
-                    # -> Find superid (child events mother) event in EventLink.
-                    childsMomEvent = Event.objects.get(origin_id=superid)
-                    childsMom = EventLink.objects.get(event_id=childsMomEvent.id)
-                    try:
-                        #get child object in Event, then write it into sociallinks table.
-                        eventObj = Event.objects.get(origin_id=superid)
-                        print(eventObj.id)
-                        EventLink.objects.update_or_create(
-                            name="extlink_twitter",
-                            event_id=eventObj.id,
-                            language_id=childsMom.language_id,
-                            link=eventObj.id
-                            )
-                        logger.info("TWITTER!!")
-                    except:
-                        pass
-                except:
-                    pass
-            '''
-            #Add facebook and twitter url for children:
-            #try
-    
 
     def import_events(self):
         import requests
@@ -972,7 +763,6 @@ class TurkuOriginalImporter(Importer):
         events = recur_dict()
 
         url = TKUDRUPAL_BASE_URL
-        
         lang = self.supported_languages
 
         try:
@@ -980,14 +770,10 @@ class TurkuOriginalImporter(Importer):
         except APIBrokenError:
             return
 
-
-        #logger.info("Test phase 1")
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
-        #logger.info("Test phase 2")
         qs = Event.objects.filter(end_time__gte=datetime.now(), data_source='turku')
-        #logger.info("Test phase 3")
+
         self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
-        #logger.info("Test phase 4")
 
         for event in event_list:
             try:
@@ -996,11 +782,7 @@ class TurkuOriginalImporter(Importer):
             except:
                 ...
 
-        #self.syncher.finish(force=True)
-
-        #Update childrens super_event_id
-        print("Trying to save children....")
-
+        logger.info("Saving children...")
         url = drupal_json_response
 
         try:
@@ -1009,12 +791,4 @@ class TurkuOriginalImporter(Importer):
             return
 
         self.syncher.finish(force=True)
-
-
-        #try:
-        #    self.saveChildElement(url, lang)
-        #except APIBrokenError:
-            #return
-
-        #self.syncher.finish(force=True)
         logger.info("%d events processed" % len(events.values()))
