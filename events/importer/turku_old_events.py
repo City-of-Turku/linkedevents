@@ -442,8 +442,9 @@ class TurkuOriginalImporter(Importer):
                 if len(notFoundKeys) != 0:
                     logger.warning('Moderator should add the following keywords: ' \
                     +str(notFoundKeys)+' for Event ID: ' \
-                    +str(eventTku['drupal_nid'] \
-                    +" with Event Name: " +str(eventTku['name_fi'])))
+                    +str(eventTku['drupal_nid']) \
+                    +" with Event Name: " +str(eventTku['title_fi'])
+                    )
 
 
             eventItem['keywords'] = event_keywords
