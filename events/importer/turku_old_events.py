@@ -829,21 +829,22 @@ class TurkuOriginalImporter(Importer):
 
                     # ->  Add children of the mother to the EventLink table...
                     for x in mothersList:
-                        for g in childList:
-                            for k, v in g.items():
-                                if v == x:
-                                    try:
-                                    # -> k is the child of the mother. Add k into EventLink
-                                        eventChildObj = Event.objects.get(origin_id=k)
-                                        EventLink.objects.update_or_create(
-                                            name="extlink_facebook",
-                                            event_id=eventChildObj.id,
-                                            language_id=myLang.id,
-                                            link=json_event['facebook_url']
-                                            )
-                                        logger.info("FACEBOOK CHILD!!!")
-                                    except:
-                                        pass
+                        if x == json_event['drupal_nid']:
+                            for g in childList:
+                                for k, v in g.items():
+                                    if v == x:
+                                        try:
+                                        # -> k is the child of the mother. Add k into EventLink
+                                            eventChildObj = Event.objects.get(origin_id=k)
+                                            EventLink.objects.update_or_create(
+                                                name="extlink_facebook",
+                                                event_id=eventChildObj.id,
+                                                language_id=myLang.id,
+                                                link=json_event['facebook_url']
+                                                )
+                                            logger.info("FACEBOOK CHILD!!!")
+                                        except:
+                                            pass
                 except:
                     pass
             if json_event['twitter_url']:
@@ -864,23 +865,26 @@ class TurkuOriginalImporter(Importer):
                         link=json_event['twitter_url']
                         )
                     logger.info("TWITTER!!")
+
                     # ->  Add children of the mother to the EventLink table...
                     for x in mothersList:
-                        for g in childList:
-                            for k, v in g.items():
-                                if v == x:
-                                    try:
-                                    # -> k is the child of the mother. Add k into EventLink
-                                        eventChildObj = Event.objects.get(origin_id=k)
-                                        EventLink.objects.update_or_create(
-                                            name="extlink_twitter",
-                                            event_id=eventChildObj.id,
-                                            language_id=myLang.id,
-                                            link=json_event['twitter_url']
-                                            )
-                                        logger.info("TWITTER CHILD!!!")
-                                    except:
-                                        pass
+                        if x == json_event['drupal_nid']:
+                            for g in childList:
+                                for k, v in g.items():
+                                    if v == x:
+                                        
+                                        try:
+                                        # -> k is the child of the mother. Add k into EventLink
+                                            eventChildObj = Event.objects.get(origin_id=k)
+                                            EventLink.objects.get_or_create(
+                                                name="extlink_twitter",
+                                                event_id=eventChildObj.id,
+                                                language_id=myLang.id,
+                                                link=json_event['twitter_url']
+                                                )
+                                            logger.info("TWITTER CHILD!!!")
+                                        except:
+                                            pass
                 except:
                     pass
 
