@@ -117,7 +117,8 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'Lectures':'yso:p15875', # -> Luennot,föreläsningar (sv), http://www.yso.fi/onto/yso/p15875
     'Participation':'yso:p5164', # -> Osallisuus,delaktighet (sv), http://www.yso.fi/onto/yso/p5164
     'Multiculturalism':'yso:p10647', # -> Monikulttuurisuus,multikulturalism, http://www.yso.fi/onto/yso/p10647
-    'Trips,cruises and tours':'yso:p3917', # -> Matkailu, turism (sv)
+    'cruises and tours': ['yso:p1917', 'yso:p366'], # -> Risteily, Matkat
+    'Trips':'yso:p25261', # -> Retket
     'Guided tours and sightseeing tours':'yso:p2149', # -> guidning (sv),Opastukset: http://www.yso.fi/onto/yso/p2149; 
     'Theatre and other performance art':'yso:p2850', # -> scenkonst (sv),Esittävä taide: http://www.yso.fi/onto/yso/p2850;  
     'Sports':'yso:p965', # -> Urheilu,idrott, http://www.yso.fi/onto/yso/p965
@@ -289,12 +290,7 @@ class TurkuOriginalImporter(Importer):
             eventItem['publisher'] = self.organization
             eventItem['end_time'] = end_time
 
-            event_categories = eventItem.get('event_categories', set())
-
-            if event_categories:
-                pass
-            else:
-                logger.info("No event_categories found for current event. Skipping...")
+            #event_categories = eventItem.get('event_categories', set())
 
             ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
 
@@ -380,21 +376,33 @@ class TurkuOriginalImporter(Importer):
             event_keywords = eventItem.get('keywords', set())
             event_audience = eventItem.get('audience', set())
 
+
             if eventTku['event_categories'] != None:
-                eventTku['event_categories'] =eventTku['event_categories'] + ','
-                categories = eventTku['event_categories'].split(',')
+                eventTku['event_categories'] = eventTku['event_categories'] + ','
+                categories = eventTku['event_categories'].replace(' ','').split(',')
                 for name in categories:
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
-                        event_keywords.add(Keyword.objects.get(id= ysoId))
+                        if isinstance(ysoId, list):
+                            for x in range(len(ysoId)):
+                                event_keywords.add(Keyword.objects.get(id = x))
+                        else:
+                            event_keywords.add(Keyword.objects.get(id = ysoId))
+                '''     
+                for name in categories:
+                    if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
+                        logger.info("Category name found in TURKU DRUPAL CATEGORY")
+                        ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
+                        event_keywords.add(Keyword.objects.get(id = ysoId))
+                '''
 
             if eventTku['keywords'] != None:
-                eventTku['keywords'] =eventTku['keywords'] + ','
-                keywords = eventTku['keywords'].split(',')
+                eventTku['keywords'] = eventTku['keywords'] + ','
+                keywords = eventTku['keywords'].replace(' ','').split(',')
                 notFoundKeys = []
                 for name in keywords:
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                        try:                
+                        try:
                             event_keywords.add(Keyword.objects.get(name = name))
                         except:
                             #print('Warning!' + ' keywords not found:' + name)
@@ -693,7 +701,7 @@ class TurkuOriginalImporter(Importer):
                                         )
                                 except:
                                     pass
-                            except Exception as ex: print(ex)
+                            except Exception as ex: pass
                             try:
                                 # -> Get object from Event.
                                 child = Event.objects.get(origin_id=k)
@@ -708,8 +716,8 @@ class TurkuOriginalImporter(Importer):
                                             description=motherOffer.description,
                                             is_free=motherOffer.is_free
                                             )
-                                except Exception as ex: print(ex)
-                            except Exception as ex: print(ex)
+                                except Exception as ex: pass
+                            except Exception as ex: pass
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
