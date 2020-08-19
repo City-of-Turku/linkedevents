@@ -831,7 +831,9 @@ class TurkuOriginalImporter(Importer):
                     for xd in childList:
                         for c, m in x.items():
                             eventMotherInEventLink = EventLink.objects.get(event_id=eventObj.id)
-                            logger.info(eventMotherInEventLink)
+                            for x in eventMotherInEventLink:
+                                print(x)
+
 
                 except:
                     pass
