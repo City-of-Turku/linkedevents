@@ -278,31 +278,6 @@ class TurkuOriginalImporter(Importer):
             return default
         return item
 
-    def _sociallinks(self, originid, eventTku):
-
-        if eventTku['facebook_url']:
-            qevnt = Event.objects.get(origin_id=originid)
-            myLang = Language.objects.get(id="fi")
-            event_Link = EventLink(
-                name="facebook_url",
-                event_id=qevnt.id,
-                language_id=myLang.id,
-                link=eventTku['facebook_url']
-            )
-            event_Link.save()
-
-        if eventTku['twitter_url']:
-            qevnt = Event.objects.get(origin_id='793162')
-            myLang = Language.objects.get(id="fi")
-            event_Link = EventLink(
-                name="twitter_url",
-                event_id=qevnt.id,
-                language_id=myLang.id,
-                link=eventTku['twitter_url']
-            )
-            event_Link.save()
-
-
     def _import_event(self, lang, event_el, events, event_image_url, eventType, mothersList, childList):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
@@ -461,8 +436,6 @@ class TurkuOriginalImporter(Importer):
 
             eventItem['audience'] = event_audience
 
-
-            eventItem['info_url'] = {"fi": eventTku['website_url'], "sv": eventTku['website_url'], "en": eventTku['website_url']}
 
             tprNo = ''
 
@@ -897,6 +870,9 @@ class TurkuOriginalImporter(Importer):
                                             pass
                 except:
                     pass
+            
+            #if json_event['website_url']:
+            #    eventItem['info_url'] = {"fi": eventTku['website_url'], "sv": eventTku['website_url'], "en": eventTku['website_url']}
 
             '''
             # -> Add children of the mothers into the sociallinks table (inheritance).
@@ -960,10 +936,10 @@ class TurkuOriginalImporter(Importer):
             except:
                 ...
 
-        self.syncher.finish(force=True)
+        #self.syncher.finish(force=True)
 
         #Update childrens super_event_id
-        print("Syncher finished... trying to save children.")
+        print("Trying to save children....")
 
         url = drupal_json_response
 
