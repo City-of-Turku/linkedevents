@@ -385,7 +385,8 @@ class TurkuOriginalImporter(Importer):
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
                             for x in range(len(ysoId)):
-                                event_keywords.add(Keyword.objects.get(id = x))
+                                ysoId = ysoId[x-1]
+                                event_keywords.add(Keyword.objects.get(id = ysoId))
                         else:
                             event_keywords.add(Keyword.objects.get(id = ysoId))
                 '''     
