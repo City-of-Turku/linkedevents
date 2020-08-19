@@ -572,6 +572,7 @@ class TurkuOriginalImporter(Importer):
 
     def _recur_fetch_paginated_url(self, url, lang, events):
         max_tries = 5
+        logger.info("Establishing connection to Drupal JSON...")
         for try_number in range(0, max_tries):            
             response = requests.get(url, headers={"User-Agent":"Mozilla/5.0"})
             if response.status_code != 200:
@@ -645,7 +646,6 @@ class TurkuOriginalImporter(Importer):
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
-
     def saveChildElement(self, drupal_url):
         json_root_event = drupal_url['events']
 
@@ -656,8 +656,6 @@ class TurkuOriginalImporter(Importer):
                 for x in childList:
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k:
-                            # -> 
-                            logger.info("Saving child!")
                             try:
                                 #try:
                                 child = Event.objects.get(origin_id=k)
@@ -697,7 +695,6 @@ class TurkuOriginalImporter(Importer):
                                     pass
                             except Exception as ex: print(ex)
                             try:
-                                logger.info("Updating childs Offer values.")
                                 # -> Get object from Event.
                                 child = Event.objects.get(origin_id=k)
                                 mother = Event.objects.get(origin_id=v)
@@ -771,7 +768,7 @@ class TurkuOriginalImporter(Importer):
             return
 
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
-        qs = Event.objects.filter(end_time__gte=datetime.now(), data_source='turku')
+        qs = Event.objects.filter(end_time__gte=datetime.now().replace(tzinfo=LOCAL_TZ), data_source='turku')
 
         self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
 
