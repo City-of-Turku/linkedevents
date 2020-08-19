@@ -702,8 +702,6 @@ class TurkuOriginalImporter(Importer):
             if json_event['event_type'] == 'Single event':
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
-
-
         #Process #2: Add Mothers.
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
@@ -828,6 +826,13 @@ class TurkuOriginalImporter(Importer):
                         link=json_event['facebook_url']
                         )
                     logger.info("FACEBOOK!!")
+
+                    # ->  Add children of the mother to the EventLink table...
+                    for xd in childList:
+                        for c, m in x.items():
+                            eventMotherInEventLink = EventLink.objects.get(event_id=eventObj.id)
+                            logger.info(eventMotherInEventLink)
+
                 except:
                     pass
             if json_event['twitter_url']:
@@ -851,9 +856,37 @@ class TurkuOriginalImporter(Importer):
                 except:
                     pass
 
+            '''
+            # -> Add children of the mothers into the sociallinks table (inheritance).
+            if json_event['event_type'] == 'Recurring event (in series)':
+                superid = json_event['drupal_nid_super']
+                try:
+                    myLang = Language.objects.get(id="fi")
+                except:
+                    pass
+                try:
+                    # -> Find superid (child events mother) event in EventLink.
+                    childsMomEvent = Event.objects.get(origin_id=superid)
+                    childsMom = EventLink.objects.get(event_id=childsMomEvent.id)
+                    try:
+                        #get child object in Event, then write it into sociallinks table.
+                        eventObj = Event.objects.get(origin_id=superid)
+                        print(eventObj.id)
+                        EventLink.objects.update_or_create(
+                            name="extlink_twitter",
+                            event_id=eventObj.id,
+                            language_id=childsMom.language_id,
+                            link=eventObj.id
+                            )
+                        logger.info("TWITTER!!")
+                    except:
+                        pass
+                except:
+                    pass
+            '''
             #Add facebook and twitter url for children:
             #try
-
+    
 
     def import_events(self):
         import requests
