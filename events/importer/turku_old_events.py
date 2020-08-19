@@ -735,7 +735,7 @@ class TurkuOriginalImporter(Importer):
         json_root_event = drupal_url['events']
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
-            print(json_event['drupal_nid'])
+            #print(json_event['drupal_nid'])
 
             if json_event['drupal_nid']:
                 #print(curEventElement['drupal_nid'])
@@ -980,13 +980,13 @@ class TurkuOriginalImporter(Importer):
             return
 
 
-        logger.info("Test phase 1")
+        #logger.info("Test phase 1")
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
-        logger.info("Test phase 2")
+        #logger.info("Test phase 2")
         qs = Event.objects.filter(end_time__gte=datetime.now(), data_source='turku')
-        logger.info("Test phase 3")
+        #logger.info("Test phase 3")
         self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
-        logger.info("Test phase 4")
+        #logger.info("Test phase 4")
 
         for event in event_list:
             try:
