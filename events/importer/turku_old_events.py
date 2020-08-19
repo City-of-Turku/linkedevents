@@ -440,7 +440,10 @@ class TurkuOriginalImporter(Importer):
                                 notFoundKeys.append(name)
                             pass
                 if len(notFoundKeys) != 0:
-                    logger.warning('Moderator should add the following keywords: '+str(notFoundKeys)+' for Event: '+str(eventTku['drupal_nid']))
+                    logger.warning('Moderator should add the following keywords: ' \
+                    +str(notFoundKeys)+' for Event ID: ' \
+                    +str(eventTku['drupal_nid'] \
+                    +" with Event Name: " +str(eventTku['name_fi'])))
 
 
             eventItem['keywords'] = event_keywords
