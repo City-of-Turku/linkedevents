@@ -436,6 +436,7 @@ class TurkuOriginalImporter(Importer):
 
             eventItem['audience'] = event_audience
 
+            eventItem['info_url'] = {"fi": eventTku['website_url'], "sv": eventTku['website_url'], "en": eventTku['website_url']}
 
             tprNo = ''
 
@@ -759,6 +760,10 @@ class TurkuOriginalImporter(Importer):
                                     'location_extra_info_fi' : mother.location_extra_info_fi,
                                     'location_extra_info_sv' : mother.location_extra_info_sv,
                                     'location_extra_info_en' : mother.location_extra_info_en,
+                                    'info_url' : mother.info_url,
+                                    'info_url_fi' : mother.info_url_fi,
+                                    'info_url_sv' : mother.info_url_fi,
+                                    'info_url_en' : mother.info_url_fi,
                                     'super_event' : mother}
                                     )
                             except Exception as ex: print(ex)
@@ -850,12 +855,12 @@ class TurkuOriginalImporter(Importer):
                     logger.info("TWITTER!!")
 
                     # ->  Add children of the mother to the EventLink table...
+
                     for x in mothersList:
                         if x == json_event['drupal_nid']:
                             for g in childList:
                                 for k, v in g.items():
                                     if v == x:
-                                        
                                         try:
                                         # -> k is the child of the mother. Add k into EventLink
                                             eventChildObj = Event.objects.get(origin_id=k)
@@ -871,8 +876,6 @@ class TurkuOriginalImporter(Importer):
                 except:
                     pass
             
-            #if json_event['website_url']:
-            #    eventItem['info_url'] = {"fi": eventTku['website_url'], "sv": eventTku['website_url'], "en": eventTku['website_url']}
 
             '''
             # -> Add children of the mothers into the sociallinks table (inheritance).
