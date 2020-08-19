@@ -832,7 +832,7 @@ class TurkuOriginalImporter(Importer):
                         for c, m in x.items():
                             eventMotherInEventLink = EventLink.objects.get(event_id=eventObj.id)
                             for x in eventMotherInEventLink:
-                                print(x)
+                                print("Facebooks: ", x)
 
 
                 except:
