@@ -428,14 +428,20 @@ class TurkuOriginalImporter(Importer):
             if eventTku['keywords'] != None:
                 eventTku['keywords'] =eventTku['keywords'] + ','
                 keywords = eventTku['keywords'].split(',')
+                notFoundKeys = []
                 for name in keywords:
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         try:                
                             event_keywords.add(Keyword.objects.get(name = name))
                         except:
-                            print('Warning!' + ' keywords not found:' + name)
-                            logger.warning('Moderator should add the following keywords ' + name)    
+                            #print('Warning!' + ' keywords not found:' + name)
+                            #logger.warning('Moderator should add the following keywords ' + name)
+                            if name != "":
+                                notFoundKeys.append(name)
                             pass
+                if len(notFoundKeys) != 0:
+                    logger.warning('Moderator should add the following keywords: '+str(notFoundKeys)+' for Event: '+str(eventTku['drupal_nid']))
+
 
             eventItem['keywords'] = event_keywords
 
