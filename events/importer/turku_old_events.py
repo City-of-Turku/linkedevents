@@ -679,7 +679,7 @@ class TurkuOriginalImporter(Importer):
                                 # Add the results to the many to many field (notice the *)
 
                                 #child.imgall.add(*[])
-                                logger.info(imgall)
+                                child.imgall.add(*imgall)
 
                                 try:
                                     Event.objects.update_or_create(
