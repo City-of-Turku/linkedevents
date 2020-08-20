@@ -384,6 +384,7 @@ class TurkuOriginalImporter(Importer):
                     if name[0:1] == " ":
                         name = name.replace(name[0:1],"", 1)
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
+                        logger.info(name)
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
                             for x in range(len(ysoId)):
