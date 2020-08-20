@@ -147,6 +147,7 @@ CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku',
 LOCAL_TZ = timezone('Europe/Helsinki')
 drupal_json_response = []
 mothersList = []
+mothersUrl = []
 childList = []
 
 def set_deleted_false(obj):
@@ -625,8 +626,22 @@ class TurkuOriginalImporter(Importer):
                         if curMotherToBeFound not in mothersList:
                             mothersList.append(curMotherToBeFound)
 
+
                         if curMotherToBeFound in mothersList:
                             childList.append({curChildNid : curMotherToBeFound})
+                        
+
+        # -> Update json so that children inherit their mothers url.
+        for json_mother_event in json_root_event:
+            json_event = json_mother_event['event']
+
+            if json_event['drupal_nid'] in mothersList:
+                event_type = "mother"
+                ev_mother = json_event['drupal_nid']
+
+                if json_event['event_image_ext_url']:
+                    ev_image_url = json_event['event_image_ext_url']['src']
+                    mothersUrl.append({ev_mother : ev_image_url})
 
         # -> Process Singles, Mothers and Children
         for json_mother_event in json_root_event:
@@ -650,6 +665,18 @@ class TurkuOriginalImporter(Importer):
                 for k, v in x.items():
                     if json_event['drupal_nid'] == str(k): #-> If event is a child.
                         event_type = "child"
+
+                        #v is the childs mother
+
+                        for s in mothersUrl:
+                            for l, p in s.items():
+                                if v == l:
+                                    print("Childs mothers URL is:", p)
+
+
+                        # -> add their mothers url
+
+
 
             if event_type != None:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
@@ -706,19 +733,8 @@ class TurkuOriginalImporter(Importer):
                                         'super_event' : mother}
                                         )
                                 except Exception as ex: print(ex)
-
-                                child = Event.objects.get(origin_id=k)
-                                mother = Event.objects.get(origin_id=v)
-
-                                try:
-                                    Event.objects.update_or_create(
-                                        id = child.id,
-                                        defaults = {
-                                        'images' : child.super_event.images}
-                                        )
-                                except Exception as ex: print(ex)
-                            
                             except Exception as ex: pass
+
                             try:
                                 # -> Get object from Event.
                                 child = Event.objects.get(origin_id=k)
