@@ -674,9 +674,12 @@ class TurkuOriginalImporter(Importer):
                                 mother = Event.objects.get(origin_id=v)
                                 #except Exception as ex: print(ex)
 
-                                gdf = Image.objects.get(id=2)
+                                imgall = Image.objects.all()
 
-                                print(gdf)
+                                # Add the results to the many to many field (notice the *)
+
+                                #child.imgall.add(*[])
+                                logger.info(imgall)
 
                                 try:
                                     Event.objects.update_or_create(
@@ -706,8 +709,7 @@ class TurkuOriginalImporter(Importer):
                                         'info_url_en' : mother.info_url_fi,
                                         'super_event' : mother}
                                         )
-                                except:
-                                    pass
+                                except Exception as ex: print(ex)
                             
                             except Exception as ex: pass
                             try:
