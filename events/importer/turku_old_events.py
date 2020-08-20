@@ -102,8 +102,8 @@ TURKU_AUDIENCES_KEYWORD_IDS = {
     'Vammaiset': 'yso:p7179', # -> Vammaiset
     'Vauvat': 'yso:p15937', # -> Vauvat
     'Viranomaiset': 'yso:p6946', # -> Viranomaiset
-    'Järjestöt': 'yso:p1393', # -> järjestöt  
-    'Yrittäjät': 'yso:p1178', # -> Yrittäjät  
+    'Järjestöt': 'yso:p1393', # -> järjestöt
+    'Yrittäjät': 'yso:p1178', # -> Yrittäjät
 }
 
 
@@ -398,12 +398,13 @@ class TurkuOriginalImporter(Importer):
                         event_keywords.add(Keyword.objects.get(id = ysoId))
                 '''
 
-            '''
             if eventTku['keywords'] != None:
                 eventTku['keywords'] = eventTku['keywords'] + ','
                 keywords = eventTku['keywords'].split(',')
                 notFoundKeys = []
                 for name in keywords:
+                    if name[0:1] == " ":
+                        name = name.replace(name[0:1],"", 1)
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         try:
                             event_keywords.add(Keyword.objects.get(name = name))
@@ -419,7 +420,7 @@ class TurkuOriginalImporter(Importer):
                     +str(eventTku['drupal_nid']) \
                     +" with Event Name: " +str(eventTku['title_fi'])
                     )
-            '''
+            
             eventItem['keywords'] = event_keywords
 
             if eventTku['target_audience'] != None:
@@ -552,9 +553,9 @@ class TurkuOriginalImporter(Importer):
                 if not eventOffer_is_free:
 
                     free_offer['is_free'] = False
-                    if eventTku['event_price']: 
+                    if eventTku['event_price']:
                         ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
-                        price = str(eventTku['event_price'])                 
+                        price = str(eventTku['event_price'])
                         price = bleach.clean(price, tags= ok_tags, strip=True)
                         free_offer_price = clean_text(price, True)
 
@@ -629,7 +630,7 @@ class TurkuOriginalImporter(Importer):
 
                         if curMotherToBeFound in mothersList:
                             childList.append({curChildNid : curMotherToBeFound})
-                        
+
 
         # -> Update json so that children inherit their mothers url.
         for json_mother_event in json_root_event:
@@ -671,9 +672,8 @@ class TurkuOriginalImporter(Importer):
                         for s in mothersUrl:
                             for l, p in s.items():
                                 if v == l:
-                                    print("Childs mothers URL is:", p)
+                                    #print("Childs mothers URL is:", p)
                                     event_image_url = p
-                                    break
 
                         # -> add their mothers url
 
