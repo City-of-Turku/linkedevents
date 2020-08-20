@@ -398,7 +398,8 @@ class TurkuOriginalImporter(Importer):
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         event_keywords.add(Keyword.objects.get(id = ysoId))
                 '''
-
+                
+            '''
             if eventTku['keywords'] != None:
                 eventTku['keywords'] = eventTku['keywords'] + ','
                 keywords = eventTku['keywords'].replace(' ','').split(',')
@@ -419,7 +420,7 @@ class TurkuOriginalImporter(Importer):
                     +str(eventTku['drupal_nid']) \
                     +" with Event Name: " +str(eventTku['title_fi'])
                     )
-
+            '''
             eventItem['keywords'] = event_keywords
 
             if eventTku['target_audience'] != None:
