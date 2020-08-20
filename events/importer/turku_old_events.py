@@ -122,12 +122,10 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'Guided tours and sightseeing tours':'yso:p2149', # -> guidning (sv),Opastukset: http://www.yso.fi/onto/yso/p2149; 
     'Theatre and other performance art':'yso:p2850', # -> scenkonst (sv),Esittävä taide: http://www.yso.fi/onto/yso/p2850;  
     'Sports':'yso:p965', # -> Urheilu,idrott, http://www.yso.fi/onto/yso/p965
-    'Christmas':'yso:p419', # -> Joulu,julen, http://www.yso.fi/onto/yso/p419	
     'Literature':'yso:p8113', # -> Kirjallisuus, litteratur (sv), http://www.yso.fi/onto/yso/p8113
-    'Others':'yso:p10727', # -> Ulkopelit,(-ei ysoa, ei kategoriaa)	
 }
-
-
+    #'Others':'yso:p10727', # -> Ulkopelit,(-ei ysoa, ei kategoriaa)	
+    #'Christmas':'yso:p419', # -> Joulu,julen, http://www.yso.fi/onto/yso/p419	
 TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
     'Adults': 'yso:p5590',
     'Child families': 'yso:p13050',
@@ -398,7 +396,7 @@ class TurkuOriginalImporter(Importer):
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         event_keywords.add(Keyword.objects.get(id = ysoId))
                 '''
-                
+
             '''
             if eventTku['keywords'] != None:
                 eventTku['keywords'] = eventTku['keywords'] + ','
