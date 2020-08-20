@@ -703,8 +703,18 @@ class TurkuOriginalImporter(Importer):
                                         'info_url_fi' : mother.info_url_fi,
                                         'info_url_sv' : mother.info_url_fi,
                                         'info_url_en' : mother.info_url_fi,
-                                        'images' : child.super_event.images,
                                         'super_event' : mother}
+                                        )
+                                except Exception as ex: print(ex)
+
+                                child = Event.objects.get(origin_id=k)
+                                mother = Event.objects.get(origin_id=v)
+
+                                try:
+                                    Event.objects.update_or_create(
+                                        id = child.id,
+                                        defaults = {
+                                        'images' : child.super_event.images}
                                         )
                                 except Exception as ex: print(ex)
                             
