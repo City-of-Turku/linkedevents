@@ -379,6 +379,7 @@ class TurkuOriginalImporter(Importer):
                 eventTku['event_categories'] = eventTku['event_categories'] + ','
                 categories = eventTku['event_categories'].replace(' ','').split(',')
                 for name in categories:
+                    print(name)
                     if name[0:1] == " ":
                         name = name.replace(name[0:1],"", 1)
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
@@ -419,6 +420,7 @@ class TurkuOriginalImporter(Importer):
                     +" with Event Name: " +str(eventTku['title_fi'])
                     )
             '''
+            print("event keywords right now are: ", event_keywords)
             eventItem['keywords'] = event_keywords
 
             if eventTku['target_audience'] != None:
