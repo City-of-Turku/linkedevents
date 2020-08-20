@@ -400,7 +400,7 @@ class TurkuOriginalImporter(Importer):
             '''
             if eventTku['keywords'] != None:
                 eventTku['keywords'] = eventTku['keywords'] + ','
-                keywords = eventTku['keywords'].replace(' ','').split(',')
+                keywords = eventTku['keywords'].split(',')
                 notFoundKeys = []
                 for name in keywords:
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
@@ -674,12 +674,8 @@ class TurkuOriginalImporter(Importer):
                                 mother = Event.objects.get(origin_id=v)
                                 #except Exception as ex: print(ex)
 
-                                imgall = Image.objects.all()
-
                                 # Add the results to the many to many field (notice the *)
-
                                 #child.imgall.add(*[])
-                                child.imgall.add(*imgall)
 
                                 try:
                                     Event.objects.update_or_create(
@@ -707,6 +703,7 @@ class TurkuOriginalImporter(Importer):
                                         'info_url_fi' : mother.info_url_fi,
                                         'info_url_sv' : mother.info_url_fi,
                                         'info_url_en' : mother.info_url_fi,
+                                        'images' : mother.super_event.images
                                         'super_event' : mother}
                                         )
                                 except Exception as ex: print(ex)
