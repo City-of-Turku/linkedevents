@@ -672,7 +672,7 @@ class TurkuOriginalImporter(Importer):
                             for l, p in s.items():
                                 if v == l:
                                     print("Childs mothers URL is:", p)
-
+                                    event_image_url = p
 
                         # -> add their mothers url
 
