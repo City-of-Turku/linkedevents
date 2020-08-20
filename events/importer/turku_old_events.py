@@ -673,6 +673,7 @@ class TurkuOriginalImporter(Importer):
                                 #try:
                                 mother = Event.objects.get(origin_id=v)
                                 #except Exception as ex: print(ex)
+                                logger.info(mother.image)
                                 try:
                                     Event.objects.update_or_create(
                                         id = child.id,
