@@ -149,6 +149,7 @@ drupal_json_response = []
 mothersList = []
 mothersUrl = []
 childList = []
+notFoundKeys = [] # -> For moderation team. 
 
 def set_deleted_false(obj):
     obj.deleted = False
@@ -401,7 +402,6 @@ class TurkuOriginalImporter(Importer):
             if eventTku['keywords'] != None:
                 eventTku['keywords'] = eventTku['keywords'] + ','
                 keywords = eventTku['keywords'].split(',')
-                notFoundKeys = []
                 for name in keywords:
                     if name[0:1] == " ":
                         name = name.replace(name[0:1],"", 1)
@@ -412,15 +412,9 @@ class TurkuOriginalImporter(Importer):
                             #print('Warning!' + ' keywords not found:' + name)
                             #logger.warning('Moderator should add the following keywords ' + name)
                             if name != "":
-                                notFoundKeys.append(name)
+                                notFoundKeys.append({name: eventTku['drupal_nid']})
                             pass
-                if len(notFoundKeys) != 0:
-                    logger.warning('Moderator should add the following keywords: ' \
-                    +str(notFoundKeys)+' for Event ID: ' \
-                    +str(eventTku['drupal_nid']) \
-                    +" with Event Name: " +str(eventTku['title_fi'])
-                    )
-            
+
             eventItem['keywords'] = event_keywords
 
             if eventTku['target_audience'] != None:
@@ -830,4 +824,17 @@ class TurkuOriginalImporter(Importer):
             return
 
         self.syncher.finish(force=True)
+
+
+        if len(notFoundKeys) != 0:
+            logger.warning('Moderator should add the missing Keywords for the following Events: '+str(notFoundKeys))
+        '''
+        if len(notFoundKeys) != 0:
+            logger.warning('Moderator should add the following keywords: ' \
+            +str(notFoundKeys)+' for Event ID: ' \
+            +str(eventTku['drupal_nid']) \
+            +" with Event Name: " +str(eventTku['title_fi'])
+            )
+        '''
+
         logger.info("%d events processed" % len(events.values()))
