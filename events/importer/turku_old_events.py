@@ -1,7 +1,7 @@
 #Documentation will be rewritten in the near future.
-#Improved code integrated with previous code version + extra.
-#08/08/2020
-
+#Importer for production ready stage completed.
+#Optimization will be added later.
+#21/08/2020
 
 #Dependencies
 import logging
@@ -147,7 +147,7 @@ CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku',
 LOCAL_TZ = timezone('Europe/Helsinki')
 drupal_json_response = []
 mothersList = []
-mothersUrl = []
+mothersUrl = [] 
 childList = []
 notFoundKeys = [] # -> For moderation team. 
 
@@ -290,8 +290,6 @@ class TurkuOriginalImporter(Importer):
             eventItem['publisher'] = self.organization
             eventItem['end_time'] = end_time
 
-            #event_categories = eventItem.get('event_categories', set())
-
             ok_tags = ('u', 'b', 'h2', 'h3', 'em', 'ul', 'li', 'strong', 'br', 'p', 'a')
 
             eventItem['name'] = {"fi": eventTku['title_fi'], "sv": eventTku['title_sv'], "en": eventTku['title_en']}
@@ -358,10 +356,9 @@ class TurkuOriginalImporter(Importer):
                 eventItem[field_name] = val
 
             eventItem['date_published'] = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
-            
+
             set_attr('start_time', self.dt_parse(self.timeToTimestamp(str(eventTku['start_date']))))
             set_attr('end_time', self.dt_parse(self.timeToTimestamp(str(eventTku['end_date']))))
-
 
             event_in_language = eventItem.get('in_language', set())
             try:
@@ -375,7 +372,6 @@ class TurkuOriginalImporter(Importer):
 
             event_keywords = eventItem.get('keywords', set())
             event_audience = eventItem.get('audience', set())
-
 
             if eventTku['event_categories'] != None:
                 eventTku['event_categories'] = eventTku['event_categories'] + ','
@@ -391,13 +387,6 @@ class TurkuOriginalImporter(Importer):
                                 event_keywords.add(Keyword.objects.get(id = ysoId[x]))
                         else:
                             event_keywords.add(Keyword.objects.get(id = ysoId))
-                '''     
-                for name in categories:
-                    if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                        logger.info("Category name found in TURKU DRUPAL CATEGORY")
-                        ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
-                        event_keywords.add(Keyword.objects.get(id = ysoId))
-                '''
 
             if eventTku['keywords'] != None:
                 eventTku['keywords'] = eventTku['keywords'] + ','
@@ -409,8 +398,6 @@ class TurkuOriginalImporter(Importer):
                         try:
                             event_keywords.add(Keyword.objects.get(name = name))
                         except:
-                            #print('Warning!' + ' keywords not found:' + name)
-                            #logger.warning('Moderator should add the following keywords ' + name)
                             if name != "":
                                 notFoundKeys.append({name: eventTku['drupal_nid']})
                             pass
@@ -426,7 +413,6 @@ class TurkuOriginalImporter(Importer):
                         event_audience.add(Keyword.objects.get(id= ysoId))
 
             eventItem['audience'] = event_audience
-
             eventItem['info_url'] = {"fi": eventTku['website_url'], "sv": eventTku['website_url'], "en": eventTku['website_url']}
 
             tprNo = ''
@@ -568,10 +554,7 @@ class TurkuOriginalImporter(Importer):
             if eventType == "mother":
                 eventItem['super_event_type'] = Event.SuperEventType.RECURRING
 
-            if eventType == "child":
-                eventItem['super_event_type'] = ""
-
-            if eventType == "single":
+            if eventType == "child" or eventType == "single":
                 eventItem['super_event_type'] = ""
 
             return eventItem
@@ -621,10 +604,8 @@ class TurkuOriginalImporter(Importer):
                         if curMotherToBeFound not in mothersList:
                             mothersList.append(curMotherToBeFound)
 
-
                         if curMotherToBeFound in mothersList:
                             childList.append({curChildNid : curMotherToBeFound})
-
 
         # -> Update json so that children inherit their mothers url.
         for json_mother_event in json_root_event:
@@ -651,7 +632,6 @@ class TurkuOriginalImporter(Importer):
 
             if json_event['event_type'] == 'Single event':
                 event_type = "single"
-                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
             if json_event['drupal_nid'] in mothersList:
                 event_type = "mother"
@@ -661,17 +641,11 @@ class TurkuOriginalImporter(Importer):
                     if json_event['drupal_nid'] == str(k): #-> If event is a child.
                         event_type = "child"
 
-                        #v is the childs mother
-
+                        #-> v is the childs mother
                         for s in mothersUrl:
                             for l, p in s.items():
                                 if v == l:
-                                    #print("Childs mothers URL is:", p)
                                     event_image_url = p
-
-                        # -> add their mothers url
-
-
 
             if event_type != None:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
@@ -689,16 +663,8 @@ class TurkuOriginalImporter(Importer):
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k:
                             try:
-                                #try:
                                 child = Event.objects.get(origin_id=k)
-                                #except Exception as ex: print(ex)
-                                #try:
                                 mother = Event.objects.get(origin_id=v)
-                                #except Exception as ex: print(ex)
-
-                                # Add the results to the many to many field (notice the *)
-                                #child.imgall.add(*[])
-
                                 try:
                                     Event.objects.update_or_create(
                                         id = child.id,
@@ -747,7 +713,7 @@ class TurkuOriginalImporter(Importer):
                                 except Exception as ex: pass
                             except Exception as ex: pass
 
-            def fb_tw(ft):
+            def fb_tw(ft): 
                 originid = json_event['drupal_nid']
                 # -> Get Language object.
                 ft_name = "extlink_"+ft
@@ -765,22 +731,19 @@ class TurkuOriginalImporter(Importer):
                         link=json_event[ft+'_url']
                         )
                     # ->  Add children of the mother to the EventLink table...
-                    for x in mothersList:
-                        if x == json_event['drupal_nid']:
-                            for g in childList:
-                                for k, v in g.items():
-                                    if v == x:
-                                        try:
-                                        # -> k is the child of the mother. Add k into EventLink...
-                                            eventChildObj = Event.objects.get(origin_id=k)
-                                            EventLink.objects.update_or_create(
-                                                name=ft_name,
-                                                event_id=eventChildObj.id,
-                                                language_id=myLang.id,
-                                                link=json_event[ft_link]
-                                                )
-                                        except:
-                                            pass
+                    rslt = [x for x in mothersList if x == json_event['drupal_nid'] for g in childList for k, v in g.items() if v == x]
+                    if rslt:
+                        try:
+                        # -> k is the child of the mother. Add k into EventLink...
+                            eventChildObj = Event.objects.get(origin_id=k)
+                            EventLink.objects.update_or_create(
+                                name=ft_name,
+                                event_id=eventChildObj.id,
+                                language_id=myLang.id,
+                                link=json_event[ft_link]
+                                )
+                        except:
+                            pass
                 except:
                     pass
 
@@ -825,16 +788,7 @@ class TurkuOriginalImporter(Importer):
 
         self.syncher.finish(force=True)
 
-
         if len(notFoundKeys) != 0:
             logger.warning('Moderator should add the missing Keywords for the following Events: '+str(notFoundKeys))
-        '''
-        if len(notFoundKeys) != 0:
-            logger.warning('Moderator should add the following keywords: ' \
-            +str(notFoundKeys)+' for Event ID: ' \
-            +str(eventTku['drupal_nid']) \
-            +" with Event Name: " +str(eventTku['title_fi'])
-            )
-        '''
 
         logger.info("%d events processed" % len(events.values()))
