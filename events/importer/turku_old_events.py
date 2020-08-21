@@ -386,7 +386,7 @@ class TurkuOriginalImporter(Importer):
                         else:
                             event_keywords.add(Keyword.objects.get(id = ysoId))
 
-            if eventTku['keywords', None]:
+            if eventTku.get('keywords', None):
                 eventTku['keywords'] = eventTku['keywords'] + ','
                 keywords = eventTku['keywords'].split(',')
                 for name in keywords:
