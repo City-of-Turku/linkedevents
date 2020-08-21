@@ -377,8 +377,7 @@ class TurkuOriginalImporter(Importer):
                 eventTku['event_categories'] = eventTku['event_categories'] + ','
                 categories = eventTku['event_categories'].split(',')
                 for name in categories:
-                    if name[0:1] == " ":
-                        name = name.replace(name[0:1],"", 1)
+                    name = name.strip()
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
@@ -387,12 +386,11 @@ class TurkuOriginalImporter(Importer):
                         else:
                             event_keywords.add(Keyword.objects.get(id = ysoId))
 
-            if eventTku['keywords'] != None:
+            if eventTku['keywords', None]:
                 eventTku['keywords'] = eventTku['keywords'] + ','
                 keywords = eventTku['keywords'].split(',')
                 for name in keywords:
-                    if name[0:1] == " ":
-                        name = name.replace(name[0:1],"", 1)
+                    name.strip()
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         try:
                             event_keywords.add(Keyword.objects.get(name = name))
@@ -644,7 +642,7 @@ class TurkuOriginalImporter(Importer):
                                 if v == l:
                                     event_image_url = p
 
-            if event_type != None:
+            if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
