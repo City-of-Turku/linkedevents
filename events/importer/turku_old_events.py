@@ -380,7 +380,6 @@ class TurkuOriginalImporter(Importer):
                     if name[0:1] == " ":
                         name = name.replace(name[0:1],"", 1)
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                        logger.info(name)
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
                             for x in range(len(ysoId)):
@@ -405,7 +404,7 @@ class TurkuOriginalImporter(Importer):
             eventItem['keywords'] = event_keywords
 
             if eventTku['target_audience'] != None:
-                eventTku['target_audience'] =eventTku['target_audience'] + ','
+                eventTku['target_audience'] = eventTku['target_audience'] + ','
                 audience = eventTku['target_audience'].split(',')
                 for name in audience:
                     if name in TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.keys():
@@ -542,7 +541,6 @@ class TurkuOriginalImporter(Importer):
                         free_offer['price'] = {'fi': free_offer_price}
                         free_offer['info_url'] =  {'fi': None}
 
-
                     if str(eventTku['buy_tickets_url']): 
                         free_offer_buy_tickets = eventTku['buy_tickets_url']
                         free_offer['info_url'] =  {'fi': free_offer_buy_tickets}
@@ -640,7 +638,6 @@ class TurkuOriginalImporter(Importer):
                 for k, v in x.items():
                     if json_event['drupal_nid'] == str(k): #-> If event is a child.
                         event_type = "child"
-
                         #-> v is the childs mother
                         for s in mothersUrl:
                             for l, p in s.items():
