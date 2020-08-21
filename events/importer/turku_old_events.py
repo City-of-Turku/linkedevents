@@ -728,19 +728,22 @@ class TurkuOriginalImporter(Importer):
                         link=json_event[ft+'_url']
                         )
                     # ->  Add children of the mother to the EventLink table...
-                    rslt = [x for x in mothersList if x == json_event['drupal_nid'] for g in childList for k, v in g.items() if v == x]
-                    if rslt:
-                        try:
-                        # -> k is the child of the mother. Add k into EventLink...
-                            eventChildObj = Event.objects.get(origin_id=k)
-                            EventLink.objects.update_or_create(
-                                name=ft_name,
-                                event_id=eventChildObj.id,
-                                language_id=myLang.id,
-                                link=json_event[ft_link]
-                                )
-                        except:
-                            pass
+                    for x in mothersList:
+                        if x == json_event['drupal_nid']:
+                            for g in childList:
+                                for k, v in g.items():
+                                    if v == x:
+                                        try:
+                                        # -> k is the child of the mother. Add k into EventLink...
+                                            eventChildObj = Event.objects.get(origin_id=k)
+                                            EventLink.objects.update_or_create(
+                                                name=ft_name,
+                                                event_id=eventChildObj.id,
+                                                language_id=myLang.id,
+                                                link=json_event[ft_link]
+                                                )
+                                        except:
+                                            pass
                 except:
                     pass
 
