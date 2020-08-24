@@ -350,7 +350,7 @@ class TurkuOriginalImporter(Importer):
                         event_image_ext_url = event_image_url
                         event_image_license = self.cc_by_license
                         eimglc(event_image_ext_url, event_image_license)
-                    if image_license == '2':
+                    #if image_license == '2':
                         # -> We don't import nor necessarily need to mark the publication banned images, hence why this is commented out until further use.
                         #event_image_license = self.event_only_license
 
