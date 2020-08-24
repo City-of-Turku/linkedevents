@@ -332,11 +332,12 @@ class TurkuOriginalImporter(Importer):
 
             event_image_ext_url = ''
             image_license = ''
-            event_image_license = self.event_only_license
+            #event_image_license = self.event_only_license
 
             #NOTE! Events image is not usable in Helmet must use this Lippupiste.py way to do it         
             if event_image_url:
 
+                
                 def eimglc(ext_url, img_lc):
                     eventItem['images'] = [{
                     'url': ext_url,
@@ -347,7 +348,6 @@ class TurkuOriginalImporter(Importer):
                 if eventTku['event_image_license']:
                     image_license = eventTku['event_image_license']
                     if image_license == '1':
-                        event_image_ext_url = event_image_url
                         event_image_license = self.cc_by_license
                         eimglc(event_image_ext_url, event_image_license)
                     #if image_license == '2':
