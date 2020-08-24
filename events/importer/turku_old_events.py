@@ -337,7 +337,7 @@ class TurkuOriginalImporter(Importer):
             #NOTE! Events image is not usable in Helmet must use this Lippupiste.py way to do it         
             if event_image_url:
 
-                
+                print("pic")
                 def eimglc(ext_url, img_lc):
                     eventItem['images'] = [{
                     'url': ext_url,
