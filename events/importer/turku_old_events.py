@@ -306,8 +306,12 @@ class TurkuOriginalImporter(Importer):
                 "en": bleach.clean(self.with_value(eventTku, 'lead_paragraph_markup_en', ''),   tags=[],   strip=True)
             }
 
-            eventItem['provider'] = {"fi": 'Turku', "sv": 'Åbo', "en": 'Turku'}
-
+            if eventTku['event_organizer']:
+                eo = eventTku['event_organizer']
+                eventItem['provider'] = {"fi": eo, "sv": eo, "en": eo}
+            else:
+                eventItem['provider'] = {"fi": 'Turku', "sv": 'Åbo', "en": 'Turku'}
+                
             location_extra_info = ''
 
             if self.with_value(eventTku, 'address_extension', ''):
