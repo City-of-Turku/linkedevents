@@ -332,7 +332,7 @@ class TurkuOriginalImporter(Importer):
 
             event_image_ext_url = ''
             image_license = ''
-            #event_image_license = self.event_only_license
+            event_image_license = self.event_only_license
 
             #NOTE! Events image is not usable in Helmet must use this Lippupiste.py way to do it         
             if event_image_url:
@@ -352,7 +352,7 @@ class TurkuOriginalImporter(Importer):
                         eimglc(event_image_ext_url, event_image_license)
                     #if image_license == '2':
                         # -> We don't import nor necessarily need to mark the publication banned images, hence why this is commented out until further use.
-                        #event_image_license = self.event_only_license
+                    #    event_image_license = self.event_only_license
 
             def set_attr(field_name, val):
                 if field_name in eventItem:
