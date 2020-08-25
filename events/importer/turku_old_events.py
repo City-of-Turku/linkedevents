@@ -331,21 +331,20 @@ class TurkuOriginalImporter(Importer):
             }
 
             #event_image_ext_url = ''
-            image_license = ''
-
+            #image_license = ''
             #event_image_license = self.event_only_license
 
-            #NOTE! Events image is not usable in Helmet must use this Lippupiste.py way to do it         
+            #NOTE! Events image is not usable in Helmet must use this Lippupiste.py way to do it
+
             if event_image_url:
-
                 #event_image_license 1 or 2 (1 is 'event_only' and 2 is 'cc_by' in Linked Events) NOTE! CHECK VALUES IN DRUPAL!
-
-                if eventTku['event_image_license']:
+                if eventTku['event_image_license'] or ev_img_lc:
+                    print("Debug. Yes.")
                     if ev_img_lc:
-                        logger.info(ev_img_lc)
                         image_license = ev_img_lc
                     else:
                         image_license = eventTku['event_image_license']
+
                     if image_license == '1':
                         event_image_license = self.cc_by_license
                         eventItem['images'] = [{
@@ -592,6 +591,7 @@ class TurkuOriginalImporter(Importer):
 
         earliest_end_time = None
         event_image_url = None
+        event_image_license = None
 
         # -> Preprocess Children and Mothers.
         for json_mother_event in json_root_event:
@@ -635,13 +635,9 @@ class TurkuOriginalImporter(Importer):
 
             if json_event['event_image_ext_url']:
                 event_image_url = json_event['event_image_ext_url']['src']
-            else:
-                event_image_url = ""
 
             if json_event['event_image_license']:
                 event_image_license = json_event['event_image_license']
-            else:
-                event_image_license = None
 
             event_type = None # -> Default None.
 
