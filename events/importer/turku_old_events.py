@@ -661,6 +661,7 @@ class TurkuOriginalImporter(Importer):
                                 if v == l:
                                     event_image_url = p[0]
                                     event_image_license = p[1]
+                                    print("childs mother url: ", event_image_url, " and license type", event_image_license)
 
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
