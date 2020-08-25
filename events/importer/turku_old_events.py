@@ -147,7 +147,7 @@ CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku',
 LOCAL_TZ = timezone('Europe/Helsinki')
 drupal_json_response = []
 mothersList = []
-mothersUrl = [] 
+mothersUrl = []
 childList = []
 notFoundKeys = [] # -> For moderation team. 
 
@@ -272,7 +272,7 @@ class TurkuOriginalImporter(Importer):
             return default
         return item
 
-    def _import_event(self, lang, event_el, events, event_image_url, eventType, mothersList, childList):
+    def _import_event(self, lang, event_el, events, event_image_url, eventType, mothersList, childList, ev_img_lc):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(self.timeToTimestamp(str(eventTku['start_date'])))
         end_time = self.dt_parse(self.timeToTimestamp(str(eventTku['end_date'])))
@@ -330,16 +330,21 @@ class TurkuOriginalImporter(Importer):
                 "en": location_extra_info if location_extra_info else None
             }
 
-            event_image_ext_url = ''
+            #event_image_ext_url = ''
             image_license = ''
+
             #event_image_license = self.event_only_license
 
             #NOTE! Events image is not usable in Helmet must use this Lippupiste.py way to do it         
             if event_image_url:
 
                 #event_image_license 1 or 2 (1 is 'event_only' and 2 is 'cc_by' in Linked Events) NOTE! CHECK VALUES IN DRUPAL!
+
                 if eventTku['event_image_license']:
-                    image_license = eventTku['event_image_license']
+                    if ev_img_lc:
+                        image_license = ev_img_lc
+                    else:
+                        image_license = eventTku['event_image_license']
                     if image_license == '1':
                         event_image_license = self.cc_by_license
                         eventItem['images'] = [{
@@ -616,7 +621,12 @@ class TurkuOriginalImporter(Importer):
 
                 if json_event['event_image_ext_url']:
                     ev_image_url = json_event['event_image_ext_url']['src']
-                    mothersUrl.append({ev_mother : ev_image_url})
+                    if json_event['event_image_license']:
+                        ev_image_license = json_event['event_image_license']
+                    else:
+                        ev_image_license = None
+
+                    mothersUrl.append({ev_mother : [ev_image_url, ev_image_license]})
 
         # -> Process Singles, Mothers and Children
         for json_mother_event in json_root_event:
@@ -643,10 +653,11 @@ class TurkuOriginalImporter(Importer):
                         for s in mothersUrl:
                             for l, p in s.items():
                                 if v == l:
-                                    event_image_url = p
+                                    event_image_url = p[0]
+                                    event_image_license = p[1]
 
             if event_type:
-                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList)
+                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
