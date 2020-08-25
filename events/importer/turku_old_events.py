@@ -637,6 +637,11 @@ class TurkuOriginalImporter(Importer):
             else:
                 event_image_url = ""
 
+            if json_event['event_image_license']:
+                event_image_license = json_event['event_image_license']
+            else:
+                event_image_license = None
+
             event_type = None # -> Default None.
 
             if json_event['event_type'] == 'Single event':
