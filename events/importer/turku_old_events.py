@@ -342,6 +342,7 @@ class TurkuOriginalImporter(Importer):
 
                 if eventTku['event_image_license']:
                     if ev_img_lc:
+                        logger.info(ev_img_lc)
                         image_license = ev_img_lc
                     else:
                         image_license = eventTku['event_image_license']
