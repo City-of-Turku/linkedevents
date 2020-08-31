@@ -616,7 +616,8 @@ class TurkuOriginalImporter(Importer):
                     else:
                         ev_image_license = None
 
-                    print(ev_mother, ev_image_url, ev_image_license)
+                    print("Does this print?")
+                    #print(ev_mother, ev_image_url, ev_image_license)
                     mothersUrl.append({ev_mother : [ev_image_url, ev_image_license]})
 
         # -> Process Singles, Mothers and Children
