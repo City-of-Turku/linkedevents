@@ -642,9 +642,10 @@ class TurkuOriginalImporter(Importer):
                         for s in mothersUrl:
                             for l, p in s.items():
                                 if v == l:
-                                    logger.info(p[0])
                                     event_image_url = p[0]
                                     event_image_license = p[1]
+                        else:
+                            print("htshtfh")
 
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
