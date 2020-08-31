@@ -603,12 +603,14 @@ class TurkuOriginalImporter(Importer):
         # -> Update json so that children inherit their mothers url.
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
+
             if json_event['drupal_nid'] in mothersList:
                 event_type = "mother"
                 ev_mother = json_event['drupal_nid']
-                print(json_event['drupal_nid'])
+
                 if json_event['event_image_ext_url']:
                     ev_image_url = json_event['event_image_ext_url']['src']
+
                     if json_event['event_image_license']:
                         ev_image_license = json_event['event_image_license']
                         mothersUrl.append({ev_mother : [ev_image_url, ev_image_license]})
