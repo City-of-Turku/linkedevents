@@ -609,7 +609,7 @@ class TurkuOriginalImporter(Importer):
                 event_type = "mother"
                 ev_mother = json_event['drupal_nid']
                 print("stage 1")
-                if json_event['event_image_ext_url']['src']:
+                if json_event['event_image_ext_url']['src'] not None:
                     print("stage 2")
                     ev_image_url = json_event['event_image_ext_url']['src']
                     if json_event['event_image_license']:
