@@ -332,16 +332,19 @@ class TurkuOriginalImporter(Importer):
 
             if event_image_url:
                 if eventTku['event_image_license'] or ev_img_lc:
-                    if ev_img_lc:
-                        image_license = ev_img_lc
-                    else:
-                        image_license = eventTku['event_image_license']
-                    if image_license == '1':
-                        event_image_license = self.cc_by_license
-                        eventItem['images'] = [{
-                        'url': event_image_url,
-                        'license': event_image_license,
-                        }]
+                    if json_event['event_image_ext_url']:
+                        event_image_url = json_event['event_image_ext_url']['src']
+                        logger.info(event_image_url)
+                            if ev_img_lc:
+                                image_license = ev_img_lc
+                            else:
+                                image_license = eventTku['event_image_license']
+                            if image_license == '1':
+                                event_image_license = self.cc_by_license
+                                eventItem['images'] = [{
+                                'url': event_image_url,
+                                'license': event_image_license,
+                                }]
 
             def set_attr(field_name, val):
                 if field_name in eventItem:
