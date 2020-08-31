@@ -638,10 +638,12 @@ class TurkuOriginalImporter(Importer):
                 for k, v in x.items():
                     if json_event['drupal_nid'] == k: #-> If event is a child.
                         event_type = "child"
+
                         #-> v is the childs mother
                         for s in mothersUrl:
                             for l, p in s.items():
                                 if v == l:
+                                    logger.info(p[0])
                                     event_image_url = p[0]
                                     event_image_license = p[1]
 
