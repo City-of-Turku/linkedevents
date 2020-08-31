@@ -622,11 +622,13 @@ class TurkuOriginalImporter(Importer):
             event_type = None # -> Default None.
 
             if json_event['event_type'] == 'Single event':
-                '''
+
+                print("Single event: ", json_event['drupal_nid'], json_event['event_image_ext_url'], json_event['event_image_license'])
                 if json_event['event_image_ext_url'] and json_event['event_image_license'] == "1":
                     event_image_url = json_event['event_image_ext_url']['src']
                     event_image_license = json_event['event_image_license']
-                '''
+                
+
                 event_type = "single"
 
             if json_event['drupal_nid'] in mothersList:
