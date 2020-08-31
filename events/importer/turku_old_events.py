@@ -619,15 +619,13 @@ class TurkuOriginalImporter(Importer):
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
 
-            if json_event['event_image_ext_url']:
-                event_image_url = json_event['event_image_ext_url']['src']
-
-            if json_event['event_image_license']:
-                event_image_license = json_event['event_image_license']
-
             event_type = None # -> Default None.
 
             if json_event['event_type'] == 'Single event':
+                if json_event['event_image_ext_url']:
+                    event_image_url = json_event['event_image_ext_url']['src']
+                if json_event['event_image_license']:
+                    event_image_license = json_event['event_image_license']
                 event_type = "single"
 
             if json_event['drupal_nid'] in mothersList:
@@ -644,8 +642,6 @@ class TurkuOriginalImporter(Importer):
                                 if v == l:
                                     event_image_url = p[0]
                                     event_image_license = p[1]
-                        else:
-                            print("htshtfh")
 
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
