@@ -332,7 +332,6 @@ class TurkuOriginalImporter(Importer):
 
             if event_image_url:
                 if eventTku['event_image_license'] or ev_img_lc:
-                    logger.info("This is a debugging test.")
                     if ev_img_lc:
                         image_license = ev_img_lc
                     else:
@@ -638,7 +637,7 @@ class TurkuOriginalImporter(Importer):
                 for k, v in x.items():
                     if json_event['drupal_nid'] == k: #-> If event is a child.
                         event_type = "child"
-
+                        print("this should print?")
                         #-> v is the childs mother
                         for s in mothersUrl:
                             for l, p in s.items():
