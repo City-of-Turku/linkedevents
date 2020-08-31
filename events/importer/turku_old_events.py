@@ -331,6 +331,7 @@ class TurkuOriginalImporter(Importer):
             }
 
             if event_image_url:
+                logger.info(event_image_url)
                 if eventTku['event_image_license'] or ev_img_lc:
                     logger.info("This is a debugging test.")
                     if ev_img_lc:
