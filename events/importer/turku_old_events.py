@@ -627,6 +627,9 @@ class TurkuOriginalImporter(Importer):
                 if json_event['event_image_ext_url'] and json_event['event_image_license'] == "1":
                     event_image_url = json_event['event_image_ext_url']['src']
                     event_image_license = json_event['event_image_license']
+                else:
+                    event_image_url = None
+                    event_image_license = None
                 
 
                 event_type = "single"
@@ -644,6 +647,9 @@ class TurkuOriginalImporter(Importer):
                                 if v == l:
                                     event_image_url = p[0]
                                     event_image_license = p[1]
+                                else:
+                                    event_image_url = None
+                                    event_image_license = None
 
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
