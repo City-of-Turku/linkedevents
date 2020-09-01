@@ -647,8 +647,6 @@ class TurkuOriginalImporter(Importer):
                                             return event_type, event_image_url, event_image_license
                                         else:
                                             return event_type, None, None
-                            return event_type, None, None
-                return None, None, None
 
             event_type, event_image_url, event_image_license = fetch_child_tul()
 
