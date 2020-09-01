@@ -722,9 +722,9 @@ class TurkuOriginalImporter(Importer):
                                             )
                                 except Exception as ex: pass
                             except Exception as ex: pass
-                            break
 
-            def fb_tw(ft): 
+
+            def fb_tw(ft):
                 originid = json_event['drupal_nid']
                 # -> Get Language object.
                 ft_name = "extlink_"+ft
@@ -748,14 +748,14 @@ class TurkuOriginalImporter(Importer):
                                 for k, v in g.items():
                                     if v == x:
                                         try:
-                                        # -> k is the child of the mother. Add k into EventLink...
+                                            # -> k is the child of the mother. Add k into EventLink...
                                             eventChildObj = Event.objects.get(origin_id=k)
                                             EventLink.objects.update_or_create(
                                                 name=ft_name,
                                                 event_id=eventChildObj.id,
                                                 language_id=myLang.id,
                                                 link=json_event[ft_link]
-                                                )
+                                            )
                                         except:
                                             pass
 
