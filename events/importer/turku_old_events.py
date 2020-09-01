@@ -647,10 +647,9 @@ class TurkuOriginalImporter(Importer):
                                             return event_type, event_image_url, event_image_license
                                         else:
                                             return event_type, None, None
+            logger.info(event_type)
             if event_type is not None: # -> If event_type is not single or mother; must be a child.
                 event_type, event_image_url, event_image_license = fetch_child_tul()
-
-            logger.info(event_type)
 
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
