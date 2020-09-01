@@ -612,7 +612,11 @@ class TurkuOriginalImporter(Importer):
                     if json_event['event_image_license']:
                         ev_image_license = json_event['event_image_license']
                         mothersUrl.append({ev_mother : [ev_image_url, ev_image_license]})
-
+                    else:
+                        mothersUrl.append({ev_mother : [ev_image_url, None]})
+                else:
+                    mothersUrl.append({ev_mother : [None, None]})
+                    
         # -> Process Singles, Mothers and Children
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
