@@ -633,14 +633,13 @@ class TurkuOriginalImporter(Importer):
 
             if json_event['drupal_nid'] in mothersList:
                 event_type = "mother"
-                logger.info("Yes")
-            
+                # -> mothersList contains mother events with child events. No childless mothers exist.
+
             # -> Have to use a function to break out of nested for loops due to the if condition.
             def fetch_child_tul(drpl_nid):
-                logger.info("TEST... IN FUNCTION")
                 logger.info(drpl_nid)
                 for x in childList:
-                    logger.info("CHILDLIST IS NOT EMPTY.")
+                    #logger.info("CHILDLIST IS NOT EMPTY.")
                     for k, v in x.items():
                         if drpl_nid == k: #-> If event is a child.
                             event_type = "child"
@@ -653,12 +652,13 @@ class TurkuOriginalImporter(Importer):
                                         event_image_license = p[1]
                                         print(event_type, event_image_url, event_image_license)
                                         return event_type, event_image_url, event_image_license
-
+                    #If iteration is complete, and event type was a childless mother; we return None values.
+                    return None, None, None
             if event_type is None: # -> If event_type is not single or mother; must be a child.
-                logger.info("TEST...")
                 event_type, event_image_url, event_image_license = fetch_child_tul(json_event['drupal_nid'])
 
-            event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
+            if event_type:
+                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
             # -> Reset our default values for each iteration, this is a fail safe.
             event_type = None
             event_image_url = None
