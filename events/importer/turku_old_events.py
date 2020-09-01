@@ -641,18 +641,14 @@ class TurkuOriginalImporter(Importer):
                             for s in mothersUrl:
                                 for l, p in s.items():
                                     if v == l:
-                                        if p[0] is not None and p[1] is not None: 
-                                            event_image_url = p[0]
-                                            event_image_license = p[1]
-                                            return event_type, event_image_url, event_image_license
-                                        else:
-                                            return event_type, None, None
+                                        event_image_url = p[0]
+                                        event_image_license = p[1]
+                                        return event_type, event_image_url, event_image_license
+
             if event_type is None: # -> If event_type is not single or mother; must be a child.
                 event_type, event_image_url, event_image_license = fetch_child_tul()
 
-            if event_type:
-                event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
-
+            event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
             # -> Reset our default values for each iteration, this is a fail safe.
             event_type = None
             event_image_url = None
