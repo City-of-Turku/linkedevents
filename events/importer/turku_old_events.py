@@ -643,6 +643,7 @@ class TurkuOriginalImporter(Importer):
                                     if v == l:
                                         event_image_url = p[0]
                                         event_image_license = p[1]
+                                        print(event_type, event_image_url, event_image_license)
                                         return event_type, event_image_url, event_image_license
 
             if event_type is None: # -> If event_type is not single or mother; must be a child.
