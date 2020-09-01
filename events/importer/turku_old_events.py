@@ -639,6 +639,7 @@ class TurkuOriginalImporter(Importer):
             def fetch_child_tul():
                 logger.info("TEST... IN FUNCTION")
                 for x in childList:
+                    logger.info("CHILDLIST IS NOT EMPTY.")
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k: #-> If event is a child.
                             event_type = "child"
