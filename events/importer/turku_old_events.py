@@ -578,8 +578,6 @@ class TurkuOriginalImporter(Importer):
         json_root_event = root_doc['events']
 
         earliest_end_time = None
-        event_image_url = None
-        event_image_license = None
 
         # -> Preprocess Children and Mothers.
         for json_mother_event in json_root_event:
@@ -619,35 +617,48 @@ class TurkuOriginalImporter(Importer):
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
 
-            event_type = None # -> Default None.
+            # -> We have to define default values for image url, license & event type.
+            event_type = None 
+            event_image_url = None 
+            event_image_license = None
 
             if json_event['event_type'] == 'Single event':
                 if json_event['event_image_ext_url'] and json_event['event_image_license'] == "1":
                     event_image_url = json_event['event_image_ext_url']['src']
                     event_image_license = json_event['event_image_license']
-                else:
-                    event_image_url = None
-                    event_image_license = None
+
                 event_type = "single"
 
             if json_event['drupal_nid'] in mothersList:
                 event_type = "mother"
+            
+            # -> Have to use a function to break out of nested for loops due to the if condition.
+            def fetch_child_tul():
+                for x in childList:
+                    for k, v in x.items():
+                        if json_event['drupal_nid'] == k: #-> If event is a child.
+                            event_type = "child"
+                            #-> v is the childs mother
+                            for s in mothersUrl:
+                                for l, p in s.items():
+                                    if v == l:
+                                        event_image_url = p[0]
+                                        event_image_license = p[1]
+                                        return event_type, event_image_url, event_image_license
+                            # -> Default return values if condition not met.
+                            event_image_url = None
+                            event_image_license = None
+                            return event_type, event_image_url, event_image_license
 
-            for x in childList:
-                for k, v in x.items():
-                    if json_event['drupal_nid'] == k: #-> If event is a child.
-                        event_type = "child"
-                        #-> v is the childs mother
-                        for s in mothersUrl:
-                            for l, p in s.items():
-                                if v == l:
-                                    event_image_url = p[0]
-                                    event_image_license = p[1]
-                                else:
-                                    event_image_url = None
-                                    event_image_license = None
+            event_type, event_image_url, event_image_license = fetch_child_tul()
+
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
+
+            # -> Reset our default values for each iteration, this is a fail safe.
+            event_type = None
+            event_image_url = None
+            event_image_license = None
 
         now = datetime.now().replace(tzinfo=LOCAL_TZ)
 
@@ -711,6 +722,7 @@ class TurkuOriginalImporter(Importer):
                                             )
                                 except Exception as ex: pass
                             except Exception as ex: pass
+                            break 
 
             def fb_tw(ft): 
                 originid = json_event['drupal_nid']
@@ -746,8 +758,7 @@ class TurkuOriginalImporter(Importer):
                                                 )
                                         except:
                                             pass
-                except:
-                    pass
+                                        break
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
