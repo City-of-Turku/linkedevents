@@ -714,12 +714,12 @@ class TurkuOriginalImporter(Importer):
                                 try:
                                     motherOffer = Offer.objects.get(event_id=mother.id)
                                     Offer.objects.update_or_create(
-                                            event_id=child.id,
-                                            price=motherOffer.price,
-                                            info_url=motherOffer.info_url,
-                                            description=motherOffer.description,
-                                            is_free=motherOffer.is_free
-                                            )
+                                        event_id=child.id,
+                                        price=motherOffer.price,
+                                        info_url=motherOffer.info_url,
+                                        description=motherOffer.description,
+                                        is_free=motherOffer.is_free
+                                        )
                                 except Exception as ex: pass
                             except Exception as ex: pass
 
@@ -755,9 +755,12 @@ class TurkuOriginalImporter(Importer):
                                                 event_id=eventChildObj.id,
                                                 language_id=myLang.id,
                                                 link=json_event[ft_link]
-                                            )
+                                                )
                                         except:
                                             pass
+                                        break
+                except:
+                    pass
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
