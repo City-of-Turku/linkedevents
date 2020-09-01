@@ -629,6 +629,7 @@ class TurkuOriginalImporter(Importer):
 
             if json_event['drupal_nid'] in mothersList:
                 event_type = "mother"
+                logger.info("Yes")
             
             # -> Have to use a function to break out of nested for loops due to the if condition.
             def fetch_child_tul():
@@ -652,7 +653,7 @@ class TurkuOriginalImporter(Importer):
             event_type, event_image_url, event_image_license = fetch_child_tul()
 
             logger.info(event_type)
-            
+
             if event_type:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
 
