@@ -617,16 +617,10 @@ class TurkuOriginalImporter(Importer):
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
 
-            # -> We have to define default values for image url, license & event type.
-            event_type = None 
-            event_image_url = None 
-            event_image_license = None
-
             if json_event['event_type'] == 'Single event':
                 if json_event['event_image_ext_url'] and json_event['event_image_license'] == "1":
                     event_image_url = json_event['event_image_ext_url']['src']
                     event_image_license = json_event['event_image_license']
-
                 event_type = "single"
 
             if json_event['drupal_nid'] in mothersList:
@@ -642,13 +636,14 @@ class TurkuOriginalImporter(Importer):
                             for s in mothersUrl:
                                 for l, p in s.items():
                                     if v == l:
-                                        event_image_url = p[0]
-                                        event_image_license = p[1]
-                                        return event_type, event_image_url, event_image_license
-                            # -> Default return values if condition not met.
-                            event_image_url = None
-                            event_image_license = None
-                            return event_type, event_image_url, event_image_license
+                                        if p[0] is not None and p[1] is not None: 
+                                            event_image_url = p[0]
+                                            event_image_license = p[1]
+                                            return event_type, event_image_url, event_image_license
+                                        else:
+                                            return event_type, None, None
+                            return event_type, None, None
+                return None, None, None
 
             event_type, event_image_url, event_image_license = fetch_child_tul()
 
