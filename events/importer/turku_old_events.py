@@ -608,7 +608,7 @@ class TurkuOriginalImporter(Importer):
 
                 if json_event['event_image_ext_url']:
                     ev_image_url = json_event['event_image_ext_url']['src']
-
+                    logger.info(ev_image_url)
                     if json_event['event_image_license']:
                         ev_image_license = json_event['event_image_license']
                         mothersUrl.append({ev_mother : [ev_image_url, ev_image_license]})
@@ -624,15 +624,18 @@ class TurkuOriginalImporter(Importer):
             event_type = None
             event_image_url = None
             event_image_license = None
+            pass_full = None
 
             if json_event['event_type'] == 'Single event':
                 if json_event['event_image_ext_url'] and json_event['event_image_license'] == "1":
                     event_image_url = json_event['event_image_ext_url']['src']
                     event_image_license = json_event['event_image_license']
                 event_type = "single"
+                pass_full = True
 
             if json_event['drupal_nid'] in mothersList:
                 event_type = "mother"
+                pass_full = True
                 # -> mothersList contains mother events with child events. No childless mothers exist.
 
             # -> Have to use a function to break out of nested for loops due to the if condition.
@@ -650,14 +653,15 @@ class TurkuOriginalImporter(Importer):
                                     if v == l:
                                         event_image_url = p[0]
                                         event_image_license = p[1]
-                                        print(event_type, event_image_url, event_image_license)
-                                        return event_type, event_image_url, event_image_license
+                                        pass_full = True
+                                        print(event_type, event_image_url, event_image_license, pass_full)
+                                        return event_type, event_image_url, event_image_license, pass_full
                     #If iteration is complete, and event type was a childless mother; we return None values.
-                    return None, None, None
+                    return None, None, None, None
             if event_type is None: # -> If event_type is not single or mother; must be a child.
-                event_type, event_image_url, event_image_license = fetch_child_tul(json_event['drupal_nid'])
+                event_type, event_image_url, event_image_license, pass_full = fetch_child_tul(json_event['drupal_nid'])
 
-            if event_type:
+            if pass_full:
                 event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
             # -> Reset our default values for each iteration, this is a fail safe.
             event_type = None
