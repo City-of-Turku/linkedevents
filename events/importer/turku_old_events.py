@@ -616,7 +616,7 @@ class TurkuOriginalImporter(Importer):
                         mothersUrl.append({ev_mother : [ev_image_url, None]})
                 else:
                     mothersUrl.append({ev_mother : [None, None]})
-                    
+
         # -> Process Singles, Mothers and Children
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
@@ -637,10 +637,12 @@ class TurkuOriginalImporter(Importer):
             
             # -> Have to use a function to break out of nested for loops due to the if condition.
             def fetch_child_tul():
+                logger.info("TEST... IN FUNCTION")
                 for x in childList:
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k: #-> If event is a child.
                             event_type = "child"
+                            logger.info("TEST... IN FUNCTION... CHILD EVENT TYPE")
                             #-> v is the childs mother
                             for s in mothersUrl:
                                 for l, p in s.items():
@@ -651,6 +653,7 @@ class TurkuOriginalImporter(Importer):
                                         return event_type, event_image_url, event_image_license
 
             if event_type is None: # -> If event_type is not single or mother; must be a child.
+                logger.info("TEST...")
                 event_type, event_image_url, event_image_license = fetch_child_tul()
 
             event = self._import_event(lang, json_event, events, event_image_url, event_type, mothersList, childList, event_image_license)
