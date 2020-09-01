@@ -722,7 +722,7 @@ class TurkuOriginalImporter(Importer):
                                             )
                                 except Exception as ex: pass
                             except Exception as ex: pass
-                            break 
+                            break
 
             def fb_tw(ft): 
                 originid = json_event['drupal_nid']
@@ -758,7 +758,6 @@ class TurkuOriginalImporter(Importer):
                                                 )
                                         except:
                                             pass
-                                        break
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
