@@ -502,82 +502,82 @@ class TurkuOriginalImporter(Importer):
 
             return eventItem
 
-def _recur_fetch_paginated_url(self, url):
-    max_tries = 5
-    logger.info("Establishing connection to Drupal JSON...")
-    for try_number in range(0, max_tries):            
-        response = requests.get(url, headers={"User-Agent":"Mozilla/5.0"})
-        if response.status_code != 200:
-            logger.warning("Turku Drupal orig API reported HTTP %d" % response.status_code)
-        if self.cache:
-            self.cache.delete_url(url)
-            continue
-        try:
-            root_doc = response.json()
-        except ValueError:
-            logger.warning("Turku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
+    def _recur_fetch_paginated_url(self, url):
+        max_tries = 5
+        logger.info("Establishing connection to Drupal JSON...")
+        for try_number in range(0, max_tries):            
+            response = requests.get(url, headers={"User-Agent":"Mozilla/5.0"})
+            if response.status_code != 200:
+                logger.warning("Turku Drupal orig API reported HTTP %d" % response.status_code)
             if self.cache:
                 self.cache.delete_url(url)
                 continue
-            break
-        else:
-            logger.error("Turku Drupal orig API broken again, giving up")
-            raise APIBrokenError()
+            try:
+                root_doc = response.json()
+            except ValueError:
+                logger.warning("Turku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
+                if self.cache:
+                    self.cache.delete_url(url)
+                    continue
+                break
+            else:
+                logger.error("Turku Drupal orig API broken again, giving up")
+                raise APIBrokenError()
 
-    def to_import(self, lang, ev, events, ev_type):
-        logger.info(ev_type)
-        event = self._import_event(lang, ev, events, ev_type)
+        def to_import(self, lang, ev, events, ev_type):
+            logger.info(ev_type)
+            event = self._import_event(lang, ev, events, ev_type)
 
-    # -> Import Single Event(s).
-    for x in json_root_event:
-        for k, v in x.items():
-            if v['event_type'] == "Single event":
-                to_import(lang, v, events, 's')
-    # -> Pre-Process.
-    childrens_mother = [v['drupal_nid_super'] for x in json_root_event for k, v in x.items() if v['event_type'] == "Recurring event (in series)"]
-    mothers_with_children = [v for x in json_root_event for k, v in x.items() if v['drupal_nid'] in childrens_mother]
-    mothers_children = [v for x in json_root_event for k, v in x.items() for c in mothers_with_children for b, n in c.items() if b == "drupal_nid" and n == v['drupal_nid_super']]
-    # -> Import Mother & Child Event(s).
-    for x in mothers_with_children:
-        to_import(lang, x, events, 'm')
-        for z in mothers_children:
-            if z['drupal_nid_super'] == x['drupal_nid']:
-                z.update({'event_image_ext_url': x['event_image_ext_url'],
-                'event_image_license': x['event_image_license'],
-                'facebook_url': x['facebook_url'],
-                'twitter_url': x['twitter_url'],
-                })
-                to_import(lang, z, events, 'c')
-    now = datetime.now().replace(tzinfo=LOCAL_TZ)
-    #return root_doc
+        # -> Import Single Event(s).
+        for x in json_root_event:
+            for k, v in x.items():
+                if v['event_type'] == "Single event":
+                    to_import(lang, v, events, 's')
+        # -> Pre-Process.
+        childrens_mother = [v['drupal_nid_super'] for x in json_root_event for k, v in x.items() if v['event_type'] == "Recurring event (in series)"]
+        mothers_with_children = [v for x in json_root_event for k, v in x.items() if v['drupal_nid'] in childrens_mother]
+        mothers_children = [v for x in json_root_event for k, v in x.items() for c in mothers_with_children for b, n in c.items() if b == "drupal_nid" and n == v['drupal_nid_super']]
+        # -> Import Mother & Child Event(s).
+        for x in mothers_with_children:
+            to_import(lang, x, events, 'm')
+            for z in mothers_children:
+                if z['drupal_nid_super'] == x['drupal_nid']:
+                    z.update({'event_image_ext_url': x['event_image_ext_url'],
+                    'event_image_license': x['event_image_license'],
+                    'facebook_url': x['facebook_url'],
+                    'twitter_url': x['twitter_url'],
+                    })
+                    to_import(lang, z, events, 'c')
+        now = datetime.now().replace(tzinfo=LOCAL_TZ)
+        #return root_doc
 
-
-def import_events(self):
-    logger.info("Importing old Turku events... REVAMP!!!!!")
-    events = recur_dict()
-    URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
-    lang = self.supported_languages
-    # -> Fetch JSON for post-processing but also process & import events.
-    try:
-        #RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
-        self._recur_fetch_paginated_url(URL)
-    except APIBrokenError:
-        return
-
-    #logger.info(RESPONSE_JSON)
-    logger.info("Phase 1 complete.")
-
-    event_list = sorted(events.values(), key=lambda x: x['end_time'])
-    qs = Event.objects.filter(end_time__gte=datetime.now().replace(tzinfo=LOCAL_TZ), data_source='turku')
-    self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
-
-    for event in event_list:
+    def import_events(self):
+        import requests
+        logger.info("Importing old Turku events... REVAMP!!!!!")
+        events = recur_dict()
+        URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
+        lang = self.supported_languages
+        # -> Fetch JSON for post-processing but also process & import events.
         try:
-            obj = self.save_event(event)
-            self.syncher.mark(obj)
-        except:
-            ...
+            #RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
+            self._recur_fetch_paginated_url(URL)
+        except APIBrokenError:
+            return
 
-    self.syncher.finish(force=True)
+        #logger.info(RESPONSE_JSON)
+        logger.info("Phase 1 complete.")
 
-    logger.info("%d events processed" % len(events.values()))
+        event_list = sorted(events.values(), key=lambda x: x['end_time'])
+        qs = Event.objects.filter(end_time__gte=datetime.now().replace(tzinfo=LOCAL_TZ), data_source='turku')
+        self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
+
+        for event in event_list:
+            try:
+                obj = self.save_event(event)
+                self.syncher.mark(obj)
+            except:
+                ...
+
+        self.syncher.finish(force=True)
+
+        logger.info("%d events processed" % len(events.values()))
