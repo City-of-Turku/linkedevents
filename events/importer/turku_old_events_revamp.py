@@ -514,7 +514,6 @@ def _recur_fetch_paginated_url(self, url):
             continue
         try:
             root_doc = response.json()
-            return root_doc
             except ValueError:
                 logger.warning("Turku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
                 if self.cache:
@@ -550,6 +549,7 @@ def _recur_fetch_paginated_url(self, url):
                 })
                 to_import(lang, z, events 'c')
     now = datetime.now().replace(tzinfo=LOCAL_TZ)
+    return root_doc
 
 
 def import_events(self):
