@@ -126,6 +126,7 @@ TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
 LANGUAGES_TURKU_OLD =  ['fi', 'sv' , 'en']
 CITY_LIST = ['turku', 'naantali', 'raisio', 'nousiainen', 'mynämäki', 'masku', 'aura', 'marttila', 'kaarina', 'lieto', 'paimio', 'sauvo']
 LOCAL_TZ = timezone('Europe/Helsinki')
+notFoundKeys = []
 
 def set_deleted_false(obj):
     obj.deleted = False
@@ -583,5 +584,8 @@ class TurkuOriginalImporter(Importer):
                 ...
 
         self.syncher.finish(force=True)
+        
+        if len(notFoundKeys) != 0:
+            logger.warning('Moderator should add the missing Keywords for the following Events: '+str(notFoundKeys))
 
         logger.info("%d events processed" % len(events.values()))
