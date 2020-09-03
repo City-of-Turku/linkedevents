@@ -514,11 +514,11 @@ def _recur_fetch_paginated_url(self, url):
             continue
         try:
             root_doc = response.json()
-            except ValueError:
-                logger.warning("Turku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
-                if self.cache:
-                    self.cache.delete_url(url)
-                    continue
+        except ValueError:
+            logger.warning("Turku Drupal orig API returned invalid JSON (try {} of {})".format(try_number + 1, max_tries))
+            if self.cache:
+                self.cache.delete_url(url)
+                continue
             break
         else:
             logger.error("Turku Drupal orig API broken again, giving up")
