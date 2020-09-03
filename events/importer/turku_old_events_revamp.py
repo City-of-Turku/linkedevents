@@ -302,7 +302,7 @@ class TurkuOriginalImporter(Importer):
 
             if eventTku['event_image_ext_url'] and int(eventTku['event_image_license']) == 1:
                 eventItem['images'] = [{
-                    'url': eventTku['event_image_ext_url'],
+                    'url': eventTku['event_image_ext_url']['src'],
                     'license': self.cc_by_license,
                 }]
 
