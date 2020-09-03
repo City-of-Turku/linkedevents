@@ -557,7 +557,7 @@ class TurkuOriginalImporter(Importer):
 
     def import_events(self):
         import requests
-        logger.info("Importing old Turku events... REVAMP!!!!!")
+        logger.info("Importing old Turku events... REVAMP!!!!! v2")
         events = recur_dict()
         URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
         lang = self.supported_languages
