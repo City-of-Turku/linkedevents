@@ -528,7 +528,7 @@ class TurkuOriginalImporter(Importer):
 
         earliest_end_time = None
 
-        def to_import(self, lang, ev, events, ev_type):
+        def to_import(lang, ev, events, ev_type):
             logger.info(ev_type)
             event = self._import_event(lang, ev, events, ev_type)
 
