@@ -532,14 +532,14 @@ def _recur_fetch_paginated_url(self, url):
     for x in json_root_event:
         for k, v in x.items():
             if v['event_type'] == "Single event":
-                to_import(lang, v, events 's')
+                to_import(lang, v, events, 's')
     # -> Pre-Process.
     childrens_mother = [v['drupal_nid_super'] for x in json_root_event for k, v in x.items() if v['event_type'] == "Recurring event (in series)"]
     mothers_with_children = [v for x in json_root_event for k, v in x.items() if v['drupal_nid'] in childrens_mother]
     mothers_children = [v for x in json_root_event for k, v in x.items() for c in mothers_with_children for b, n in c.items() if b == "drupal_nid" and n == v['drupal_nid_super']]
     # -> Import Mother & Child Event(s).
     for x in mothers_with_children:
-        to_import(lang, x, events 'm')
+        to_import(lang, x, events, 'm')
         for z in mothers_children:
             if z['drupal_nid_super'] == x['drupal_nid']:
                 z.update({'event_image_ext_url': x['event_image_ext_url'],
@@ -547,7 +547,7 @@ def _recur_fetch_paginated_url(self, url):
                 'facebook_url': x['facebook_url'],
                 'twitter_url': x['twitter_url'],
                 })
-                to_import(lang, z, events 'c')
+                to_import(lang, z, events, 'c')
     now = datetime.now().replace(tzinfo=LOCAL_TZ)
     return root_doc
 
