@@ -564,7 +564,7 @@ class TurkuOriginalImporter(Importer):
         # -> Fetch JSON for post-processing but also process & import events.
         try:
             #RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
-            self._recur_fetch_paginated_url(URL)
+            self._recur_fetch_paginated_url(URL, lang, events)
         except APIBrokenError:
             return
 
