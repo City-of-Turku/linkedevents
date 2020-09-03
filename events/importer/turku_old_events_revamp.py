@@ -526,7 +526,7 @@ def _recur_fetch_paginated_url(self, url):
 
     def to_import(self, lang, ev, events, ev_type):
         logger.info(ev_type)
-        event = self._import_event(lang, ev, events ev_type)
+        event = self._import_event(lang, ev, events, ev_type)
 
     # -> Import Single Event(s).
     for x in json_root_event:
