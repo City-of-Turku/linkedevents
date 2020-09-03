@@ -549,7 +549,7 @@ def _recur_fetch_paginated_url(self, url):
                 })
                 to_import(lang, z, events, 'c')
     now = datetime.now().replace(tzinfo=LOCAL_TZ)
-    return root_doc
+    #return root_doc
 
 
 def import_events(self):
@@ -559,11 +559,12 @@ def import_events(self):
     lang = self.supported_languages
     # -> Fetch JSON for post-processing but also process & import events.
     try:
-        RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
+        #RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
+        self._recur_fetch_paginated_url(URL)
     except APIBrokenError:
         return
 
-    logger.info(RESPONSE_JSON)
+    #logger.info(RESPONSE_JSON)
     logger.info("Phase 1 complete.")
 
     event_list = sorted(events.values(), key=lambda x: x['end_time'])
