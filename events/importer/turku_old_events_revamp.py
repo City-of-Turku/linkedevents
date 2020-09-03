@@ -565,3 +565,18 @@ def import_events(self):
 
     logger.info(RESPONSE_JSON)
     logger.info("Phase 1 complete.")
+
+    event_list = sorted(events.values(), key=lambda x: x['end_time'])
+    qs = Event.objects.filter(end_time__gte=datetime.now().replace(tzinfo=LOCAL_TZ), data_source='turku')
+    self.syncher = ModelSyncher(qs, lambda obj: obj.origin_id, delete_func=set_deleted_false)
+
+    for event in event_list:
+        try:
+            obj = self.save_event(event)
+            self.syncher.mark(obj)
+        except:
+            ...
+
+    self.syncher.finish(force=True)
+
+    logger.info("%d events processed" % len(events.values()))
