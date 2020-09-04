@@ -411,9 +411,6 @@ class TurkuOriginalImporter(Importer):
 
             evItem['in_language'] = event_in_language
 
-            evItem['extlink_facebook'] = eventTku['facebook_url']
-            evItem['twitter_url'] = eventTku['twitter_url']
-
             event_keywords = evItem.get('keywords', set())
             event_audience = evItem.get('audience', set())
 
@@ -645,7 +642,7 @@ class TurkuOriginalImporter(Importer):
                 root_doc = response.json()
             except ValueError:
                 logger.warning(
-                    "tku Drupal orig API returned invalid JSON (try {} of {})"
+                    "Drupal orig API returned invalid JSON (try {} of {})"
                     .format(try_number + 1, max_tries)
                 )
                 if self.cache:
@@ -653,7 +650,7 @@ class TurkuOriginalImporter(Importer):
                     continue
             break
         else:
-            logger.error("tku Drupal orig API broken again, giving up")
+            logger.error("Drupal orig API broken again, giving up")
             raise APIBrokenError()
 
         jsr = root_doc['events']
@@ -664,12 +661,12 @@ class TurkuOriginalImporter(Importer):
             logger.info(ev_type)
             event = self._import_event(lang, ev, events, ev_type)
 
-        # -> Import Single Event(s).
+        # Import Single Event(s).
         for x in jsr:
             for k, v in x.items():
                 if v['event_type'] == "Single event":
                     to_import(lang, v, events, 's')
-        # -> Pre-Process.
+        # Pre-Process.
         childrens_mother = [
             v['drupal_nid_super'] for x in jsr for k, v in x.items()
             if v['event_type'] == "Recurring event (in series)"
@@ -684,7 +681,7 @@ class TurkuOriginalImporter(Importer):
             for b, n in c.items()
             if b == "drupal_nid" and n == v['drupal_nid_super']
         ]
-        # -> Import Mother & Child Event(s).
+        # Import Mother & Child Event(s).
         for x in mothers_with_children:
             to_import(lang, x, events, 'm')
             for z in mothers_children:
@@ -697,7 +694,110 @@ class TurkuOriginalImporter(Importer):
                     })
                     to_import(lang, z, events, 'c')
         now = datetime.now().replace(tzinfo=TZ)
-        return root_doc
+        return root_doc, mothers_with_children, mothers_children
+
+    def save_extra(self, drupal_url, mothersList, childList):
+        json_root_event = drupal_url['events']
+        for json_mother_event in json_root_event:
+            json_event = json_mother_event['event']
+            if json_event['drupal_nid']:
+                for x in childList:
+                    for k, v in x.items():
+                        if json_event['drupal_nid'] == k:
+                            try:
+                                child = Event.objects.get(origin_id=k)
+                                mother = Event.objects.get(origin_id=v)
+                                try:
+                                    Event.objects.update_or_create(
+                                        id = child.id,
+                                        defaults = {
+                                        'date_published' : mother.date_published,
+                                        'provider' : mother.provider,
+                                        'provider_fi' : mother.provider_fi,
+                                        'provider_sv' : mother.provider_sv,
+                                        'provider_en' : mother.provider_en,
+                                        'description' : mother.description,
+                                        'description_fi' : mother.description_fi,
+                                        'description_sv' : mother.description_sv,
+                                        'description_en' : mother.description_en,
+                                        'short_description' : mother.short_description,
+                                        'short_description_fi' : mother.short_description_fi,
+                                        'short_description_sv' : mother.short_description_sv,
+                                        'short_description_en' : mother.short_description_en,
+                                        'location_id' : mother.location_id,
+                                        'location_extra_info' : mother.location_extra_info,
+                                        'location_extra_info_fi' : mother.location_extra_info_fi,
+                                        'location_extra_info_sv' : mother.location_extra_info_sv,
+                                        'location_extra_info_en' : mother.location_extra_info_en,
+                                        'info_url' : mother.info_url,
+                                        'info_url_fi' : mother.info_url_fi,
+                                        'info_url_sv' : mother.info_url_fi,
+                                        'info_url_en' : mother.info_url_fi,
+                                        'super_event' : mother}
+                                        )
+                                except Exception as ex: pass
+                            except Exception as ex: pass
+
+                            try:
+                                # -> Get object from Event.
+                                child = Event.objects.get(origin_id=k)
+                                mother = Event.objects.get(origin_id=v)
+                                # -> Get object from Offer once we have the Event object.
+                                try:
+                                    motherOffer = Offer.objects.get(event_id=mother.id)
+                                    Offer.objects.update_or_create(
+                                        event_id=child.id,
+                                        price=motherOffer.price,
+                                        info_url=motherOffer.info_url,
+                                        description=motherOffer.description,
+                                        is_free=motherOffer.is_free
+                                        )
+                                except Exception as ex: pass
+                            except Exception as ex: pass
+
+            def fb_tw(ft):
+                originid = json_event['drupal_nid']
+                # -> Get Language object.
+                ft_name = "extlink_"+ft
+                ft_link = ft+"_url"
+                try:
+                    myLang = Language.objects.get(id="fi")
+                except:
+                    pass
+                try:
+                    eventObj = Event.objects.get(origin_id=originid)
+                    EventLink.objects.update_or_create(
+                        name=ft_name,
+                        event_id=eventObj.id,
+                        language_id=myLang.id,
+                        link=json_event[ft+'_url']
+                        )
+                    # ->  Add children of the mother to the EventLink table...
+                    for x in mothersList:
+                        if x == json_event['drupal_nid']:
+                            for g in childList:
+                                for k, v in g.items():
+                                    if v == x:
+                                        try:
+                                            # -> k is the child of the mother. Add k into EventLink...
+                                            eventChildObj = Event.objects.get(origin_id=k)
+                                            EventLink.objects.update_or_create(
+                                                name=ft_name,
+                                                event_id=eventChildObj.id,
+                                                language_id=myLang.id,
+                                                link=json_event[ft_link]
+                                                )
+                                        except:
+                                            pass
+                                        break
+                except:
+                    pass
+
+            if json_event['facebook_url']:
+                fb_tw('facebook')
+
+            if json_event['twitter_url']:
+                fb_tw('twitter')
 
     def import_events(self):
         import requests
@@ -707,13 +807,12 @@ class TurkuOriginalImporter(Importer):
         lang = self.supported_languages
         # Fetch JSON for post-processing but also process & import events.
         try:
-            # RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
-            RESPONSE_JSON = self._recur_fetch_paginated_url(URL, lang, events)
+            RESPONSE_JSON, mother_events, child_events = self._recur_fetch_paginated_url(URL, lang, events)
         except APIBrokenError:
             return
 
-        logger.info(RESPONSE_JSON)
-        logger.info("Phase 1 complete.")
+        # logger.info(RESPONSE_JSON)
+        logger.info("Phase 1 complete... Phase 2 now in progress.")
 
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
         qs = Event.objects.filter(
@@ -732,6 +831,11 @@ class TurkuOriginalImporter(Importer):
                 self.syncher.mark(obj)
             except:
                 ...
+
+        try:
+            self.save_extra(RESPONSE_JSON, mother_events, child_events)
+        except APIBrokenError:
+            return
 
         self.syncher.finish(force=True)
 
