@@ -707,6 +707,7 @@ class TurkuOriginalImporter(Importer):
                             try:
                                 child = Event.objects.get(origin_id=k)
                                 mother = Event.objects.get(origin_id=v)
+                                logger.info("Test?")
                                 try:
                                     Event.objects.update_or_create(
                                         id = child.id,
@@ -789,7 +790,6 @@ class TurkuOriginalImporter(Importer):
                                                 )
                                         except:
                                             pass
-                                        break
                 except:
                     pass
 
