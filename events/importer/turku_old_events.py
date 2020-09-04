@@ -422,6 +422,7 @@ class TurkuOriginalImporter(Importer):
                 categories = eventTku['event_categories'].split(',')
                 for name in categories:
                     name = name.strip()
+                    print(name)
                     if name == 'Theatre and other perfomance art':
                         name = 'Theatre and other performance art'
                         # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
