@@ -380,7 +380,9 @@ class TurkuOriginalImporter(Importer):
                     evItem['images'] = [{
                         'url': eventTku['event_image_ext_url']['src'],
                         'license': self.cc_by_license,
-                        'alt_text': "Moi",
+                        'alt_text': '',
+                        'name': '',
+                        'photographer_name': ''
                     }]
 
             def set_attr(field_name, val):
