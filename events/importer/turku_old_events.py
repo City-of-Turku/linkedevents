@@ -411,7 +411,7 @@ class TurkuOriginalImporter(Importer):
 
             evItem['in_language'] = event_in_language
 
-            evItem['facebook'] = eventTku['facebook_url']
+            evItem['extlink_facebook'] = eventTku['facebook_url']
             evItem['twitter_url'] = eventTku['twitter_url']
 
             event_keywords = evItem.get('keywords', set())
