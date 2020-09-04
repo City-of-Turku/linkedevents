@@ -103,12 +103,10 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'cruises and tours': ['yso:p1917', 'yso:p366'],  # Risteily, Matkat
     'Trips': 'yso:p25261',  # Retket
     'Guided tours and sightseeing tours': 'yso:p2149',  # Guidning, Opastukset
-    'Theatre and other perfomance art': ['yso:p2850', 'yso:2625'],  # Esittävä taide
+    'Theatre and other performance art': ['yso:p2850', 'yso:2625'],  # Esittävä taide
     'Sports': 'yso:p965',  # Urheilu, Idrott
     'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
 }
-
-# Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
 
 TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
     'Adults': 'yso:p5590',
@@ -424,18 +422,17 @@ class TurkuOriginalImporter(Importer):
                 categories = eventTku['event_categories'].split(',')
                 for name in categories:
                     name = name.strip()
+                    if name == 'Theatre and other perfomance art':
+                        name = 'Theatre and other performance art'
+                        # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
                             for x in range(len(ysoId)):
-                                #logger.info(ysoId[x])
-                                print("List category found!!!", name)
                                 event_keywords.add(
                                     Keyword.objects.get(id=ysoId[x])
                                 )
                         else:
-                            #logger.info(ysoId)
-                            print(name, " IS NOT A LIST, ADDING KEYWORD!")
                             event_keywords.add(
                                 Keyword.objects.get(id=ysoId)
                             )
