@@ -701,10 +701,11 @@ class TurkuOriginalImporter(Importer):
         #print(json_root_event)
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
-            logger.info("Printing for each Event.")
+            #logger.info("Printing for each Event.")
             if json_event['drupal_nid']:
-                print(json_event['drupal_nid'])
+                #print(json_event['drupal_nid'])
                 for x in childList:
+                    print(x['drupal_nid'])
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k:
                             try:
