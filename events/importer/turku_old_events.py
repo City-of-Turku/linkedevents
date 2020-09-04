@@ -659,6 +659,13 @@ class TurkuOriginalImporter(Importer):
 
         def to_import(lang, ev, events, ev_type):
             logger.info(ev_type)
+            if ev['event_image_ext_url'] is None:
+                ev.update({
+                    "event_image_ext_url": {
+                        "src": "",
+                        "alt": ""
+                    }
+                })
             event = self._import_event(lang, ev, events, ev_type)
 
         # Import Single Event(s).
@@ -759,37 +766,18 @@ class TurkuOriginalImporter(Importer):
                 # Get Language object.
                 ft_name = "extlink_"+ft
                 ft_link = ft+"_url"
-                logger.info("TEST PHASE 1")
                 try:
                     myLang = Language.objects.get(id="fi")
                 except:
                     pass
                 try:
-                    print("TEST PHASE 2")
                     eventObj = Event.objects.get(origin_id=originid)
                     EventLink.objects.update_or_create(
                         name=ft_name,
                         event_id=eventObj.id,
                         language_id=myLang.id,
                         link=json_event[ft+'_url']
-                        )
-                    # Add children of the mother to the EventLink table
-                    for x in mothersList:
-                        if x == json_event['drupal_nid']:
-                            for g in childList:
-                                if g['drupal_nid_super'] == x:
-                                    try:
-                                        logger.info("TEST PHASE 3")
-                                        # k is the child of the mother. Add k into EventLink.
-                                        eventChildObj = Event.objects.get(origin_id=k)
-                                        EventLink.objects.update_or_create(
-                                            name=ft_name,
-                                            event_id=eventChildObj.id,
-                                            language_id=myLang.id,
-                                            link=json_event[ft_link]
-                                        )
-                                    except:
-                                        pass
+                    )
                 except:
                     pass
 
