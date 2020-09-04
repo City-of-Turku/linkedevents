@@ -697,68 +697,62 @@ class TurkuOriginalImporter(Importer):
         return root_doc, mothers_with_children, mothers_children
 
     def save_extra(self, drupal_url, mothersList, childList):
-        json_root_event = drupal_url['events']
-        #print(json_root_event)
-        for json_mother_event in json_root_event:
+        jsr = drupal_url['events']
+        for json_mother_event in jsr:
             json_event = json_mother_event['event']
-            #logger.info("Printing for each Event.")
             if json_event['drupal_nid']:
-                #print(json_event['drupal_nid'])
                 for x in childList:
-                    print(x['drupal_nid'])
-                    for k, v in x.items():
-                        if json_event['drupal_nid'] == k:
+                    if json_event['drupal_nid'] == x['drupal_nid_super']:
+                        try:
+                            child = Event.objects.get(origin_id=x['drupal_nid'])
+                            mother = Event.objects.get(origin_id=json_event['drupal_nid'])
                             try:
-                                child = Event.objects.get(origin_id=k)
-                                mother = Event.objects.get(origin_id=v)
-                                logger.info("Test?")
-                                try:
-                                    Event.objects.update_or_create(
-                                        id = child.id,
-                                        defaults = {
-                                        'date_published' : mother.date_published,
-                                        'provider' : mother.provider,
-                                        'provider_fi' : mother.provider_fi,
-                                        'provider_sv' : mother.provider_sv,
-                                        'provider_en' : mother.provider_en,
-                                        'description' : mother.description,
-                                        'description_fi' : mother.description_fi,
-                                        'description_sv' : mother.description_sv,
-                                        'description_en' : mother.description_en,
-                                        'short_description' : mother.short_description,
-                                        'short_description_fi' : mother.short_description_fi,
-                                        'short_description_sv' : mother.short_description_sv,
-                                        'short_description_en' : mother.short_description_en,
-                                        'location_id' : mother.location_id,
-                                        'location_extra_info' : mother.location_extra_info,
-                                        'location_extra_info_fi' : mother.location_extra_info_fi,
-                                        'location_extra_info_sv' : mother.location_extra_info_sv,
-                                        'location_extra_info_en' : mother.location_extra_info_en,
-                                        'info_url' : mother.info_url,
-                                        'info_url_fi' : mother.info_url_fi,
-                                        'info_url_sv' : mother.info_url_fi,
-                                        'info_url_en' : mother.info_url_fi,
-                                        'super_event' : mother}
-                                        )
-                                except Exception as ex: pass
+                                Event.objects.update_or_create(
+                                    id = child.id,
+                                    defaults = {
+                                    'date_published' : mother.date_published,
+                                    'provider' : mother.provider,
+                                    'provider_fi' : mother.provider_fi,
+                                    'provider_sv' : mother.provider_sv,
+                                    'provider_en' : mother.provider_en,
+                                    'description' : mother.description,
+                                    'description_fi' : mother.description_fi,
+                                    'description_sv' : mother.description_sv,
+                                    'description_en' : mother.description_en,
+                                    'short_description' : mother.short_description,
+                                    'short_description_fi' : mother.short_description_fi,
+                                    'short_description_sv' : mother.short_description_sv,
+                                    'short_description_en' : mother.short_description_en,
+                                    'location_id' : mother.location_id,
+                                    'location_extra_info' : mother.location_extra_info,
+                                    'location_extra_info_fi' : mother.location_extra_info_fi,
+                                    'location_extra_info_sv' : mother.location_extra_info_sv,
+                                    'location_extra_info_en' : mother.location_extra_info_en,
+                                    'info_url' : mother.info_url,
+                                    'info_url_fi' : mother.info_url_fi,
+                                    'info_url_sv' : mother.info_url_fi,
+                                    'info_url_en' : mother.info_url_fi,
+                                    'super_event' : mother}
+                                )
                             except Exception as ex: pass
+                        except Exception as ex: pass
 
+                        try:
+                            # Get object from Event.
+                            child = Event.objects.get(origin_id=x['drupal_nid'])
+                            mother = Event.objects.get(origin_id=json_event['drupal_nid'])
+                            # -> Get object from Offer once we have the Event object.
                             try:
-                                # -> Get object from Event.
-                                child = Event.objects.get(origin_id=k)
-                                mother = Event.objects.get(origin_id=v)
-                                # -> Get object from Offer once we have the Event object.
-                                try:
-                                    motherOffer = Offer.objects.get(event_id=mother.id)
-                                    Offer.objects.update_or_create(
-                                        event_id=child.id,
-                                        price=motherOffer.price,
-                                        info_url=motherOffer.info_url,
-                                        description=motherOffer.description,
-                                        is_free=motherOffer.is_free
-                                        )
-                                except Exception as ex: pass
+                                motherOffer = Offer.objects.get(event_id=mother.id)
+                                Offer.objects.update_or_create(
+                                    event_id=child.id,
+                                    price=motherOffer.price,
+                                    info_url=motherOffer.info_url,
+                                    description=motherOffer.description,
+                                    is_free=motherOffer.is_free
+                                    )
                             except Exception as ex: pass
+                        except Exception as ex: pass
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
