@@ -422,18 +422,18 @@ class TurkuOriginalImporter(Importer):
                 categories = eventTku['event_categories'].split(',')
                 for name in categories:
                     name = name.strip()
-                    print("CATEGORY: ", name)
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                        print("CATEGORY NOT FOUND IN TKU DRUPAL CATEGORY: ", name)
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
                             for x in range(len(ysoId)):
                                 #logger.info(ysoId[x])
+                                print("List category found!!!", name)
                                 event_keywords.add(
                                     Keyword.objects.get(id=ysoId[x])
                                 )
                         else:
                             #logger.info(ysoId)
+                            print(name, " IS NOT A LIST, ADDING KEYWORD!")
                             event_keywords.add(
                                 Keyword.objects.get(id=ysoId)
                             )
