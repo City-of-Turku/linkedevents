@@ -697,8 +697,7 @@ class TurkuOriginalImporter(Importer):
         return root_doc, mothers_with_children, mothers_children
 
     def save_extra(self, drupal_url, mothersList, childList):
-        jsr = drupal_url['events']
-        for json_mother_event in jsr:
+        for json_mother_event in drupal_url['events']:
             json_event = json_mother_event['event']
             if json_event['drupal_nid']:
                 for x in childList:
@@ -742,7 +741,7 @@ class TurkuOriginalImporter(Importer):
                             # Get object from Event.
                             child = Event.objects.get(origin_id=x['drupal_nid'])
                             mother = Event.objects.get(origin_id=json_event['drupal_nid'])
-                            # -> Get object from Offer once we have the Event object.
+                            # Get object from Offer once we have the Event object.
                             try:
                                 motherOffer = Offer.objects.get(event_id=mother.id)
                                 Offer.objects.update_or_create(
@@ -757,7 +756,7 @@ class TurkuOriginalImporter(Importer):
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
-                # -> Get Language object.
+                # Get Language object.
                 ft_name = "extlink_"+ft
                 ft_link = ft+"_url"
                 try:
@@ -772,24 +771,23 @@ class TurkuOriginalImporter(Importer):
                         language_id=myLang.id,
                         link=json_event[ft+'_url']
                         )
-                    # ->  Add children of the mother to the EventLink table...
+                    # Add children of the mother to the EventLink table
                     for x in mothersList:
                         if x == json_event['drupal_nid']:
                             for g in childList:
-                                for k, v in g.items():
-                                    if v == x:
-                                        try:
-                                            logger.info("TEST?????????????????")
-                                            # -> k is the child of the mother. Add k into EventLink...
-                                            eventChildObj = Event.objects.get(origin_id=k)
-                                            EventLink.objects.update_or_create(
-                                                name=ft_name,
-                                                event_id=eventChildObj.id,
-                                                language_id=myLang.id,
-                                                link=json_event[ft_link]
-                                            )
-                                        except:
-                                            pass
+                                if g['drupal_nid_super'] == x:
+                                    try:
+                                        logger.info("TEST?????????????????")
+                                        # k is the child of the mother. Add k into EventLink.
+                                        eventChildObj = Event.objects.get(origin_id=k)
+                                        EventLink.objects.update_or_create(
+                                            name=ft_name,
+                                            event_id=eventChildObj.id,
+                                            language_id=myLang.id,
+                                            link=json_event[ft_link]
+                                        )
+                                    except:
+                                        pass
                 except:
                     pass
 
