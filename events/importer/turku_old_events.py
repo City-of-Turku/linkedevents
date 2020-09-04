@@ -1,4 +1,13 @@
-# PEP8 format
+# Last updated 04/09/2020
+
+# PEP8 mode (Exceeding line length unavoidable at times),
+# Processing improvements (List comprehension, JSON update methods),
+# JSON re-usage through return instead of global. (Globals are bad practice),
+# Category key updated & JSON misspelling compensation,
+# Necessary Image field improvements (alt_text, name, photographer),
+# Images are shown on front-end without crash.
+
+# Dependencies
 import logging
 import requests
 import requests_cache
@@ -423,15 +432,12 @@ class TurkuOriginalImporter(Importer):
                 for name in categories:
                     name = name.strip()
                     if name == 'Theatre and other perfomance art':
-                        print("YES")
                         name = 'Theatre and other performance art'
-                    print(name)
                         # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
                             for x in range(len(ysoId)):
-                                print(ysoId[x])
                                 event_keywords.add(
                                     Keyword.objects.get(id=ysoId[x])
                                 )
@@ -445,7 +451,6 @@ class TurkuOriginalImporter(Importer):
                 keywords = eventTku['keywords'].split(',')
                 for name in keywords:
                     name.strip()
-                    #print("KEYWORD: ", name)
                     if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         try:
                             event_keywords.add(
@@ -668,7 +673,6 @@ class TurkuOriginalImporter(Importer):
         earliest_end_time = None
 
         def to_import(lang, ev, events, ev_type):
-            logger.info(ev_type)
             event = self._import_event(lang, ev, events, ev_type)
 
         # Import Single Event(s).
@@ -717,38 +721,40 @@ class TurkuOriginalImporter(Importer):
                             mother = Event.objects.get(origin_id=json_event['drupal_nid'])
                             try:
                                 Event.objects.update_or_create(
-                                    id = child.id,
-                                    defaults = {
-                                    'date_published': mother.date_published,
-                                    'provider': mother.provider,
-                                    'provider_fi': mother.provider_fi,
-                                    'provider_sv': mother.provider_sv,
-                                    'provider_en': mother.provider_en,
-                                    'description': mother.description,
-                                    'description_fi': mother.description_fi,
-                                    'description_sv': mother.description_sv,
-                                    'description_en': mother.description_en,
-                                    'short_description': mother.short_description,
-                                    'short_description_fi': mother.short_description_fi,
-                                    'short_description_sv': mother.short_description_sv,
-                                    'short_description_en': mother.short_description_en,
-                                    'location_id': mother.location_id,
-                                    'location_extra_info': mother.location_extra_info,
-                                    'location_extra_info_fi': mother.location_extra_info_fi,
-                                    'location_extra_info_sv': mother.location_extra_info_sv,
-                                    'location_extra_info_en': mother.location_extra_info_en,
-                                    'info_url': mother.info_url,
-                                    'info_url_fi': mother.info_url_fi,
-                                    'info_url_sv': mother.info_url_fi,
-                                    'info_url_en': mother.info_url_fi,
-                                    'super_event': mother
+                                    id=child.id,
+                                    defaults={
+                                        'date_published': mother.date_published,
+                                        'provider': mother.provider,
+                                        'provider_fi': mother.provider_fi,
+                                        'provider_sv': mother.provider_sv,
+                                        'provider_en': mother.provider_en,
+                                        'description': mother.description,
+                                        'description_fi': mother.description_fi,
+                                        'description_sv': mother.description_sv,
+                                        'description_en': mother.description_en,
+                                        'short_description': mother.short_description,
+                                        'short_description_fi': mother.short_description_fi,
+                                        'short_description_sv': mother.short_description_sv,
+                                        'short_description_en': mother.short_description_en,
+                                        'location_id': mother.location_id,
+                                        'location_extra_info': mother.location_extra_info,
+                                        'location_extra_info_fi': mother.location_extra_info_fi,
+                                        'location_extra_info_sv': mother.location_extra_info_sv,
+                                        'location_extra_info_en': mother.location_extra_info_en,
+                                        'info_url': mother.info_url,
+                                        'info_url_fi': mother.info_url_fi,
+                                        'info_url_sv': mother.info_url_fi,
+                                        'info_url_en': mother.info_url_fi,
+                                        'super_event': mother
                                     }
                                 )
-                            except Exception as ex: pass
-                        except Exception as ex: pass
+                            except Exception as ex:
+                                pass
+                        except Exception as ex:
+                            pass
 
                         try:
-                            # Get object from Event.
+                            # Re-get object from Event once saved.
                             child = Event.objects.get(origin_id=x['drupal_nid'])
                             mother = Event.objects.get(origin_id=json_event['drupal_nid'])
                             # Get object from Offer once we have the Event object.
@@ -761,8 +767,10 @@ class TurkuOriginalImporter(Importer):
                                     description=motherOffer.description,
                                     is_free=motherOffer.is_free
                                 )
-                            except Exception as ex: pass
-                        except Exception as ex: pass
+                            except Exception as ex:
+                                pass
+                        except Exception as ex:
+                            pass
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
@@ -791,7 +799,6 @@ class TurkuOriginalImporter(Importer):
 
     def import_events(self):
         import requests
-        logger.info("Importing old Turku events... REVAMP!!!!! v2")
         events = recur_dict()
         URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
         lang = self.supported_languages
@@ -800,9 +807,6 @@ class TurkuOriginalImporter(Importer):
             RESPONSE_JSON, mother_events, child_events = self._recur_fetch_paginated_url(URL, lang, events)
         except APIBrokenError:
             return
-
-        # logger.info(RESPONSE_JSON)
-        logger.info("Phase 1 complete... Phase 2 now in progress.")
 
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
         qs = Event.objects.filter(
@@ -821,7 +825,7 @@ class TurkuOriginalImporter(Importer):
                 self.syncher.mark(obj)
             except:
                 ...
-
+        # Post processing; Facebook Url, Twitter Url & Additional child inheritance data.
         try:
             self.save_extra(RESPONSE_JSON, mother_events, child_events)
         except APIBrokenError:
