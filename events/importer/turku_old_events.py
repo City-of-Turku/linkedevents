@@ -108,7 +108,7 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
 }
 
-# Theathre and other performance art is spelled incorrectly in the JSON. "Perfomance".
+# Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
 
 TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
     'Adults': 'yso:p5590',
