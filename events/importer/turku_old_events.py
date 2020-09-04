@@ -759,11 +759,13 @@ class TurkuOriginalImporter(Importer):
                 # Get Language object.
                 ft_name = "extlink_"+ft
                 ft_link = ft+"_url"
+                logger.info("TEST PHASE 1")
                 try:
                     myLang = Language.objects.get(id="fi")
                 except:
                     pass
                 try:
+                    print("TEST PHASE 2")
                     eventObj = Event.objects.get(origin_id=originid)
                     EventLink.objects.update_or_create(
                         name=ft_name,
@@ -777,7 +779,7 @@ class TurkuOriginalImporter(Importer):
                             for g in childList:
                                 if g['drupal_nid_super'] == x:
                                     try:
-                                        logger.info("TEST?????????????????")
+                                        logger.info("TEST PHASE 3")
                                         # k is the child of the mother. Add k into EventLink.
                                         eventChildObj = Event.objects.get(origin_id=k)
                                         EventLink.objects.update_or_create(
