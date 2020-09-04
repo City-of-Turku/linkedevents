@@ -103,7 +103,7 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'cruises and tours': ['yso:p1917', 'yso:p366'],  # Risteily, Matkat
     'Trips': 'yso:p25261',  # Retket
     'Guided tours and sightseeing tours': 'yso:p2149',  # Guidning, Opastukset
-    'Theatre and other performance art': ['yso:p2850', 'yso:2625'],  # Esittävä taide
+    'Theatre and other performance art': ['yso:p2850', 'yso:p2625'],  # Esittävä taide
     'Sports': 'yso:p965',  # Urheilu, Idrott
     'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
 }
