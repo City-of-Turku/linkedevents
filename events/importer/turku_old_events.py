@@ -380,6 +380,7 @@ class TurkuOriginalImporter(Importer):
                     evItem['images'] = [{
                         'url': eventTku['event_image_ext_url']['src'],
                         'license': self.cc_by_license,
+                        'alt_txt': "Moi",
                     }]
 
             def set_attr(field_name, val):
@@ -659,13 +660,6 @@ class TurkuOriginalImporter(Importer):
 
         def to_import(lang, ev, events, ev_type):
             logger.info(ev_type)
-            if ev['event_image_ext_url'] is None:
-                ev.update({
-                    "event_image_ext_url": {
-                        "src": "",
-                        "alt": ""
-                    }
-                })
             event = self._import_event(lang, ev, events, ev_type)
 
         # Import Single Event(s).
