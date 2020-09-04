@@ -698,10 +698,12 @@ class TurkuOriginalImporter(Importer):
 
     def save_extra(self, drupal_url, mothersList, childList):
         json_root_event = drupal_url['events']
-        print(json_root_event)
+        #print(json_root_event)
         for json_mother_event in json_root_event:
             json_event = json_mother_event['event']
+            logger.info("Printing for each Event.")
             if json_event['drupal_nid']:
+                print(json_event['drupal_nid'])
                 for x in childList:
                     for k, v in x.items():
                         if json_event['drupal_nid'] == k:
