@@ -518,18 +518,14 @@ class TurkuOriginalImporter(Importer):
                                     regex.group(0),
                                     re.IGNORECASE
                                 )
-                                event_address_name = _regex.group(0)
-                                .strip()
-                                .capitalize()
+                                event_address_name = _regex.group(0).strip().capitalize()
                             except:
                                 _regex = re.search(
                                     r'(?<=\))[^\]][^,]+',
                                     regex.group(1),
                                     re.IGNORECASE
                                 )
-                                event_address_name = _regex.group(0)
-                                .strip()
-                                .capitalize()
+                                event_address_name = _regex.group(0).strip().capitalize()
 
                         else:
                             _regex = re.search(
@@ -537,9 +533,7 @@ class TurkuOriginalImporter(Importer):
                                 event_address_name,
                                 re.IGNORECASE
                             )
-                            event_name = _regex.group(0)
-                            .strip()
-                            .capitalize()
+                            event_name = _regex.group(0).strip().capitalize()
                         city = ""
                         for _city in CITY_LIST:
                             if len(event_address.split(',')) >= 2:
@@ -700,7 +694,7 @@ class TurkuOriginalImporter(Importer):
                     })
                     to_import(lang, z, events, 'c')
         now = datetime.now().replace(tzinfo=TZ)
-        # return root_doc
+        return root_doc
 
     def import_events(self):
         import requests
@@ -711,11 +705,11 @@ class TurkuOriginalImporter(Importer):
         # Fetch JSON for post-processing but also process & import events.
         try:
             # RESPONSE_JSON = self._recur_fetch_paginated_url(URL)
-            self._recur_fetch_paginated_url(URL, lang, events)
+            RESPONSE_JSON = self._recur_fetch_paginated_url(URL, lang, events)
         except APIBrokenError:
             return
 
-        # logger.info(RESPONSE_JSON)
+        logger.info(RESPONSE_JSON)
         logger.info("Phase 1 complete.")
 
         event_list = sorted(events.values(), key=lambda x: x['end_time'])
