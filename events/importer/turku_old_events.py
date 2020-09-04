@@ -662,7 +662,7 @@ class TurkuOriginalImporter(Importer):
             event = self._import_event(lang, ev, events, ev_type)
 
         # -> Import Single Event(s).
-        for x in json_root_event:
+        for x in jsr:
             for k, v in x.items():
                 if v['event_type'] == "Single event":
                     to_import(lang, v, events, 's')
