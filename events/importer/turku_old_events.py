@@ -710,29 +710,30 @@ class TurkuOriginalImporter(Importer):
                                 Event.objects.update_or_create(
                                     id = child.id,
                                     defaults = {
-                                    'date_published' : mother.date_published,
-                                    'provider' : mother.provider,
-                                    'provider_fi' : mother.provider_fi,
-                                    'provider_sv' : mother.provider_sv,
-                                    'provider_en' : mother.provider_en,
-                                    'description' : mother.description,
-                                    'description_fi' : mother.description_fi,
-                                    'description_sv' : mother.description_sv,
-                                    'description_en' : mother.description_en,
-                                    'short_description' : mother.short_description,
-                                    'short_description_fi' : mother.short_description_fi,
-                                    'short_description_sv' : mother.short_description_sv,
-                                    'short_description_en' : mother.short_description_en,
-                                    'location_id' : mother.location_id,
-                                    'location_extra_info' : mother.location_extra_info,
-                                    'location_extra_info_fi' : mother.location_extra_info_fi,
-                                    'location_extra_info_sv' : mother.location_extra_info_sv,
-                                    'location_extra_info_en' : mother.location_extra_info_en,
-                                    'info_url' : mother.info_url,
-                                    'info_url_fi' : mother.info_url_fi,
-                                    'info_url_sv' : mother.info_url_fi,
-                                    'info_url_en' : mother.info_url_fi,
-                                    'super_event' : mother}
+                                    'date_published': mother.date_published,
+                                    'provider': mother.provider,
+                                    'provider_fi': mother.provider_fi,
+                                    'provider_sv': mother.provider_sv,
+                                    'provider_en': mother.provider_en,
+                                    'description': mother.description,
+                                    'description_fi': mother.description_fi,
+                                    'description_sv': mother.description_sv,
+                                    'description_en': mother.description_en,
+                                    'short_description': mother.short_description,
+                                    'short_description_fi': mother.short_description_fi,
+                                    'short_description_sv': mother.short_description_sv,
+                                    'short_description_en': mother.short_description_en,
+                                    'location_id': mother.location_id,
+                                    'location_extra_info': mother.location_extra_info,
+                                    'location_extra_info_fi': mother.location_extra_info_fi,
+                                    'location_extra_info_sv': mother.location_extra_info_sv,
+                                    'location_extra_info_en': mother.location_extra_info_en,
+                                    'info_url': mother.info_url,
+                                    'info_url_fi': mother.info_url_fi,
+                                    'info_url_sv': mother.info_url_fi,
+                                    'info_url_en': mother.info_url_fi,
+                                    'super_event': mother
+                                    }
                                 )
                             except Exception as ex: pass
                         except Exception as ex: pass
@@ -750,7 +751,7 @@ class TurkuOriginalImporter(Importer):
                                     info_url=motherOffer.info_url,
                                     description=motherOffer.description,
                                     is_free=motherOffer.is_free
-                                    )
+                                )
                             except Exception as ex: pass
                         except Exception as ex: pass
 
@@ -778,6 +779,7 @@ class TurkuOriginalImporter(Importer):
                                 for k, v in g.items():
                                     if v == x:
                                         try:
+                                            logger.info("TEST?????????????????")
                                             # -> k is the child of the mother. Add k into EventLink...
                                             eventChildObj = Event.objects.get(origin_id=k)
                                             EventLink.objects.update_or_create(
@@ -785,7 +787,7 @@ class TurkuOriginalImporter(Importer):
                                                 event_id=eventChildObj.id,
                                                 language_id=myLang.id,
                                                 link=json_event[ft_link]
-                                                )
+                                            )
                                         except:
                                             pass
                 except:
@@ -793,7 +795,6 @@ class TurkuOriginalImporter(Importer):
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
-
             if json_event['twitter_url']:
                 fb_tw('twitter')
 
