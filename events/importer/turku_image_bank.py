@@ -102,7 +102,7 @@ def process(self):
     ro = return_org.__iter__()
 
     imgs = {
-        'img':[dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')]
+        'img':[dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', name='',photographer_name='',alt_text='')]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
