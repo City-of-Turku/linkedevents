@@ -53,12 +53,12 @@ def process():
     #DataSource
     # -> datasources contains all top level datasource objects; no data_source defined. 
     try:
-        self.cc_by_license = License.objects.get(id='cc_by')
+        cc_by_license = License.objects.get(id='cc_by')
     except License.DoesNotExist:
-        self.cc_by_license = None
+        cc_by_license = None
 
     imgs = {
-        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')],
+        'img':[dict(license=cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')],
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rgi = return_img.__iter__()
@@ -73,7 +73,7 @@ def process():
 
 @register_importer
 class ImageBankImporter(Importer):
-    name = curFile 
+    name = curFile
     supported_languages = ['fi', 'sv']
     def setup(self):
         for k, v in process().items():
