@@ -77,7 +77,9 @@ def process(self):
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
 
-    data_source = return_ds[0]
+    self.data_source = return_ds[0]
+
+    print(self.data_source)
 
     imgs = {'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source=self.data_source, publisher=self.organization)]}
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
