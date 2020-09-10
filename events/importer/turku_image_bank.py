@@ -83,11 +83,12 @@ def process(self):
 
     datasources = {
         'img_ds':[dict(id="image", user_editable=True), dict(name='Kuvapankki')],
+        'org':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')]
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
 
     ds_orgs_class = {
-        'kvpankkiclass':[dict(origin_id='15', data_source=return_ds[0]), dict(name='Kuvapankki')],
+        'kvpankkiclass':[dict(origin_id='15', data_source=return_ds[1]), dict(name='Kuvapankki')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
 
@@ -109,6 +110,7 @@ def process(self):
     try:
         return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
             'data_source': rds.__next__(),
+            'data_source_org': rds.__next__(),
             'org_class': rgc.__next__(),
             'organization': ro.__next__(),
             'image_thing': rdi.__next__()
