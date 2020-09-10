@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.utils.module_loading import import_string
 from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
-from events.models import Image, License, DataSource
+from events.models import Image, License
 from django_orghierarchy.models import Organization
 from .sync import ModelSyncher
 from .base import Importer, register_importer
@@ -46,7 +46,7 @@ logger.addHandler(
 def get_create_image(ob, args):
     try:
         image, _ = Image.objects.update_or_create(defaults=args[1], **args[0])
-        return ds
+        return image
     except:
         logger.warn("Image update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
@@ -66,12 +66,14 @@ def process(self):
 
     try:
         self.data_source = DataSource.objects.get(id='turku')
-        print("Data_Source YES.")
+        print("Data_Source YES...")
     except DataSource.DoesNotExist:
         self.data_source = None
 
+    print(self.data_source)
+
     imgs = {
-        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', publisher=self.organization, data_source='turku')],
+        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source=self.data_source, publisher=self.organization)]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
