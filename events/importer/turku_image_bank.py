@@ -62,9 +62,8 @@ def process(self):
         self.organization = Organization.objects.get(id='turku:853')
         print("YES.")
     except License.DoesNotExist:
-        self.nameorganization = None
+        self.organization = None
 
-    print(org_get)
     imgs = {
         'img':[dict(license=cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', publisher=self.organization)],
     }
