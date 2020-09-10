@@ -57,8 +57,13 @@ def process():
     except License.DoesNotExist:
         cc_by_license = None
 
+    try:
+        org_get = Organization.objects.get(id='turku:853')
+    except License.DoesNotExist:
+        org_get = None
+
     imgs = {
-        'img':[dict(license=cc_by_license), dict(publisher=None, url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')],
+        'img':[dict(license=cc_by_license), dict(publisher=org_get, url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')],
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
