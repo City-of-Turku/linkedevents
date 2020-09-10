@@ -85,10 +85,9 @@ def process(self):
         'img_ds':[dict(id="image", user_editable=True), dict(name='Kuvapankki')],
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
-    data_source = return_ds[0]
 
     ds_orgs_class = {
-        'kvpankkiclass':[dict(origin_id='15', data_source=self.data_source), dict(name='Kuvapankki')],
+        'kvpankkiclass':[dict(origin_id='15', data_source=return_ds[0]), dict(name='Kuvapankki')],
     }
     return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
 
@@ -96,13 +95,13 @@ def process(self):
     rgc = return_orgclass_ds.__iter__()
 
     org_arr = {
-        'image_org':[dict(origin_id='1500', data_source=self.data_source, classification_id="org:15"), dict(name='Kuvapankki')],
+        'image_org':[dict(origin_id='1500', data_source=return_ds[0], classification_id="org:15"), dict(name='Kuvapankki')],
     }
     return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
     ro = return_org.__iter__()
 
     imgs = {
-        'img':[dict(license=self.cc_by_license), dict(data_source=data_source, publisher=organization, url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')]
+        'img':[dict(license=self.cc_by_license), dict(data_source=return_ds[0], publisher=organization, url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
