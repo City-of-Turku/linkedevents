@@ -8,7 +8,7 @@ from django.utils.module_loading import import_string
 from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
 from events.models import Image, License, DataSource
-from django_orghierarchy.models import Organization
+from django_orghierarchy.models import Organization, OrganizationClass
 from .sync import ModelSyncher
 from .base import Importer, register_importer
 
