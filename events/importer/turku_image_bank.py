@@ -123,5 +123,6 @@ class ImageBankImporter(Importer):
     supported_languages = ['fi', 'sv']
     def setup(self):
         for k, v in process(self).items():
+            print("yes")
             __setattr__(self, k, v)
             logger.info("ImageBankImporter image created: "+k)
