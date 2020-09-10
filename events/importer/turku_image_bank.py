@@ -57,6 +57,22 @@ def get_create_ds(ob, args):
     except:
         logger.warn("DataSource update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
+
+def get_create_organization(ob, args):
+    try:
+        org, _ = Organization.objects.update_or_create(defaults=args[1], **args[0])
+        return org
+    except:
+        logger.warn("Organization update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
+
+def get_create_organizationclass(ob, args):
+    try:
+        orgclass, _ = OrganizationClass.objects.update_or_create(defaults=args[1], **args[0])
+        return orgclass
+    except:
+        logger.warn("OrganizationClass update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
+
+
 def process(self):
     #DataSource
     # -> datasources contains all top level datasource objects; no data_source defined. 
@@ -65,29 +81,38 @@ def process(self):
     except License.DoesNotExist:
         self.cc_by_license = None
 
-    try:
-        self.organization = Organization.objects.get(id='turku:853')
-        print("YES.")
-    except License.DoesNotExist:
-        self.organization = None
-
-
     datasources = {
         'img_ds':[dict(id="image", user_editable=True), dict(name='Kuvapankki')],
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
+    data_source = return_ds[0]
 
-    self.data_source = return_ds[0]
+    ds_orgs_class = {
+        'kvpankkiclass':[dict(origin_id='15', data_source=self.data_source), dict(name='Kuvapankki')],
+    }
+    return_orgclass_ds = [get_create_organizationclass(keys, values) for keys, values in ds_orgs_class.items()]
 
-    print(self.data_source)
+    rds = return_ds.__iter__()
+    rgc = return_orgclass_ds.__iter__()
 
-    imgs = {'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source=self.data_source, publisher=self.organization)]}
+    org_arr = {
+        'image_org':[dict(origin_id='1500', data_source=self.data_source, classification_id="org:15"), dict(name='Kuvapankki')],
+    }
+    return_org = [get_create_organization(keys, values) for keys, values in org_arr.items()]
+    ro = return_org.__iter__()
+
+    imgs = {
+        'img':[dict(license=self.cc_by_license), dict(data_source=data_source, publisher=organization, url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')]
+    }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
 
     try:
         return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
-            'first_image': rdi.__next__(),
+            'data_source': rds,__next__(),
+            'org_class': rdc.__next__(),
+            'organization': ro.__next__(),
+            'image_thing': rdi.__next__()
         }
     except:
         logger.warn("Stop iteration error when returning process function items.")
