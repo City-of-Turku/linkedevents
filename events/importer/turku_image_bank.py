@@ -66,13 +66,12 @@ def process(self):
 
     try:
         self.data_source = DataSource.objects.get(id='turku')
+        print("Data_Source YES.")
     except DataSource.DoesNotExist:
         self.data_source = None
 
     imgs = {
-        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg',
-        publisher=self.organization,
-        data_source=self.data_source)],
+        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', publisher=self.organization, data_source=self.data_source)],
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
