@@ -109,7 +109,7 @@ def process(self):
 
     try:
         return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
-            'data_source': rds,__next__(),
+            'data_source': rds.__next__(),
             'org_class': rdc.__next__(),
             'organization': ro.__next__(),
             'image_thing': rdi.__next__()
