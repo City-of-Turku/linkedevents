@@ -57,19 +57,19 @@ def get_create_ds(ob, args):
     except:
         logger.warn("DataSource update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
-def process(self):
+def process():
     #DataSource
     # -> datasources contains all top level datasource objects; no data_source defined. 
     try:
-        self.cc_by_license = License.objects.get(id='cc_by')
+        cc_by_license = License.objects.get(id='cc_by')
     except License.DoesNotExist:
-        self.cc_by_license = None
+        cc_by_license = None
 
     try:
-        self.organization = Organization.objects.get(id='turku:853')
+        organization = Organization.objects.get(id='turku:853')
         print("YES.")
     except License.DoesNotExist:
-        self.organization = None
+        organization = None
 
 
     datasources = {
@@ -78,7 +78,7 @@ def process(self):
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
 
 
-    imgs = {'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source=return_ds[0], publisher=self.organization)]}
+    imgs = {'img':[dict(license=cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source=return_ds[0], publisher=organization)]}
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
 
@@ -95,6 +95,6 @@ class ImageBankImporter(Importer):
     name = curFile
     supported_languages = ['fi', 'sv']
     def setup(self):
-        for k, v in process(self).items():
+        for k, v in process().items():
             __setattr__(self, k, v)
             logger.info("ImageBankImporter image created: "+k)
