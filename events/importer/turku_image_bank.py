@@ -61,7 +61,7 @@ def process():
         'img':[dict(license=cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg')],
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
-    rgi = return_img.__iter__()
+    rdi = return_img.__iter__()
 
     try:
         return { # -> Class attribute names go here. Could return an already sorted dictionary if need be.
