@@ -50,6 +50,13 @@ def get_create_image(ob, args):
     except:
         logger.warn("Image update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
 
+def get_create_ds(ob, args):
+    try:
+        ds, _ = DataSource.objects.update_or_create(defaults=args[1], **args[0])
+        return ds
+    except:
+        logger.warn("DataSource update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
+
 def process(self):
     #DataSource
     # -> datasources contains all top level datasource objects; no data_source defined. 
@@ -64,15 +71,14 @@ def process(self):
     except License.DoesNotExist:
         self.organization = None
 
-    '''
-    try:
-        self.data_source = DataSource.objects.get(id='turku')
-        print("Data_Source YES...")
-    except:
-        pass
-    '''
 
-    imgs = {'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source='turku',publisher=self.organization)]}
+    datasources = {
+        'img_ds':[dict(id="image", user_editable=True), dict(name='Kuvapankki')],
+    }
+    return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
+
+
+    imgs = {'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', data_source=return_ds[0], publisher=self.organization)]}
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
 
