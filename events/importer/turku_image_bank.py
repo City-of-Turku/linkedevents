@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.utils.module_loading import import_string
 from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
-from events.models import Image, License
+from events.models import Image, License, DataSource
 from django_orghierarchy.models import Organization
 from .sync import ModelSyncher
 from .base import Importer, register_importer
@@ -64,8 +64,15 @@ def process(self):
     except License.DoesNotExist:
         self.organization = None
 
+    try:
+        self.data_source = DataSource.objects.get(id='turku')
+    except DataSource.DoesNotExist:
+        self.data_source = None
+
     imgs = {
-        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', publisher=self.organization)],
+        'img':[dict(license=self.cc_by_license), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg',
+        publisher=self.organization,
+        data_source=self.data_source)],
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
