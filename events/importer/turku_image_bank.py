@@ -108,9 +108,9 @@ def process(self):
 
     imgs = {
         'img': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0], url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg'), dict(name='', photographer_name='', alt_text='')],
-        'img_2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]) url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg'), dict(name='', photographer_name='', alt_text='')],
-        'img_3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]) url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg'), dict(name='', photographer_name='', alt_text='')],
-        'img_4': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]) url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg'), dict(name='', photographer_name='', alt_text='')]
+        'img_2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0], url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg'), dict(name='', photographer_name='', alt_text='')],
+        'img_3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0], url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg'), dict(name='', photographer_name='', alt_text='')],
+        'img_4': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0], url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg'), dict(name='', photographer_name='', alt_text='')]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
