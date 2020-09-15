@@ -95,33 +95,33 @@ class OrganizationImporter(Importer):
 
         # OrganizationClass
 
-        self.valttoim, _ = DataSource.objects.update_or_create(
+        self.valttoim, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Valtiollinen toimija'), **dict(origin_id='1', data_source=self.data_source_org))
-        self.maaktoim, _ = DataSource.objects.update_or_create(
+        self.maaktoim, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Maakunnallinen toimija'), **dict(origin_id='2', data_source=self.data_source_org))
-        self.kunta, _ = DataSource.objects.update_or_create(
+        self.kunta, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Kunta'), **dict(origin_id='3', data_source=self.data_source_org))
-        self.kunnanliik, _ = DataSource.objects.update_or_create(
+        self.kunnanliik, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Kunnan liikelaitos'), **dict(origin_id='4', data_source=self.data_source_org))
-        self.valtliik, _ = DataSource.objects.update_or_create(
+        self.valtliik, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Valtion liikelaitos'), **dict(origin_id='5', data_source=self.data_source_org))
-        self.yrityss, _ = DataSource.objects.update_or_create(
+        self.yrityss, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Yritys'), **dict(origin_id='6', data_source=self.data_source_org))
-        self.saatioo, _ = DataSource.objects.update_or_create(
+        self.saatioo, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Säätiö'), **dict(origin_id='7', data_source=self.data_source_org))
-        self.seurakuntaa, _ = DataSource.objects.update_or_create(
+        self.seurakuntaa, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Seurakunta'), **dict(origin_id='8', data_source=self.data_source_org))
-        self.yhdseurr, _ = DataSource.objects.update_or_create(
+        self.yhdseurr, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Yhdistys tai seura'), **dict(origin_id='9', data_source=self.data_source_org))
-        self.muuyhtt, _ = DataSource.objects.update_or_create(
+        self.muuyhtt, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Muu yhteisö'), **dict(origin_id='10', data_source=self.data_source_org))
-        self.ykshenkk, _ = DataSource.objects.update_or_create(
+        self.ykshenkk, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Yksityishenkilö'), **dict(origin_id='11', data_source=self.data_source_org))
-        self.paiktietoo, _ = DataSource.objects.update_or_create(
+        self.paiktietoo, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Paikkatieto'), **dict(origin_id='12', data_source=self.data_source_org))
-        self.sanastoo, _ = DataSource.objects.update_or_create(
+        self.sanastoo, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Sanasto'), **dict(origin_id='13', data_source=self.data_source_org))
-        self.virtuaalitapahh, _ = DataSource.objects.update_or_create(
+        self.virtuaalitapahh, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Virtuaalitapahtuma'), **dict(origin_id='14', data_source=self.data_source_org))
 
         self.organization = "bla"
