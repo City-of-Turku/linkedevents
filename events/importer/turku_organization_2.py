@@ -16,11 +16,9 @@ from .base import Importer, register_importer
 if not exists(join(dirname(__file__), 'logs')):
     mkdir(join(dirname(__file__), 'logs'))
 
-
 __setattr__ = setattr
 __iter__ = iter
 __next__ = next
-
 
 logger = logging.getLogger(__name__)
 curFileExt = basename(__file__)
