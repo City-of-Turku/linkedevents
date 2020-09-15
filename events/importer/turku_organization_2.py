@@ -56,12 +56,12 @@ class OrganizationImporter(Importer):
     name = curFile  # curFile is defined up top. It's the name of this current file.
     supported_languages = ['fi', 'sv']
 
-        '''       #public data source for organisations model
+    '''       #public data source for organisations model
                 ds_args1 = dict(id='org', user_editable=True)
                 defaults1 = dict(name='Ulkoa tuodut organisaatiotiedot')
                 self.data_source, _ = DataSource.objects.get_or_create(defaults=defaults1, **ds_args1)  '''
 
-        '''
+    '''
         datasources = {
             'system':[dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), dict(name='Järjestelmän sisältä luodut lähteet')],
             'organization':[dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')],
