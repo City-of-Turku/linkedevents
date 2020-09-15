@@ -137,7 +137,7 @@ class OrganizationImporter(Importer):
 
         # Place
         self.place_org_virtual, _ = Place.objects.update_or_create(
-            defaults=dict(name='Virtuaalitapahtuma', name_fi='Virtuaalitapahtuma', name_sv='Virtuell evenemang', name_en='Virtual event', description='Toistaiseksi kaikki virtuaalitapahtumat merkitään tähän paikkatietoon.'), **dict(id='virtual:public', origin_id='public', data_source=self.data_source_virtual, publisher=self.organization_yksityis))
+            defaults=dict(id='virtual:public', origin_id='public', data_source=self.data_source_virtual), **dict(data_source=self.data_source_virtual, publisher=self.organization_yksityis, name='Virtuaalitapahtuma', name_fi='Virtuaalitapahtuma', name_sv='Virtuell evenemang', name_en='Virtual event', description='Toistaiseksi kaikki virtuaalitapahtumat merkitään tähän paikkatietoon.'))
 
         '''
         place_arr = {
