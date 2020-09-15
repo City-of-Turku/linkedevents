@@ -44,8 +44,10 @@ logger.addHandler(
 
 
 def get_create_image(ob, args):
+
     try:
-        imge, _ = Image.objects.update_or_create(defaults=args[1], **args[0])
+        imge, _ = Image.objects.create(defaults=args[1], **args[0])
+        print(imge)
         return imge
     except:
         logger.warn("Image update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
