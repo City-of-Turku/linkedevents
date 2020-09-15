@@ -85,11 +85,11 @@ class OrganizationImporter(Importer):
             defaults=dict(name='TEST Järjestelmän sisältä luodut lähteet'), **dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True))
         self.data_source_org, _ = DataSource.objects.update_or_create(
             defaults=dict(name='TEST Ulkoa tuodut organisaatiotiedot'), **dict(id='org', user_editable=True))
-        self.data_source_org, _ = DataSource.objects.update_or_create(
+        self.data_source_turku, _ = DataSource.objects.update_or_create(
             defaults=dict(name='TEST Kuntakohtainen data Turun Kaupunki'), **dict(id='turku', user_editable=True))
-        self.data_source_org, _ = DataSource.objects.update_or_create(
+        self.data_source_yksilo, _ = DataSource.objects.update_or_create(
             defaults=dict(name='TEST Yksityishenkilöihin liittyvä yleisdata'), **dict(id='yksilo', user_editable=True))
-        self.data_source_org, _ = DataSource.objects.update_or_create(
+        self.data_source_virtual, _ = DataSource.objects.update_or_create(
             defaults=dict(name='TEST Virtuaalitapahtumat'), **dict(id='virtual', user_editable=True))
         self.organization = "bla"
 
