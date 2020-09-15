@@ -105,10 +105,10 @@ def process(self):
     ro = return_org.__iter__()
 
     imgs = {
-        'img1': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_ds[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', name='', photographer_name='', alt_text='')],
-        'img2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_ds[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg', name='', photographer_name='', alt_text='')],
-        'img3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_ds[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg', name='', photographer_name='', alt_text='')],
-        'img4': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_ds[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg', name='', photographer_name='', alt_text='')]
+        'img1': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', name='', photographer_name='', alt_text='')],
+        'img2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg', name='', photographer_name='', alt_text='')],
+        'img3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg', name='', photographer_name='', alt_text='')],
+        'img4': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg', name='', photographer_name='', alt_text='')]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
