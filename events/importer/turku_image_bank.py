@@ -89,6 +89,7 @@ def process(self):
         'org': [dict(id="org", user_editable=True), dict(name='Ulkoa tuodut organisaatiotiedot')]
     }
     return_ds = [get_create_ds(keys, values) for keys, values in datasources.items()]
+    print(return_ds)
 
     ds_orgs_class = {
         'kvpankkiclass': [dict(origin_id='15', data_source=return_ds[1]), dict(name='Kuvapankki')],
