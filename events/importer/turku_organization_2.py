@@ -84,6 +84,7 @@ class OrganizationImporter(Importer):
         defaults1 = dict(name='TEST')
         self.data_source, _ = DataSource.objects.get_or_create(defaults=defaults1, **ds_args1)
 
+        self.organization = "bla"
         '''
         self.data_source, _ = DataSource.objects.update_or_create(defaults=dict(
             id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), **dict(name='Järjestelmän sisältä luodut lähteet'))
