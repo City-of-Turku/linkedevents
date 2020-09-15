@@ -125,15 +125,15 @@ class OrganizationImporter(Importer):
         self.orglevel3_lukiokoul, _ = Organization.objects.update_or_create(
             defaults=dict(name='Lukiokoulutus'), **dict(origin_id='4031', data_source=self.data_source_turku, parent=self.orglevel2_sivistystoim, classification_id='org:3'))
         self.orglevel3_kirjastopalv, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Kirjastopalvelut'), **dict(origin_id='4453', data_source=self.data_source_turku, parent=self.orglevel2_kaupunkiymparistotoim, classification_id='org:3'))
+            defaults=dict(name='Kirjastopalvelut'), **dict(origin_id='4453', data_source=self.data_source_turku, parent=self.orglevel2_vapaa_aikatoim, classification_id='org:3'))
         self.orglevel3_liikuntapalv, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Liikuntapalvelut'), **dict(origin_id='4470', data_source=self.data_source_turku, parent=self.orglevel2_kaupunkiymparistotoim, classification_id='org:3'))
+            defaults=dict(name='Liikuntapalvelut'), **dict(origin_id='4470', data_source=self.data_source_turku, parent=self.orglevel2_vapaa_aikatoim, classification_id='org:3'))
         self.orglevel3_museopalv, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Museopalvelut'), **dict(origin_id='4462', data_source=self.data_source_turku, parent=self.orglevel2_kaupunkiymparistotoim, classification_id='org:3'))
+            defaults=dict(name='Museopalvelut'), **dict(origin_id='4462', data_source=self.data_source_turku, parent=self.orglevel2_vapaa_aikatoim, classification_id='org:3'))
         self.orglevel3_nuorisopalv, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Nuorisopalvelut'), **dict(origin_id='4480', data_source=self.data_source_turku, parent=self.orglevel2_kaupunkiymparistotoim, classification_id='org:3'))
+            defaults=dict(name='Nuorisopalvelut'), **dict(origin_id='4480', data_source=self.data_source_turku, parent=self.orglevel2_vapaa_aikatoim, classification_id='org:3'))
         self.orglevel3_turunkaupunginork, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Turun Kaupunginorkesteri'), **dict(origin_id='4431', data_source=self.data_source_turku, parent=self.orglevel2_kaupunkiymparistotoim, classification_id='org:3'))
+            defaults=dict(name='Turun Kaupunginorkesteri'), **dict(origin_id='4431', data_source=self.data_source_turku, parent=self.orglevel2_vapaa_aikatoim, classification_id='org:3'))
 
         # Place
         self.place_org_virtual, _ = Place.objects.update_or_create(
