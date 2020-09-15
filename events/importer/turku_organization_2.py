@@ -78,10 +78,8 @@ class OrganizationImporter(Importer):
         '''
 
     def setup(self):
-        # DataSource
 
-        #ds_args1 = dict(id='org', user_editable=True)
-        #defaults1 = dict(name='TEST')
+        # DataSource
 
         self.data_source, _ = DataSource.objects.update_or_create(
             defaults=dict(name='TEST Järjestelmän sisältä luodut lähteet'), **dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True))
@@ -94,3 +92,54 @@ class OrganizationImporter(Importer):
         self.data_source_org, _ = DataSource.objects.update_or_create(
             defaults=dict(name='TEST Virtuaalitapahtumat'), **dict(id='virtual', user_editable=True))
         self.organization = "bla"
+
+        # OrganizationClass
+
+        self.valttoim, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Valtiollinen toimija'), **dict(origin_id='1', data_source=self.data_source_org))
+        self.maaktoim, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Maakunnallinen toimija'), **dict(origin_id='2', data_source=self.data_source_org))
+        self.kunta, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Kunta'), **dict(origin_id='3', data_source=self.data_source_org))
+        self.kunnanliik, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Kunnan liikelaitos'), **dict(origin_id='4', data_source=self.data_source_org))
+        self.valtliik, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Valtion liikelaitos'), **dict(origin_id='5', data_source=self.data_source_org))
+        self.yrityss, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Yritys'), **dict(origin_id='6', data_source=self.data_source_org))
+        self.saatioo, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Säätiö'), **dict(origin_id='7', data_source=self.data_source_org))
+        self.seurakuntaa, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Seurakunta'), **dict(origin_id='8', data_source=self.data_source_org))
+        self.yhdseurr, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Yhdistys tai seura'), **dict(origin_id='9', data_source=self.data_source_org))
+        self.muuyhtt, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Muu yhteisö'), **dict(origin_id='10', data_source=self.data_source_org))
+        self.ykshenkk, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Yksityishenkilö'), **dict(origin_id='11', data_source=self.data_source_org))
+        self.paiktietoo, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Paikkatieto'), **dict(origin_id='12', data_source=self.data_source_org))
+        self.sanastoo, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Sanasto'), **dict(origin_id='13', data_source=self.data_source_org))
+        self.virtuaalitapahh, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Virtuaalitapahtuma'), **dict(origin_id='14', data_source=self.data_source_org))
+
+        self.organization = "bla"
+        '''
+        ds_orgs_class = {
+        'valttoim':[dict(origin_id='1', data_source=return_ds[1]), dict(name='Valtiollinen toimija')],
+        'maaktoim':[dict(origin_id='2', data_source=return_ds[1]), dict(name='Maakunnallinen toimija')],
+        'kunta':[dict(origin_id='3', data_source=return_ds[1]), dict(name='Kunta')],
+        'kunnanliik':[dict(origin_id='4', data_source=return_ds[1]), dict(name='Kunnan liikelaitos')],
+        'valtliik':[dict(origin_id='5', data_source=return_ds[1]), dict(name='Valtion liikelaitos')],
+        'yrityss':[dict(origin_id='6', data_source=return_ds[1]), dict(name='Yritys')],
+        'saatioo':[dict(origin_id='7', data_source=return_ds[1]), dict(name='Säätiö')],
+        'seurakuntaa':[dict(origin_id='8', data_source=return_ds[1]), dict(name='Seurakunta')],
+        'yhdseurr':[dict(origin_id='9', data_source=return_ds[1]), dict(name='Yhdistys tai seura')],
+        'muuyhtt':[dict(origin_id='10', data_source=return_ds[1]), dict(name='Muu yhteisö')],
+        'ykshenkk':[dict(origin_id='11', data_source=return_ds[1]), dict(name='Yksityishenkilö')],
+        'paiktietoo':[dict(origin_id='12', data_source=return_ds[1]), dict(name='Paikkatieto')],
+        'sanastoo':[dict(origin_id='13', data_source=return_ds[1]), dict(name='Sanasto')],
+        'virtuaalitapahh':[dict(origin_id='14', data_source=return_ds[1]), dict(name='Virtuaalitapahtuma')],
+        }
+        '''
