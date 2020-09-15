@@ -100,7 +100,7 @@ class OrganizationImporter(Importer):
         self.maaktoim, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Maakunnallinen toimija'), **dict(origin_id='2', data_source=self.data_source_org))
         self.kunta, _ = OrganizationClass.objects.update_or_create(
-            defaults=dict(name='Kunta'), **dict(origin_id='3', data_source=self.data_source_org))
+            defaults=dict(name='TEST Kunta'), **dict(origin_id='3', data_source=self.data_source_org))
         self.kunnanliik, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Kunnan liikelaitos'), **dict(origin_id='4', data_source=self.data_source_org))
         self.valtliik, _ = OrganizationClass.objects.update_or_create(
