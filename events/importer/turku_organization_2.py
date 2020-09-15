@@ -79,13 +79,13 @@ class OrganizationImporter(Importer):
 
     def setup(self):
         # DataSource
-        self.data_source, _ = DataSource.objects.get_or_create(defaults=dict(
+        self.data_source, _ = DataSource.objects.update_or_create(defaults=dict(
             id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), **dict(name='Järjestelmän sisältä luodut lähteet'))
-        self.data_source_org, _ = DataSource.objects.get_or_create(defaults=dict(
+        self.data_source_org, _ = DataSource.objects.update_or_create(defaults=dict(
             id='org', user_editable=True), **dict(name='Ulkoa tuodut organisaatiotiedot'))
-        self.data_source_turku, _ = DataSource.objects.get_or_create(defaults=dict(
+        self.data_source_turku, _ = DataSource.objects.update_or_create(defaults=dict(
             id='turku', user_editable=True), **dict(name='Test'))
-        self.data_source_yksilo, _ = DataSource.objects.get_or_create(defaults=dict(
+        self.data_source_yksilo, _ = DataSource.objects.update_or_create(defaults=dict(
             id='yksilo', user_editable=True), **dict(name='Yksityishenkilöihin liittyvä yleisdata'))
-        self.data_source_virtual, _ = DataSource.objects.get_or_create(defaults=dict(
+        self.data_source_virtual, _ = DataSource.objects.update_or_create(defaults=dict(
             id='virtual', user_editable=True), **dict(name='Virtuaalitapahtumat'))
