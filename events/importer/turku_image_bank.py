@@ -107,9 +107,9 @@ def process(self):
     ro = return_org.__iter__()
 
     imgs = {
-        'img': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', name='', photographer_name='', alt_text='')],
-        'img_2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg', name='', photographer_name='', alt_text='')],
-        'img_3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg', name='', photographer_name='', alt_text='')]
+        'img': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0], url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg'), dict(name='', photographer_name='', alt_text='')],
+        #'img_2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg', name='', photographer_name='', alt_text='')],
+        #'img_3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg', name='', photographer_name='', alt_text='')]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
@@ -122,8 +122,8 @@ def process(self):
             'org_class': rgc.__next__(),
             'organization': ro.__next__(),
             'a1': rdi.__next__(),
-            'b2': rdi.__next__(),
-            'c3': rdi.__next__(),
+            #'b2': rdi.__next__(),
+            #'c3': rdi.__next__(),
         }
     except:
         logger.warn("Stop iteration error when returning process function items.")
