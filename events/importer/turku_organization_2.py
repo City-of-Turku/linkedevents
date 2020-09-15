@@ -124,22 +124,11 @@ class OrganizationImporter(Importer):
         self.virtuaalitapahh, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Virtuaalitapahtuma'), **dict(origin_id='14', data_source=self.data_source_org))
 
-        self.organization = "bla"
-        '''
-        ds_orgs_class = {
-        'valttoim':[dict(origin_id='1', data_source=return_ds[1]), dict(name='Valtiollinen toimija')],
-        'maaktoim':[dict(origin_id='2', data_source=return_ds[1]), dict(name='Maakunnallinen toimija')],
-        'kunta':[dict(origin_id='3', data_source=return_ds[1]), dict(name='Kunta')],
-        'kunnanliik':[dict(origin_id='4', data_source=return_ds[1]), dict(name='Kunnan liikelaitos')],
-        'valtliik':[dict(origin_id='5', data_source=return_ds[1]), dict(name='Valtion liikelaitos')],
-        'yrityss':[dict(origin_id='6', data_source=return_ds[1]), dict(name='Yritys')],
-        'saatioo':[dict(origin_id='7', data_source=return_ds[1]), dict(name='Säätiö')],
-        'seurakuntaa':[dict(origin_id='8', data_source=return_ds[1]), dict(name='Seurakunta')],
-        'yhdseurr':[dict(origin_id='9', data_source=return_ds[1]), dict(name='Yhdistys tai seura')],
-        'muuyhtt':[dict(origin_id='10', data_source=return_ds[1]), dict(name='Muu yhteisö')],
-        'ykshenkk':[dict(origin_id='11', data_source=return_ds[1]), dict(name='Yksityishenkilö')],
-        'paiktietoo':[dict(origin_id='12', data_source=return_ds[1]), dict(name='Paikkatieto')],
-        'sanastoo':[dict(origin_id='13', data_source=return_ds[1]), dict(name='Sanasto')],
-        'virtuaalitapahh':[dict(origin_id='14', data_source=return_ds[1]), dict(name='Virtuaalitapahtuma')],
-        }
-        '''
+        # Organization
+
+        self.organization, _ = Organization.objects.update_or_create(
+            defaults=dict(name='Turun kaupunki'), **dict(origin_id='853', data_source=self.data_source_turku, classification_id='org:3'))
+        self.organization_yksityis, _ = Organization.objects.update_or_create(
+            defaults=dict(name='Yksityishenkilöt'), **dict(origin_id='2000', data_source=self.data_source_yksilo, classification_id='org:11'))
+        self.organization_virtual, _ = Organization.objects.update_or_create(
+            defaults=dict(name='Virtuaalitapahtumat'), **dict(origin_id='3000', data_source=self.data_source_virtual, classification_id='org:14'))
