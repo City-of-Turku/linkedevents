@@ -82,17 +82,16 @@ class OrganizationImporter(Importer):
         # DataSource
 
         self.data_source, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='TEST Järjestelmän sisältä luodut lähteet'), **dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True))
+            defaults=dict(name='Järjestelmän sisältä luodut lähteet'), **dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True))
         self.data_source_org, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='TEST Ulkoa tuodut organisaatiotiedot'), **dict(id='org', user_editable=True))
+            defaults=dict(name='Ulkoa tuodut organisaatiotiedot'), **dict(id='org', user_editable=True))
         self.data_source_turku, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='TEST Kuntakohtainen data Turun Kaupunki'), **dict(id='turku', user_editable=True))
+            defaults=dict(name='Kuntakohtainen data Turun Kaupunki'), **dict(id='turku', user_editable=True))
         self.data_source_yksilo, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='TEST Yksityishenkilöihin liittyvä yleisdata'), **dict(id='yksilo', user_editable=True))
+            defaults=dict(name='Yksityishenkilöihin liittyvä yleisdata'), **dict(id='yksilo', user_editable=True))
         self.data_source_virtual, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='TEST Virtuaalitapahtumat'), **dict(id='virtual', user_editable=True))
-        self.organization = "bla"
-
+            defaults=dict(name='Virtuaalitapahtumat'), **dict(id='virtual', user_editable=True))
+            
         # OrganizationClass
 
         self.valttoim, _ = OrganizationClass.objects.update_or_create(
@@ -100,7 +99,7 @@ class OrganizationImporter(Importer):
         self.maaktoim, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Maakunnallinen toimija'), **dict(origin_id='2', data_source=self.data_source_org))
         self.kunta, _ = OrganizationClass.objects.update_or_create(
-            defaults=dict(name='TEST Kunta'), **dict(origin_id='3', data_source=self.data_source_org))
+            defaults=dict(name='Kunta'), **dict(origin_id='3', data_source=self.data_source_org))
         self.kunnanliik, _ = OrganizationClass.objects.update_or_create(
             defaults=dict(name='Kunnan liikelaitos'), **dict(origin_id='4', data_source=self.data_source_org))
         self.valtliik, _ = OrganizationClass.objects.update_or_create(
@@ -127,7 +126,7 @@ class OrganizationImporter(Importer):
         # Organization
 
         self.organization, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Turun kaupunki'), **dict(origin_id='853', data_source=self.data_source_turku, classification_id='org:3'))
+            defaults=dict(name='TEST Turun kaupunki'), **dict(origin_id='853', data_source=self.data_source_turku, classification_id='org:3'))
         self.organization_yksityis, _ = Organization.objects.update_or_create(
             defaults=dict(name='Yksityishenkilöt'), **dict(origin_id='2000', data_source=self.data_source_yksilo, classification_id='org:11'))
         self.organization_virtual, _ = Organization.objects.update_or_create(
