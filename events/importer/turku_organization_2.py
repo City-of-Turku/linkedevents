@@ -82,22 +82,15 @@ class OrganizationImporter(Importer):
 
         #ds_args1 = dict(id='org', user_editable=True)
         #defaults1 = dict(name='TEST')
-        #self.data_source, _ = DataSource.objects.update_or_create(defaults=dict(name='TEST3'), **dict(id='org', user_editable=True))
 
-
-        self.data_source, _ = DataSource.objects.update_or_create(defaults=dict(
-            id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True), **dict(name='Järjestelmän sisältä luodut lähteet'))
-
-        self.data_source_org, _ = DataSource.objects.update_or_create(defaults=dict(
-            id='org', user_editable=True), **dict(name='Ulkoa tuodut organisaatiotiedot'))
-
-        self.data_source_turku, _ = DataSource.objects.update_or_create(defaults=dict(
-            id='turku', user_editable=True), **dict(name='Test'))
-
-        self.data_source_yksilo, _ = DataSource.objects.update_or_create(defaults=dict(
-            id='yksilo', user_editable=True), **dict(name='Yksityishenkilöihin liittyvä yleisdata'))
-
-        self.data_source_virtual, _ = DataSource.objects.update_or_create(defaults=dict(
-            id='virtual', user_editable=True), **dict(name='Virtuaalitapahtumat'))
-
+        self.data_source, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='TEST Järjestelmän sisältä luodut lähteet'), **dict(id=settings.SYSTEM_DATA_SOURCE_ID, user_editable=True))
+        self.data_source_org, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='TEST Ulkoa tuodut organisaatiotiedot'), **dict(id='org', user_editable=True))
+        self.data_source_org, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='TEST Kuntakohtainen data Turun Kaupunki'), **dict(id='turku', user_editable=True))
+        self.data_source_org, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='TEST Yksityishenkilöihin liittyvä yleisdata'), **dict(id='yksilo', user_editable=True))
+        self.data_source_org, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='TEST Virtuaalitapahtumat'), **dict(id='virtual', user_editable=True))
         self.organization = "bla"
