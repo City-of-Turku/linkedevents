@@ -111,6 +111,7 @@ def process(self):
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
+    print(rdi)
 
     try:
         return {  # -> Class attribute names go here. Could return an already sorted dictionary if need be.
