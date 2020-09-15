@@ -80,9 +80,9 @@ class OrganizationImporter(Importer):
     def setup(self):
         # DataSource
 
-        ds_args1 = dict(id='org', user_editable=True)
+        #ds_args1 = dict(id='org', user_editable=True)
         #defaults1 = dict(name='TEST')
-        self.data_source, _ = DataSource.objects.update_or_create(defaults=dict(name='TEST2'), **ds_args1)
+        self.data_source, _ = DataSource.objects.update_or_create(defaults=dict(name='TEST2'), **dict(id='org', user_editable=True))
 
         self.organization = "bla"
         '''
