@@ -44,10 +44,9 @@ logger.addHandler(
 
 
 def get_create_image(ob, args):
-
+    print(ob, args)
     try:
         imge, _ = Image.objects.create(defaults=args[1], **args[0])
-        print(imge)
         return imge
     except:
         logger.warn("Image update_or_create did NOT pass: "+ob+" correctly. Argument/Arguments incompatible.")
@@ -110,7 +109,7 @@ def process(self):
     imgs = {
         'img': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', name='', photographer_name='', alt_text='')],
         'img_2': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg', name='', photographer_name='', alt_text='')],
-        'img_3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg', name='', photographer_name='', alt_text='')],
+        'img_3': [dict(license=self.cc_by_license, data_source=return_ds[0], publisher=return_org[0]), dict(url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg', name='', photographer_name='', alt_text='')]
     }
     return_img = [get_create_image(keys, values) for keys, values in imgs.items()]
     rdi = return_img.__iter__()
