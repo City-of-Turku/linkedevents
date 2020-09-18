@@ -506,6 +506,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             else:
                 # without api key, the user will have to be admin
                 if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
+                    # An exception to allow users to publish events using default images from the Imagebank
+                    # even if they aren't bound to the Imagebank-organization for regular or admin rights.
                     if not instance.__class__.__name__ == "Image":
                         raise PermissionDenied()
 
