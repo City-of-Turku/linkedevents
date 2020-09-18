@@ -506,7 +506,11 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             else:
                 # without api key, the user will have to be admin
                 if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
-                    if not instance.__class__.__name__ == "Image":
+                    if instance.__class__.__name__ == "Image":
+                        print("yes pass because instance datasource is image")
+                        #raise PermissionDenied()
+                    else:
+                        print("not pass")
                         raise PermissionDenied()
 
     def to_internal_value(self, data):
