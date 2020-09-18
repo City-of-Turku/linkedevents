@@ -507,7 +507,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             else:
                 # without api key, the user will have to be admin
                 if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
-                    raise PermissionDenied()
+                    raise PermissionDenied(_("TEST"))
+                    #raise PermissionDenied()
 
     def to_internal_value(self, data):
         for field in self.system_generated_fields:
