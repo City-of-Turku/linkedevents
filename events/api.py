@@ -515,7 +515,10 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                         print(self.data_source)
                     except Exception as exce:
                         print(exce)
-
+                    try:
+                        print(instance.data_source)
+                    except Exception as exce:
+                        print(exce)
                     raise PermissionDenied()
 
     def to_internal_value(self, data):
