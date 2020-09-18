@@ -511,7 +511,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                     print(instance.__class__)
                     print(instance.data_source.__class__.__name__)
                     print(instance.__class__.__name__)
-                    if instance.data_source == "image":
+                    if instance.__class__.__name__ == "Image":
                         print("yes pass because instance datasource is image")
                         #raise PermissionDenied()
                     else:
