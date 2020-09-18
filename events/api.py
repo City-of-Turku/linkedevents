@@ -499,6 +499,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # therefore, we only do permission checks for single instances
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
+            print("test")
             '''
             if isinstance(self.user, ApiKeyUser):
                 # allow updating only if the api key matches instance data source
