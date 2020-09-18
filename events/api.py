@@ -513,8 +513,9 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                         print(self.publisher)
                         print(self.user)
                         print(self.data_source)
-                    except:
-                        pass
+                    except Exception as exce:
+                        print(exce)
+
                     raise PermissionDenied()
 
     def to_internal_value(self, data):
