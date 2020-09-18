@@ -502,6 +502,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             if isinstance(self.user, ApiKeyUser):
                 # allow updating only if the api key matches instance data source
                 if not instance.data_source == self.data_source:
+                    print("TEST")
                     raise PermissionDenied()
             else:
                 # without api key, the user will have to be admin
