@@ -60,13 +60,32 @@ class ImageBankImporter(Importer):
         except License.DoesNotExist:
             self.cc_by_license = None
 
+        def generate_id():
+            import time, base64, struct
+            t = time.time() * 1000000
+            b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
+            return b.decode('utf8')
+
+        img = requests.get('https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', headers={'User-Agent': 'Mozilla/5.0'}).content
+        
+        imgfile = generate_id()
+        
+        path = '%(root)s/images/%(img)s.png' % ({
+            'root': settings.MEDIA_ROOT,
+            'img': imgfile
+        })
+        with open(path, 'wb') as file:
+            file.write(img)
+
         # Default Image URL's.
         self.image_1, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                 license=self.cc_by_license,
                 data_source=self.data_source,
                 publisher=self.organization,
-                url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg'))
+                image=imgfile + str('.png')
+
+        '''
         self.image_2, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                 license=self.cc_by_license,
@@ -85,3 +104,4 @@ class ImageBankImporter(Importer):
                 data_source=self.data_source,
                 publisher=self.organization,
                 url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg'))
+        '''
