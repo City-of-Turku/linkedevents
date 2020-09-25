@@ -393,7 +393,7 @@ class TurkuOriginalImporter(Importer):
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
                     img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent': 'Mozilla/5.0'}).content
-                    path = '%(root)s/%(img)s.png' % ({
+                    path = '%(root)s/images/%(img)s.png' % ({
                         'root': settings.MEDIA_ROOT,
                         'img': generate_id()
                     })
