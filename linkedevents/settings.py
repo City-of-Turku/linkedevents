@@ -46,7 +46,6 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, []),
     ADMINS=(list, []),
     SECURE_PROXY_SSL_HEADER=(tuple, None),
-    ROOT = root,
     MEDIA_ROOT=(environ.Path(), root('media')),
     STATIC_ROOT=(environ.Path(), root('static')),
     MEDIA_URL=(str, '/media/'),
