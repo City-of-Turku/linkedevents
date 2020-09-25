@@ -85,7 +85,6 @@ class ImageBankImporter(Importer):
                 publisher=self.organization,
                 image=imgfile + str('.png')
 
-        '''
         self.image_2, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                 license=self.cc_by_license,
@@ -104,4 +103,3 @@ class ImageBankImporter(Importer):
                 data_source=self.data_source,
                 publisher=self.organization,
                 url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg'))
-        '''
