@@ -386,7 +386,7 @@ class TurkuOriginalImporter(Importer):
 
             if eventTku['event_image_ext_url']:
                 img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent':'Mozilla/5.0'}).content
-                path = '%(root)s/media/%s.png' % ({'root': settings.ROOT})
+                path = '%(root)s/images/%s.png' % ({'root': '/home/linkedevents/codepoint/linkedevents/media/'})
                 #path = settings.MEDIA_URL
                 with open(path, 'wb') as file:
                     file.write(img)
