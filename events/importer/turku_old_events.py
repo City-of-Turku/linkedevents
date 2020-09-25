@@ -16,6 +16,7 @@ import dateutil.parser
 import time
 import pytz
 import bleach
+import os
 from datetime import datetime, timedelta
 from django.utils.html import strip_tags
 from events.models import Event, Keyword, DataSource, Place, License, Image
