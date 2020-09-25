@@ -87,7 +87,7 @@ class ImageBankImporter(Importer):
             path = '%(root)s/%(abspath)s/%(img)s.%(imgtype)s' % ({
                 'root': settings.MEDIA_ROOT,
                 'pathext': PATH_EXTEND,
-                'img': path,
+                'img': imgfile,
                 'type': imgtype
             })
             with open(path, 'wb') as file:
