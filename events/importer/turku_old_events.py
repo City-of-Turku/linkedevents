@@ -386,7 +386,8 @@ class TurkuOriginalImporter(Importer):
 
             if eventTku['event_image_ext_url']:
                 img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent':'Mozilla/5.0'}).content
-                path = '%(root)s/media/images/%s.png' % ({'root': settings.ROOT})
+                #path = '%(root)s/media/%s.png' % ({'root': settings.IMAGE_URL})
+                path = settings.IMAGE_URL
                 with open(path, 'wb') as file:
                     file.write(img)
                 if int(eventTku['event_image_license']) == 1:
