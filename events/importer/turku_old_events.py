@@ -400,6 +400,7 @@ class TurkuOriginalImporter(Importer):
                     with open(path, 'wb') as file:
                         file.write(img)
                     evItem['images'] = [{
+                        'url': None,
                         'images': path,
                         'license': self.cc_by_license,
                         'alt_text': '',
