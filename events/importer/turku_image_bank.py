@@ -1,5 +1,6 @@
 import logging
 import os
+import requests
 from django import db
 from django.conf import settings
 from django.core.management import call_command
