@@ -84,7 +84,7 @@ class ImageBankImporter(Importer):
             img = requests.get(next(IMAGE_BANK_IMAGES),
                         headers={'User-Agent': 'Mozilla/5.0'}).content
             imgfile = generate_id()
-            path = '%(root)s/%(abspath)s/%(img)s.%(imgtype)s' % ({
+            path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
                 'root': settings.MEDIA_ROOT,
                 'pathext': PATH_EXTEND,
                 'img': imgfile,
