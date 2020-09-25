@@ -83,7 +83,7 @@ class ImageBankImporter(Importer):
                 license=self.cc_by_license,
                 data_source=self.data_source,
                 publisher=self.organization,
-                image=imgfile+str('.png'))
+                image=imgfile+str('.png')))
         '''
         self.image_2, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
