@@ -18,6 +18,7 @@ import pytz
 import bleach
 import os
 import base64
+import struct
 from datetime import datetime, timedelta
 from django.utils.html import strip_tags
 from events.models import Event, Keyword, DataSource, Place, License, Image
