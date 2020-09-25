@@ -215,7 +215,7 @@ class TurkuOriginalImporter(Importer):
             name_sv='Virtuell evenemang',
             name_en='Virtual event',
             description='Virtuaalitapahtumat merkitään tähän paikkatietoon.'
-            )
+        )
         self.internet_location, _ = Place.objects.update_or_create(
             id=VIRTUAL_LOCATION_ID,
             defaults=defaults5
@@ -270,8 +270,8 @@ class TurkuOriginalImporter(Importer):
     def dt_parse(self, dt_str):
         """Convert a string to UTC datetime"""  # Times are in UTC+02:00 TZ
         return TZ.localize(
-                dateutil.parser.parse(dt_str),
-                is_dst=None).astimezone(pytz.utc)
+            dateutil.parser.parse(dt_str),
+            is_dst=None).astimezone(pytz.utc)
 
     def timeToTimestamp(self, origTime):
         timestamp = time.mktime(time.strptime(origTime, '%d.%m.%Y %H.%M'))
@@ -385,9 +385,13 @@ class TurkuOriginalImporter(Importer):
             }
 
             if eventTku['event_image_ext_url']:
+                img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent':'Mozilla/5.0'}).content
+                path = '%(root)s/media/images/%s.png' % ({'root': settings.ROOT})
+                with open(path, 'wb') as file:
+                    file.write(img)
                 if int(eventTku['event_image_license']) == 1:
                     evItem['images'] = [{
-                        'url': eventTku['event_image_ext_url']['src'],
+                        'url': path,
                         'license': self.cc_by_license,
                         'alt_text': '',
                         'name': '',
@@ -558,11 +562,11 @@ class TurkuOriginalImporter(Importer):
                                     break
 
                         addr = 'osoite:%s' % (''.join(
-                                event_address.replace(' ', '_')
-                                .split(','))
-                                .strip()
-                                .lower()
-                                .replace('k.', 'katu'))
+                            event_address.replace(' ', '_')
+                            .split(','))
+                            .strip()
+                            .lower()
+                            .replace('k.', 'katu'))
 
                         if city and not addr.endswith(city):
                             addr += '_%s' % city.lower()
@@ -575,7 +579,7 @@ class TurkuOriginalImporter(Importer):
                         tpr = '%s:%s' % (
                             str(evItem.get('data_source')),
                             origin_id
-                            )  # Mimic tpr
+                        )  # Mimic tpr
                         try:
                             place_id = Place.objects.get(id=tpr)
                         except:
@@ -601,7 +605,7 @@ class TurkuOriginalImporter(Importer):
                                 }, translated=[
                                     'name',
                                     'street_address'
-                                    ]
+                                ]
                                 )
                             place.save()
                         evItem['location']['id'] = tpr
@@ -613,7 +617,7 @@ class TurkuOriginalImporter(Importer):
                     'price': None,
                     'description': None,
                     'info_url': None,
-                    }
+                }
                 eventOffer_is_free = bool(int(eventTku['free_event']))
                 # Fill if events is not free price event
                 if not eventOffer_is_free:
