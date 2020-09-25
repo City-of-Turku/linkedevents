@@ -49,7 +49,6 @@ env = environ.Env(
     MEDIA_ROOT=(environ.Path(), root('media')),
     STATIC_ROOT=(environ.Path(), root('static')),
     MEDIA_URL=(str, '/media/'),
-    IMAGE_URL=(str, '/media/images/'),
     STATIC_URL=(str, '/static/'),
     TRUST_X_FORWARDED_HOST=(bool, False),
     SENTRY_DSN=(str, ''),
