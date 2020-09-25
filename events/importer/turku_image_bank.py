@@ -80,7 +80,7 @@ class ImageBankImporter(Importer):
         IMAGE_TYPE = 'jpg'
         PATH_EXTEND = 'images'
 
-        def request_image_url(image_url):
+        def request_image_url():
             img = requests.get(next(IMAGE_BANK_IMAGES),
                         headers={'User-Agent': 'Mozilla/5.0'}).content
             imgfile = generate_id()
