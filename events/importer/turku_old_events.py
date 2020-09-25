@@ -384,20 +384,22 @@ class TurkuOriginalImporter(Importer):
                 "en": location_extra_info if location_extra_info else None
             }
 
+
+            def generate_id():
+                t = time.time() * 1000000
+                b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
+                return b.decode('utf8')
+
             if eventTku['event_image_ext_url']:
-                img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent':'Mozilla/5.0'}).content
-                path = '%(root)s/images/%s.png' % ({'root': '/home/linkedevents/codepoint/linkedevents/media/'})
-                #path = settings.MEDIA_URL
-                with open(path, 'wb') as file:
-                    file.write(img)
                 if int(eventTku['event_image_license']) == 1:
-                    evItem['images'] = [{
-                        'url': path,
-                        'license': self.cc_by_license,
-                        'alt_text': '',
-                        'name': '',
-                        'photographer_name': ''
-                    }]
+                    img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent': 'Mozilla/5.0'}).content
+                    path = os.path('%(root)s%(img)s' % ({
+                        'root': settings.MEDIA_ROOT,
+                        'img': generate_id()
+                    }))
+                    with open(path, 'wb') as file:
+                        file.write(img.content)
+
 
             def set_attr(field_name, val):
                 if field_name in evItem:
