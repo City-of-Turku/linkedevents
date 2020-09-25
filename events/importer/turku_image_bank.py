@@ -1,6 +1,9 @@
 import logging
 import os
 import requests
+import time
+import base64
+import struct
 from django import db
 from django.conf import settings
 from django.core.management import call_command
@@ -62,24 +65,34 @@ class ImageBankImporter(Importer):
             self.cc_by_license = None
 
         def generate_id():
-            import time
-            import base64
-            import struct
             t = time.time() * 1000000
             b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
             return b.decode('utf8')
 
-        img = requests.get('https://www.turku.fi/sites/default/files/styles/site_logo/public/sites/all/themes/custom/driveturku/images/sprites/logo.png',
-                           headers={'User-Agent': 'Mozilla/5.0'}).content
+        IMAGE_BANK_IMAGES = {
+            'https://i.imgur.com/eANHbqh.jpg',
+            'https://i.imgur.com/hpF5Ugz.jpg',
+            'https://i.imgur.com/nNbigmG.jpg',
+            'https://i.imgur.com/e750x68.jpg'
+        }
 
-        imgfile = generate_id()
+        IMAGE_BANK_IMAGES = iter(IMAGE_BANK_IMAGES)
+        IMAGE_TYPE = 'jpg'
+        PATH_EXTEND = 'images'
 
-        path = '%(root)s/images/%(img)s.png' % ({
-            'root': settings.MEDIA_ROOT,
-            'img': imgfile
-        })
-        with open(path, 'wb') as file:
-            file.write(img)
+        def request_image_url(image_url):
+            img = requests.get(next(IMAGE_BANK_IMAGES),
+                        headers={'User-Agent': 'Mozilla/5.0'}).content
+            imgfile = generate_id()
+            path = '%(root)s/%(abspath)s/%(img)s.%(imgtype)s' % ({
+                'root': settings.MEDIA_ROOT,
+                'pathext': PATH_EXTEND,
+                'img': path,
+                'type': imgtype
+            })
+            with open(path, 'wb') as file:
+                file.write(img)
+            return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
 
         # Default Image URL's.
         self.image_1, _ = Image.objects.update_or_create(
@@ -87,24 +100,25 @@ class ImageBankImporter(Importer):
                 license=self.cc_by_license,
                 data_source=self.data_source,
                 publisher=self.organization,
-                image='images/'+imgfile+'.png'))
-        '''
+                image=request_image_url))
+
         self.image_2, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                 license=self.cc_by_license,
                 data_source=self.data_source,
                 publisher=self.organization,
-                url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/img_2738.jpg'))
+                url=request_image_url))
+
         self.image_3, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                 license=self.cc_by_license,
                 data_source=self.data_source,
                 publisher=self.organization,
-                url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/66611781_2613563701989600_82393011928956928_n_7.jpg'))
+                url=request_image_url))
+
         self.image_4, _ = Image.objects.update_or_create(
             defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                 license=self.cc_by_license,
                 data_source=self.data_source,
                 publisher=self.organization,
-                url='https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/nuorten_viikonloppu_turun_seudun_tapahtumakalenterin_kuva_yhdistetty.jpg'))
-        '''
+                url=request_image_url))
