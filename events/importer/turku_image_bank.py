@@ -88,7 +88,7 @@ class ImageBankImporter(Importer):
                 'root': settings.MEDIA_ROOT,
                 'pathext': PATH_EXTEND,
                 'img': imgfile,
-                'type': imgtype
+                'type': IMAGE_TYPE
             })
             with open(path, 'wb') as file:
                 file.write(img)
