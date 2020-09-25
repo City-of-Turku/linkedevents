@@ -62,15 +62,18 @@ class ImageBankImporter(Importer):
             self.cc_by_license = None
 
         def generate_id():
-            import time, base64, struct
+            import time
+            import base64
+            import struct
             t = time.time() * 1000000
             b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
             return b.decode('utf8')
 
-        img = requests.get('https://testilinkedevents.turku.fi:8001/media/images/9wbdk.jpeg', headers={'User-Agent': 'Mozilla/5.0'}).content
-        
+        img = requests.get('https://www.turku.fi/sites/default/files/styles/site_logo/public/sites/all/themes/custom/driveturku/images/sprites/logo.png',
+                           headers={'User-Agent': 'Mozilla/5.0'}).content
+
         imgfile = generate_id()
-        
+
         path = '%(root)s/images/%(img)s.png' % ({
             'root': settings.MEDIA_ROOT,
             'img': imgfile
