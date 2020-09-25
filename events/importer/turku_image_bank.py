@@ -67,7 +67,7 @@ class ImageBankImporter(Importer):
             b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
             return b.decode('utf8')
 
-        img = requests.get('https://kalenteri.turku.fi/sites/default/files/styles/event_node/public/images/event_ext/sadonkorjuutori.jpg', headers={'User-Agent': 'Mozilla/5.0'}).content
+        img = requests.get('https://testilinkedevents.turku.fi:8001/media/images/9wbdk.jpeg', headers={'User-Agent': 'Mozilla/5.0'}).content
         
         imgfile = generate_id()
         
