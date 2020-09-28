@@ -421,7 +421,8 @@ class TurkuOriginalImporter(Importer):
                             publisher=self.organization,
                             image=request_image_url()))
 
-                    logger.info(self.image_obj)
+                    logger.info(self.image_obj.id)
+
                     try:
                         originid = eventTku['drupal_nid']
                         eventObj = Event.objects.get(origin_id=originid)
