@@ -356,6 +356,7 @@ class TurkuOriginalImporter(Importer):
                 evItem['provider'] = {
                     "fi": 'Turku', "sv": 'Åbo', "en": 'Turku'
                 }
+            
 
             location_extra_info = ''
 
@@ -385,23 +386,11 @@ class TurkuOriginalImporter(Importer):
             }
 
 
-            def generate_id():
-                import time, base64, struct
-                t = time.time() * 1000000
-                b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
-                return b.decode('utf8')
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
-                    img = requests.get(eventTku['event_image_ext_url']['src'], headers={'User-Agent': 'Mozilla/5.0'}).content
-                    path = '%(root)s/images/%(img)s.png' % ({
-                        'root': settings.MEDIA_ROOT,
-                        'img': generate_id()
-                    })
-                    with open(path, 'wb') as file:
-                        file.write(img)
                     evItem['images'] = [{
                         'url': None,
-                        'images': path,
+                        'image': Image.objects.get(last().id)
                         'license': self.cc_by_license,
                         'alt_text': '',
                         'name': '',
