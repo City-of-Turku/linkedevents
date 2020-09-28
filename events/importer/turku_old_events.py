@@ -389,7 +389,7 @@ class TurkuOriginalImporter(Importer):
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
                     evItem['images'] = [{
-                        'url': eventTku['event_image_ext_url']['src'],
+                        'url': None,
                         'license': self.cc_by_license,
                         'alt_text': '',
                         'name': '',
@@ -802,11 +802,13 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('twitter')
 
             # Experimental Image.
-
-            originid = json_event['drupal_nid']
-            eventObj = Event.objects.get(origin_id=originid)
-            last_kuva_example = Image.objects.last()
-            eventObj.images.add(last_kuva_example.id)
+            try:
+                originid = json_event['drupal_nid']
+                eventObj = Event.objects.get(origin_id=originid)
+                last_kuva_example = Image.objects.first()
+                eventObj.images.add(last_kuva_example.id)
+            except:
+                pass
 
 
             '''
