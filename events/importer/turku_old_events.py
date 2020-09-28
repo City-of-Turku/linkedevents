@@ -502,7 +502,7 @@ class TurkuOriginalImporter(Importer):
                 node_type = eventTku['event_categories'][0]
                 if node_type == 'Virtual events':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
-
+            '''
                 elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
@@ -621,7 +621,7 @@ class TurkuOriginalImporter(Importer):
                                 )
                             place.save()
                         evItem['location']['id'] = tpr
-
+            '''
             if event_type == "m" or event_type == "s":
                 # Add a default offer
                 free_offer = {
@@ -812,6 +812,11 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('facebook')
             if json_event['twitter_url']:
                 fb_tw('twitter')
+
+            # Experimental Image.
+            testi = Event()
+            testi.save()
+            testi.images.add(Image.objects.first())
 
     def import_events(self):
         import requests
