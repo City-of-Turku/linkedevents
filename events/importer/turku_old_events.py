@@ -286,11 +286,6 @@ class TurkuOriginalImporter(Importer):
             return default
         return item
     
-    def generate_id():
-        t = time.time() * 1000000
-        b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
-        return b.decode('utf8')
-
     def _import_event(self, lang, event_el, events, event_type):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(
@@ -399,6 +394,11 @@ class TurkuOriginalImporter(Importer):
                     # Save image to Image table in database.
                     IMAGE_TYPE = 'jpg'
                     PATH_EXTEND = 'images'
+
+                    def generate_id():
+                        t = time.time() * 1000000
+                        b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
+                        return b.decode('utf8')
 
                     img = requests.get(eventTku['event_image_ext_url']['src'],
                                     headers={'User-Agent': 'Mozilla/5.0'}).content
