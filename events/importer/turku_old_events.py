@@ -846,7 +846,7 @@ class TurkuOriginalImporter(Importer):
                 test = '%s/%s.%s' % ('images',originid,'jpg')
                 print(test)
                 last_kuva_example = Image.objects.update_or_create(image=test)
-                print(last_kuva_example)
+                print(last_kuva_example.id)
                 # eventObj.images.add(last_kuva_example.id)
             except:
                 pass
