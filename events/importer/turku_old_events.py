@@ -803,8 +803,16 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('twitter')
 
             # Experimental Image.
+
+            origid = json_event['drupal_nid']
+            event_obj = Event.objects.get(origin_id=origid)
+            last_kuva_example = Image.objects.last()
+            event_obj.images.add(last_kuva_example.id)
+
+
             '''
-            testi = Event()
+
+            testi = Event().objects.get(origin_id=)
             lst = Image.objects.last()
             logger.info(lst.id)
             self.data_source_imgpk, _ = DataSource.objects.update_or_create(
