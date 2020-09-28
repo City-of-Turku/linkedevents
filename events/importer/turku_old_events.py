@@ -819,7 +819,8 @@ class TurkuOriginalImporter(Importer):
             logger.info(lst.id)
             self.data_source_imgpk, _ = DataSource.objects.update_or_create(
                 defaults=dict(name='Kuvapankki'), **dict(id='image', user_editable=True))
-            testi.images.add(lst.id, through_defaults={'image' : lst})
+            eventObj = Event.objects.get(origin_id=originid)
+            testi.images.add(eventObj.id, through_defaults={'image' : lst})
 
     def import_events(self):
         import requests
