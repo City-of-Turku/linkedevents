@@ -395,15 +395,17 @@ class TurkuOriginalImporter(Importer):
                     IMAGE_TYPE = 'jpg'
                     PATH_EXTEND = 'images'
 
+                    '''
                     def generate_id():
                         t = time.time() * 1000000
                         b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
                         return b.decode('utf8')
+                    '''
 
                     def request_image_url():
                         img = requests.get(eventTku['event_image_ext_url']['src'],
                                         headers={'User-Agent': 'Mozilla/5.0'}).content
-                        imgfile = generate_id()
+                        imgfile = eventTku['drupal_nid']
                         path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
                             'root': settings.MEDIA_ROOT,
                             'pathext': PATH_EXTEND,
@@ -421,13 +423,6 @@ class TurkuOriginalImporter(Importer):
                             publisher=self.organization,
                             image=request_image_url()))
 
-                    try:
-                        originid = eventTku['drupal_nid']
-                        eventObj = Event.objects.get(origin_id=originid)
-                        last_kuva_example = self.image_obj
-                        eventObj.images.add(last_kuva_example.id)
-                    except:
-                        pass
                     '''
                     evItem['images'] = [{
                         'url': eventTku['event_image_ext_url']['src'],
@@ -843,19 +838,16 @@ class TurkuOriginalImporter(Importer):
             if json_event['twitter_url']:
                 fb_tw('twitter')
 
-            '''
             # Experimental Image.
             try:
                 originid = json_event['drupal_nid']
                 eventObj = Event.objects.get(origin_id=originid)
-                last_kuva_example = Image.objects.first()
+                last_kuva_example = Image.objects.update_or_create(id=originid)
                 eventObj.images.add(last_kuva_example.id)
             except:
                 pass
-            '''
 
             '''
-
             testi = Event().objects.get(origin_id=)
             lst = Image.objects.last()
             logger.info(lst.id)
