@@ -283,6 +283,11 @@ class TurkuOriginalImporter(Importer):
         if not item:
             return default
         return item
+    
+    def generate_id():
+        t = time.time() * 1000000
+        b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
+        return b.decode('utf8')
 
     def _import_event(self, lang, event_el, events, event_type):
         eventTku = self._get_eventTku(event_el)
@@ -388,13 +393,32 @@ class TurkuOriginalImporter(Importer):
 
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
+
+                    # Save image to Image table in database.
+                    IMAGE_TYPE = 'jpg'
+                    PATH_EXTEND = 'images'
+
+                    img = requests.get(eventTku['event_image_ext_url']['src'],
+                                    headers={'User-Agent': 'Mozilla/5.0'}).content
+                    imgfile = generate_id()
+                    path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
+                        'root': settings.MEDIA_ROOT,
+                        'pathext': PATH_EXTEND,
+                        'img': imgfile,
+                        'type': IMAGE_TYPE
+                    })
+                    with open(path, 'wb') as file:
+                        file.write(img)
+
+                    '''
                     evItem['images'] = [{
-                        'url': None,
+                        'url': eventTku['event_image_ext_url']['src'],
                         'license': self.cc_by_license,
                         'alt_text': '',
                         'name': '',
                         'photographer_name': ''
                     }]
+                    '''
 
             def set_attr(field_name, val):
                 if field_name in evItem:
