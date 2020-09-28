@@ -53,7 +53,6 @@ logger.addHandler(
     logFile
 )
 
-VIRTUAL_LOCATION_ID = "virtual:public"
 KEYW_LIST = []
 
 TURKU_KEYWORD_IDS = {
@@ -497,11 +496,13 @@ class TurkuOriginalImporter(Importer):
             }
 
             tprNo = ''
-
+            
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories'][0]
                 if node_type == 'Virtual events':
-                    evItem['location']['id'] = VIRTUAL_LOCATION_ID
+                    evItem['location']['id'] = 'virtual:public'
+
+            '''
                 elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
@@ -515,12 +516,13 @@ class TurkuOriginalImporter(Importer):
 
                     evItem['location']['id'] = ('tpr:' + tprNo)
                 else:
+                    
                     def numeric(string):
                         from hashlib import md5
                         h = md5()
                         h.update(string.encode())
                         return str(int(h.hexdigest(), 16))[0:6]
-
+                    
                     if eventTku['address']:
                         import re
                         event_address = copy(eventTku['address'])
@@ -619,6 +621,7 @@ class TurkuOriginalImporter(Importer):
                                 )
                             place.save()
                         evItem['location']['id'] = tpr
+            '''
 
             if event_type == "m" or event_type == "s":
                 # Add a default offer

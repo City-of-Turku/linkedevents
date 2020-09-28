@@ -82,7 +82,7 @@ class ImageBankImporter(Importer):
 
         def request_image_url():
             img = requests.get(next(IMAGE_BANK_IMAGES),
-                        headers={'User-Agent': 'Mozilla/5.0'}).content
+                               headers={'User-Agent': 'Mozilla/5.0'}).content
             imgfile = generate_id()
             path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
                 'root': settings.MEDIA_ROOT,
