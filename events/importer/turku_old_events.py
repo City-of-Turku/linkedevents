@@ -389,6 +389,7 @@ class TurkuOriginalImporter(Importer):
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
                     evItem['images'] = [{
+                        'url': None,
                         'image': 'images/kissa_I9eCA5Y.jpeg',
                         'license': self.cc_by_license,
                         'alt_text': '',
