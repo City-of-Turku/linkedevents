@@ -817,7 +817,9 @@ class TurkuOriginalImporter(Importer):
             testi = Event()
             lst = Image.objects.last()
             logger.info(lst.id)
-            # testi.images.add(Image.objects.last())
+            self.data_source_imgpk, _ = DataSource.objects.update_or_create(
+                defaults=dict(name='Kuvapankki'), **dict(id='image', user_editable=True))
+            testi.images.add(lst.id, through_defaults{name='', photographer_name='', alt_text='', data_source=self.data_source_imgpk, image=lst.image})
 
     def import_events(self):
         import requests
