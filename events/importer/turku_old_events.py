@@ -819,6 +819,7 @@ class TurkuOriginalImporter(Importer):
             logger.info(lst.id)
             self.data_source_imgpk, _ = DataSource.objects.update_or_create(
                 defaults=dict(name='Kuvapankki'), **dict(id='image', user_editable=True))
+            originid = json_event['drupal_nid']
             eventObj = Event.objects.get(origin_id=originid)
             testi.images.add(eventObj.id, through_defaults={'image' : lst})
 
