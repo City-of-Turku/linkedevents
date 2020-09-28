@@ -842,7 +842,7 @@ class TurkuOriginalImporter(Importer):
             try:
                 originid = json_event['drupal_nid']
                 eventObj = Event.objects.get(origin_id=originid)
-                last_kuva_example = Image.objects.update_or_create(id=originid)
+                last_kuva_example = Image.objects.update_or_create(image='%s/%s.%s' % ('images',originid,'jpg'))
                 eventObj.images.add(last_kuva_example.id)
             except:
                 pass
