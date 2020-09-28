@@ -821,7 +821,7 @@ class TurkuOriginalImporter(Importer):
                 defaults=dict(name='Kuvapankki'), **dict(id='image', user_editable=True))
             originid = json_event['drupal_nid']
             eventObj = Event.objects.get(origin_id=originid)
-            testi.images.add(eventObj.id, through_defaults={'image' : lst})
+            testi.images.add(eventObj.id)
 
     def import_events(self):
         import requests
