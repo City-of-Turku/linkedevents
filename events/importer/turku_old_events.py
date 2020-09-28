@@ -503,7 +503,6 @@ class TurkuOriginalImporter(Importer):
                 if node_type == 'Virtual events':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
 
-            '''
                 elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
@@ -622,7 +621,6 @@ class TurkuOriginalImporter(Importer):
                                 )
                             place.save()
                         evItem['location']['id'] = tpr
-            '''
 
             if event_type == "m" or event_type == "s":
                 # Add a default offer
