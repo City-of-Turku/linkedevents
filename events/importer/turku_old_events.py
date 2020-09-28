@@ -815,7 +815,7 @@ class TurkuOriginalImporter(Importer):
 
             # Experimental Image.
             testi = Event()
-            logger.info(Image.objects.all())
+            logger.info(testi.images.all())
 
     def import_events(self):
         import requests
