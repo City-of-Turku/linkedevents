@@ -804,8 +804,8 @@ class TurkuOriginalImporter(Importer):
 
             # Experimental Image.
 
-            origid = json_event['drupal_nid']
-            event_obj = Event.objects.get(origin_id=origid)
+            originid = json_event['drupal_nid']
+            event_obj = Event.objects.get(origin_id=originid)
             last_kuva_example = Image.objects.last()
             event_obj.images.add(last_kuva_example.id)
 
