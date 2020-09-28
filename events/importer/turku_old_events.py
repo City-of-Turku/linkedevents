@@ -803,6 +803,7 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('twitter')
 
             # Experimental Image.
+            '''
             testi = Event()
             lst = Image.objects.last()
             logger.info(lst.id)
@@ -811,7 +812,7 @@ class TurkuOriginalImporter(Importer):
             originid = json_event['drupal_nid']
             eventObj = Event.objects.get(origin_id=originid)
             testi.images.add(lst.id)
-
+            '''
     def import_events(self):
         import requests
         events = recur_dict()
