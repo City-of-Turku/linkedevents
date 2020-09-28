@@ -400,18 +400,26 @@ class TurkuOriginalImporter(Importer):
                         b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
                         return b.decode('utf8')
 
-                    img = requests.get(eventTku['event_image_ext_url']['src'],
-                                    headers={'User-Agent': 'Mozilla/5.0'}).content
-                    imgfile = generate_id()
-                    path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
-                        'root': settings.MEDIA_ROOT,
-                        'pathext': PATH_EXTEND,
-                        'img': imgfile,
-                        'type': IMAGE_TYPE
-                    })
-                    with open(path, 'wb') as file:
-                        file.write(img)
+                    def request_image_url():
+                        img = requests.get(eventTku['event_image_ext_url']['src'],
+                                        headers={'User-Agent': 'Mozilla/5.0'}).content
+                        imgfile = generate_id()
+                        path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
+                            'root': settings.MEDIA_ROOT,
+                            'pathext': PATH_EXTEND,
+                            'img': imgfile,
+                            'type': IMAGE_TYPE
+                        })
+                        with open(path, 'wb') as file:
+                            file.write(img)
+                        return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
 
+                    self.image_obj, _ = Image.objects.update_or_create(
+                        defaults=dict(name='', photographer_name='', alt_text=''), **dict(
+                            license=self.cc_by_license,
+                            data_source=self.data_source,
+                            publisher=self.organization,
+                            image=request_image_url()))
                     '''
                     evItem['images'] = [{
                         'url': eventTku['event_image_ext_url']['src'],
