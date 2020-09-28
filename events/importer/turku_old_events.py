@@ -424,7 +424,7 @@ class TurkuOriginalImporter(Importer):
                     try:
                         originid = eventTku['drupal_nid']
                         eventObj = Event.objects.get(origin_id=originid)
-                        last_kuva_example = Image.objects.first()
+                        last_kuva_example = self.image_obj
                         eventObj.images.add(last_kuva_example.id)
                     except:
                         pass
