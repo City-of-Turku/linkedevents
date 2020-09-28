@@ -54,6 +54,7 @@ logger.addHandler(
 )
 
 KEYW_LIST = []
+VIRTUAL_LOCATION_ID = 'virtual:public'
 
 TURKU_KEYWORD_IDS = {
     'Festivaalit': 'yso:p1304',  # Festivaalit
@@ -500,7 +501,7 @@ class TurkuOriginalImporter(Importer):
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories'][0]
                 if node_type == 'Virtual events':
-                    evItem['location']['id'] = 'virtual:public'
+                    evItem['location']['id'] = VIRTUAL_LOCATION_ID
 
             '''
                 elif str(eventTku['palvelukanava_code']):
