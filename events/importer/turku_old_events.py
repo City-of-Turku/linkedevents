@@ -845,7 +845,7 @@ class TurkuOriginalImporter(Importer):
                 print("Event... preparing to add image...")
                 test = '%s/%s.%s' % ('images',originid,'jpg')
                 print(test)
-                last_kuva_example = Image.objects.update_or_create(image=test)
+                last_kuva_example = Image.objects.get(image=test)
                 print(last_kuva_example.id)
                 # eventObj.images.add(last_kuva_example.id)
             except:
