@@ -389,8 +389,7 @@ class TurkuOriginalImporter(Importer):
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
                     evItem['images'] = [{
-                        'url': None,
-                        'image': 'images/kissa_I9eCA5Y.jpeg',
+                        'url': eventTku['event_image_ext_url']['src'],
                         'license': self.cc_by_license,
                         'alt_text': '',
                         'name': '',
@@ -805,9 +804,9 @@ class TurkuOriginalImporter(Importer):
             # Experimental Image.
 
             originid = json_event['drupal_nid']
-            event_obj = Event.objects.get(origin_id=originid)
+            eventObj = Event.objects.get(origin_id=originid)
             last_kuva_example = Image.objects.last()
-            event_obj.images.add(last_kuva_example.id)
+            eventObj.images.add(last_kuva_example.id)
 
 
             '''
