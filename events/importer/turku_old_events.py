@@ -390,7 +390,7 @@ class TurkuOriginalImporter(Importer):
                 if int(eventTku['event_image_license']) == 1:
                     evItem['images'] = [{
                         'url': None,
-                        'image': Image.objects.get(last().id)
+                        'image': Image.objects.get(last().id),
                         'license': self.cc_by_license,
                         'alt_text': '',
                         'name': '',
