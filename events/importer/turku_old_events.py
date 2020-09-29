@@ -514,6 +514,8 @@ class TurkuOriginalImporter(Importer):
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories'][0]
                 if node_type == 'Virtual events':
+                    logger.info("This is a Virtual Event.")
+                    time.sleep(.5)
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
 
                 elif str(eventTku['palvelukanava_code']):
@@ -529,7 +531,7 @@ class TurkuOriginalImporter(Importer):
 
                     evItem['location']['id'] = ('tpr:' + tprNo)
                 else:
-                    
+
                     def numeric(string):
                         from hashlib import md5
                         h = md5()
