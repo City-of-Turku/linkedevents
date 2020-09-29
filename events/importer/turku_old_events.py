@@ -813,16 +813,16 @@ class TurkuOriginalImporter(Importer):
                     return None, None
                 #originid and eventObj get default None values.
                 originid, eventObj = sm_img('drupal_nid')
-                print(eventObj)
+                print(originid, eventObj)
                 if eventObj == None:
                     # Child events who find their mothers image.
                     # logger.info("Finding childs mother image...")
                     originid, eventObj = sm_img('drupal_nid_super')
-                    print(eventObj)
+                    print(originid, eventObj)
 
                 #print("Event... preparing to add image...")
                 test = '%s/%s.%s' % ('images', originid, 'jpg')
-                # print(test)
+                print("Fetch image from Image table with: ", test)
                 last_kuva_example = Image.objects.get(image=test)
                 # print(last_kuva_example.id)
                 eventObj.images.add(last_kuva_example.id)
