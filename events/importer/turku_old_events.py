@@ -512,13 +512,13 @@ class TurkuOriginalImporter(Importer):
             tprNo = ''
             
             if eventTku.get('event_categories', None):
-                node_type = eventTku['event_categories'][0]
+                node_type = eventTku['event_categories']
                 if node_type == 'Virtual events':
                     logger.info("This is a Virtual Event.")
                     time.sleep(.5)
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
 
-                elif eventTku['palvelukanava_code'] is not "":
+                elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
                         tprNo = '148'
