@@ -813,14 +813,13 @@ class TurkuOriginalImporter(Importer):
                         pass
                     return None
                 ffimg = fetch_from_image_table('drupal_nid') # Mothers and Singles can be found from image objects.
-                print(ffimg)
                 if ffimg == None:
                     try:
                         originid = json_event['drupal_nid_super']
-                        print(originid)
                         eventObj = Event.objects.get(origin_id=originid)
                         test = '%s/%s.%s' % ('images', originid, 'jpg')
                         last_kuva_example = Image.objects.get(image=test)
+                        print(last_kuva_example)
                         eventObj.images.add(last_kuva_example.id)
                     except:
                         pass
