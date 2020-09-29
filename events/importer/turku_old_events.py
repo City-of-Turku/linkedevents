@@ -806,6 +806,7 @@ class TurkuOriginalImporter(Importer):
                         # Single Events & Mothers
                         originid = json_event[arg]
                         eventObj = Event.objects.get(origin_id=originid)
+                        logger.info("Finding mother or singles image...")
                         return originid, eventObj
                     except:
                         pass
@@ -814,6 +815,7 @@ class TurkuOriginalImporter(Importer):
                 originid, eventObj = sm_img('drupal_nid')
                 if eventObj == None:
                     # Child events who find their mothers image.
+                    logger.info("Finding childs mother image...")
                     originid, eventObj = sm_img('drupal_nid_super')
 
                 #print("Event... preparing to add image...")
