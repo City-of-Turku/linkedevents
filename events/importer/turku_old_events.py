@@ -382,9 +382,9 @@ class TurkuOriginalImporter(Importer):
                 location_extra_info = location_extra_info.strip()[:-1]
 
             evItem['location_extra_info'] = {
-                "fi": location_extra_info if location_extra_info else None,
-                "sv": location_extra_info if location_extra_info else None,
-                "en": location_extra_info if location_extra_info else None
+                "fi": "test "+location_extra_info if location_extra_info else None,
+                "sv": "test "+location_extra_info if location_extra_info else None,
+                "en": "test "+location_extra_info if location_extra_info else None
             }
 
 
@@ -860,7 +860,7 @@ class TurkuOriginalImporter(Importer):
             originid = json_event['drupal_nid']
             eventObj = Event.objects.get(origin_id=originid)
             testi.images.add(lst.id)
-            '''
+        '''
     def import_events(self):
         import requests
         events = recur_dict()
