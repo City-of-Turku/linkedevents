@@ -380,12 +380,14 @@ class TurkuOriginalImporter(Importer):
 
             if location_extra_info.strip().endswith(','):
                 location_extra_info = location_extra_info.strip()[:-1]
-
+            
             evItem['location_extra_info'] = {
-                "fi": eventTku['address']+'-'+location_extra_info if location_extra_info else None,
-                "sv": eventTku['address']+'-'+location_extra_info if location_extra_info else None,
-                "en": eventTku['address']+'-'+location_extra_info if location_extra_info else None
+                "fi": location_extra_info if location_extra_info else None,
+                "sv": location_extra_info if location_extra_info else None,
+                "en": location_extra_info if location_extra_info else None
             }
+
+            logger.info(evItem['location_extra_info']['fi'])
 
 
             if eventTku['event_image_ext_url']:
