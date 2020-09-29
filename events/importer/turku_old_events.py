@@ -115,6 +115,7 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'Theatre and other performance art': ['yso:p2850', 'yso:p2625'],  # Esittävä taide
     'Sports': 'yso:p965',  # Urheilu, Idrott
     'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
+    'Virtual public': 'yso:p26626',  # Etäosallistuminen
 }
 
 TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
@@ -383,6 +384,14 @@ class TurkuOriginalImporter(Importer):
                 "sv": location_extra_info if location_extra_info else None,
                 "en": location_extra_info if location_extra_info else None
             }
+
+            # Adds address data onto location info if address data exists.
+            if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is not None:
+                evItem['location_extra_info'].update({
+                    "fi": eventTku['address']+' / '+evItem['location_extra_info']['fi'],
+                    "sv": eventTku['address']+' / '+evItem['location_extra_info']['sv'],
+                    "en": eventTku['address']+' / '+evItem['location_extra_info']['en']
+                })
 
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
