@@ -801,34 +801,21 @@ class TurkuOriginalImporter(Importer):
 
             # Experimental Image.
             try:
-                def sm_img(arg):
+
+                def fetch_from_image_table(arg):
                     try:
-                        # Single Events & Mothers
                         originid = json_event[arg]
                         eventObj = Event.objects.get(origin_id=originid)
-                        #test = '%s/%s.%s' % ('images', originid, 'jpg')
-                        print("Origin ID is: ", originid)
-                        # logger.info("Finding mother or singles image...")
-                        return originid, eventObj
+                        test = '%s/%s.%s' % ('images', originid, 'jpg')
+                        last_kuva_example = Image.objects.get(image=test)
+                        eventObj.images.add(last_kuva_example.id)
+                        return last_kuva_example
                     except:
                         pass
-                    return None, None
-                #originid and eventObj get default None values.
-                originid, eventObj = sm_img('drupal_nid')
-                print(originid, eventObj)
-                if eventObj == None:
-                    # Child events who find their mothers image.
-                    # logger.info("Finding childs mother image...")
-                    originid, eventObj = sm_img('drupal_nid_super')
-                    print("eventObj is NONE... Finding childrens mother image: ", originid, eventObj)
-                    
-
-                #print("Event... preparing to add image...")
-                test = '%s/%s.%s' % ('images', originid, 'jpg')
-                print("Fetch image from Image table with: ", test)
-                last_kuva_example = Image.objects.get(image=test)
-                # print(last_kuva_example.id)
-                eventObj.images.add(last_kuva_example.id)
+                    return None
+                ffimg = fetch_from_image_table('drupal_nid') # Mothers and Children can be found from image objects.
+                if ffimg == None:
+                    fetch_from_image_table('drupal_nid_super')
             except:
                 pass
 
