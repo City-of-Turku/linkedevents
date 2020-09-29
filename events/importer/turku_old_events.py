@@ -358,7 +358,6 @@ class TurkuOriginalImporter(Importer):
                 evItem['provider'] = {
                     "fi": 'Turku', "sv": 'Åbo', "en": 'Turku'
                 }
-            
 
             location_extra_info = ''
 
@@ -401,13 +400,6 @@ class TurkuOriginalImporter(Importer):
                     IMAGE_TYPE = 'jpg'
                     PATH_EXTEND = 'images'
 
-                    '''
-                    def generate_id():
-                        t = time.time() * 1000000
-                        b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
-                        return b.decode('utf8')
-                    '''
-
                     def request_image_url():
                         img = requests.get(eventTku['event_image_ext_url']['src'],
                                         headers={'User-Agent': 'Mozilla/5.0'}).content
@@ -428,16 +420,6 @@ class TurkuOriginalImporter(Importer):
                             data_source=self.data_source,
                             publisher=self.organization,
                             image=request_image_url()))
-
-                    '''
-                    evItem['images'] = [{
-                        'url': eventTku['event_image_ext_url']['src'],
-                        'license': self.cc_by_license,
-                        'alt_text': '',
-                        'name': '',
-                        'photographer_name': ''
-                    }]
-                    '''
 
             def set_attr(field_name, val):
                 if field_name in evItem:
@@ -533,7 +515,7 @@ class TurkuOriginalImporter(Importer):
                 node_type = eventTku['event_categories'][0]
                 if node_type == 'Virtual events':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
-            '''
+
                 elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
@@ -553,7 +535,7 @@ class TurkuOriginalImporter(Importer):
                         h = md5()
                         h.update(string.encode())
                         return str(int(h.hexdigest(), 16))[0:6]
-                    
+
                     if eventTku['address']:
                         import re
                         event_address = copy(eventTku['address'])
@@ -623,6 +605,7 @@ class TurkuOriginalImporter(Importer):
                             str(evItem.get('data_source')),
                             origin_id
                         )  # Mimic tpr
+                        '''
                         try:
                             place_id = Place.objects.get(id=tpr)
                         except:
@@ -651,8 +634,9 @@ class TurkuOriginalImporter(Importer):
                                 ]
                                 )
                             place.save()
+                            '''
                         evItem['location']['id'] = tpr
-            '''
+
             if event_type == "m" or event_type == "s":
                 # Add a default offer
                 free_offer = {
