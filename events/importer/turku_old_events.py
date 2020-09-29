@@ -117,6 +117,7 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'Theatre and other performance art': ['yso:p2850', 'yso:p2625'],  # Esittävä taide
     'Sports': 'yso:p965',  # Urheilu, Idrott
     'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
+    'Remote participation': 'yso:p26626',  # Etäosallistuminen
 }
 
 TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
