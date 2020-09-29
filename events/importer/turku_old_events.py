@@ -801,29 +801,14 @@ class TurkuOriginalImporter(Importer):
 
             # Experimental Image.
             try:
-
-                def fetch_from_image_table(arg):
-                    try:
-                        originid = json_event[arg]
-                        eventObj = Event.objects.get(origin_id=originid)
-                        test = '%s/%s.%s' % ('images', originid, 'jpg')
-                        last_kuva_example = Image.objects.get(image=test)
-                        eventObj.images.add(last_kuva_example.id)
-                        return last_kuva_example
-                    except:
-                        pass
-                    return None
-                ffimg = fetch_from_image_table('drupal_nid') # Mothers and Children can be found from image objects.
-                print(ffimg)
-                if ffimg == None:
-                    try:
-                        originid = json_event['drupal_nid_super']
-                        eventObj = Event.objects.get(origin_id=originid)
-                        test = '%s/%s.%s' % ('images', originid, 'jpg')
-                        last_kuva_example = Image.objects.get(image=test)
-                        eventObj.images.add(last_kuva_example.id)
-                    except:
-                        pass
+                originid = json_event['drupal_nid']
+                eventObj = Event.objects.get(origin_id=originid)
+                #print("Event... preparing to add image...")
+                test = '%s/%s.%s' % ('images', originid, 'jpg')
+                # print(test)
+                last_kuva_example = Image.objects.get(image=test)
+                # print(last_kuva_example.id)
+                eventObj.images.add(last_kuva_example.id)
             except:
                 pass
 
