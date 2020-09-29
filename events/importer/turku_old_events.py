@@ -820,7 +820,8 @@ class TurkuOriginalImporter(Importer):
                     # Child events who find their mothers image.
                     # logger.info("Finding childs mother image...")
                     originid, eventObj = sm_img('drupal_nid_super')
-                    print(originid, eventObj)
+                    print("eventObj is NONE... Finding childrens mother image: ", originid, eventObj)
+                    
 
                 #print("Event... preparing to add image...")
                 test = '%s/%s.%s' % ('images', originid, 'jpg')
