@@ -814,6 +814,7 @@ class TurkuOriginalImporter(Importer):
                         pass
                     return None
                 ffimg = fetch_from_image_table('drupal_nid') # Mothers and Children can be found from image objects.
+                print(ffimg)
                 if ffimg == None:
                     fetch_from_image_table('drupal_nid_super')
             except:
