@@ -494,8 +494,8 @@ class TurkuOriginalImporter(Importer):
             tprNo = ''
 
             if eventTku.get('event_categories', None):
-                node_type = eventTku['event_categories'][0]
-                if node_type == 'Virtual events':
+                node_type = eventTku['event_categories']
+                if node_type == 'Virtual events,':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
                 elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
