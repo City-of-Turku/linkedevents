@@ -519,7 +519,7 @@ class TurkuOriginalImporter(Importer):
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
 
                 elif eventTku['palvelukanava_code'] is not "":
-                    tprNo = str(eventTku['palvelukanava_code'])
+                    tprNo = eventTku['palvelukanava_code']
                     if tprNo == '10123':
                         tprNo = '148'
                     elif tprNo == '10132':
