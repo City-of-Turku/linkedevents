@@ -388,7 +388,7 @@ class TurkuOriginalImporter(Importer):
             }
         
             if eventTku['address'] is not None and location_extra_info is not None:
-                logger.info(location_extra_info, evItem['location_extra_info']['fi'])
+                print(location_extra_info, evItem['location_extra_info']['fi'])
                 logger.info(eventTku['address'])
                 evItem['location_extra_info'].update({
                     "fi": eventTku['address']+'-'+evItem['location_extra_info']['fi'],
