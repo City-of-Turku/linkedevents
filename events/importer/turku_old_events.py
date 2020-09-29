@@ -286,7 +286,7 @@ class TurkuOriginalImporter(Importer):
         if not item:
             return default
         return item
-    
+
     def _import_event(self, lang, event_el, events, event_type):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(
@@ -380,13 +380,13 @@ class TurkuOriginalImporter(Importer):
 
             if location_extra_info.strip().endswith(','):
                 location_extra_info = location_extra_info.strip()[:-1]
-            
+
             evItem['location_extra_info'] = {
                 "fi": location_extra_info if location_extra_info else None,
                 "sv": location_extra_info if location_extra_info else None,
                 "en": location_extra_info if location_extra_info else None
             }
-        
+            # Adds address data onto location info if address data exists.
             if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is not None:
                 evItem['location_extra_info'].update({
                     "fi": eventTku['address']+' / '+evItem['location_extra_info']['fi'],
@@ -397,13 +397,13 @@ class TurkuOriginalImporter(Importer):
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
 
-                    # Save image to Image table in database.
+                    # Saves an image from the URL onto our server & database Image table.
                     IMAGE_TYPE = 'jpg'
                     PATH_EXTEND = 'images'
 
                     def request_image_url():
                         img = requests.get(eventTku['event_image_ext_url']['src'],
-                                        headers={'User-Agent': 'Mozilla/5.0'}).content
+                                           headers={'User-Agent': 'Mozilla/5.0'}).content
                         imgfile = eventTku['drupal_nid']
                         path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
                             'root': settings.MEDIA_ROOT,
@@ -511,14 +511,13 @@ class TurkuOriginalImporter(Importer):
             }
 
             tprNo = ''
-            
+
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories']
                 if node_type == 'Virtual events,':
-                    logger.info("This is a Virtual Event.")
-                    time.sleep(.5)
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
 
+                # Palvelukanava_code exceptions.
                 elif str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
@@ -532,7 +531,6 @@ class TurkuOriginalImporter(Importer):
                     evItem['location']['id'] = ('tpr:' + tprNo)
 
                 else:
-
                     def numeric(string):
                         from hashlib import md5
                         h = md5()
@@ -608,36 +606,7 @@ class TurkuOriginalImporter(Importer):
                             str(evItem.get('data_source')),
                             origin_id
                         )  # Mimic tpr
-                        '''
-                        try:
-                            place_id = Place.objects.get(id=tpr)
-                        except:
-                            def place_info(data: dict, translated=[]) -> Place:
-                                p = Place()
-                                for k in data:
-                                    __setattr__(p, k, data[k])
-                                    if k in translated:
-                                        __setattr__(p, '%s_fi' % k, data[k])
-                                        __setattr__(p, '%s_en' % k, data[k])
-                                        __setattr__(p, '%s_sv' % k, data[k])
-                                return p
 
-                            place = \
-                                place_info({
-                                    'name': event_name,
-                                    'street_address': event_address_name,
-                                    'id': tpr,
-                                    'origin_id': origin_id,
-                                    'data_source': evItem.get('data_source'),
-                                    'publisher': evItem.get('publisher'),
-                                    'postal_code': event_postal_code
-                                }, translated=[
-                                    'name',
-                                    'street_address'
-                                ]
-                                )
-                            place.save()
-                            '''
                         evItem['location']['id'] = tpr
 
             if event_type == "m" or event_type == "s":
@@ -831,29 +800,18 @@ class TurkuOriginalImporter(Importer):
             if json_event['twitter_url']:
                 fb_tw('twitter')
 
-            # Experimental Image.
+            # Save to the ManyToMany relationship table.
+            # Links an event together with the correct event image.
             try:
                 originid = json_event['drupal_nid']
                 eventObj = Event.objects.get(origin_id=originid)
-                #print("Event... preparing to add image...")
-                test = '%s/%s.%s' % ('images',originid,'jpg')
-                #print(test)
-                last_kuva_example = Image.objects.get(image=test)
-                #print(last_kuva_example.id)
-                eventObj.images.add(last_kuva_example.id)
+                img_format = '%s/%s.%s' % ('images', originid, 'jpg')
+                img_rtrn = Image.objects.get(image=img_format)
+                eventObj.images.add(img_rtrn.id)
             except:
                 pass
 
-            '''
-            testi = Event().objects.get(origin_id=)
-            lst = Image.objects.last()
-            logger.info(lst.id)
-            self.data_source_imgpk, _ = DataSource.objects.update_or_create(
-                defaults=dict(name='Kuvapankki'), **dict(id='image', user_editable=True))
-            originid = json_event['drupal_nid']
-            eventObj = Event.objects.get(origin_id=originid)
-            testi.images.add(lst.id)
-        '''
+
     def import_events(self):
         import requests
         events = recur_dict()
