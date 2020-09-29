@@ -387,13 +387,12 @@ class TurkuOriginalImporter(Importer):
                 "en": location_extra_info if location_extra_info else None
             }
         
-            if eventTku['address'] is not None:
+            if eventTku['address'] is not None and location_extra_info is not None:
                 evItem['location_extra_info'].update({
                     "fi": eventTku['address']+'-'+evItem['location_extra_info']['fi'],
                     "sv": eventTku['address']+'-'+evItem['location_extra_info']['sv'],
                     "en": eventTku['address']+'-'+evItem['location_extra_info']['en']
                 })
-
 
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
