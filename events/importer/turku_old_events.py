@@ -823,6 +823,7 @@ class TurkuOriginalImporter(Importer):
                         last_kuva_example = Image.objects.get(image=test)
                         eventObj.images.add(last_kuva_example.id)
                     except:
+                        pass
             except:
                 pass
 
