@@ -382,9 +382,9 @@ class TurkuOriginalImporter(Importer):
                 location_extra_info = location_extra_info.strip()[:-1]
 
             evItem['location_extra_info'] = {
-                "fi": eventTku['drupal_nid']+location_extra_info if location_extra_info else None,
-                "sv": eventTku['drupal_nid']+location_extra_info if location_extra_info else None,
-                "en": eventTku['drupal_nid']+location_extra_info if location_extra_info else None
+                "fi": eventTku['address']+'-'+location_extra_info if location_extra_info else None,
+                "sv": eventTku['address']+'-'+location_extra_info if location_extra_info else None,
+                "en": eventTku['address']+'-'+location_extra_info if location_extra_info else None
             }
 
 
