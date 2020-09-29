@@ -811,7 +811,6 @@ class TurkuOriginalImporter(Importer):
             except:
                 pass
 
-
     def import_events(self):
         import requests
         events = recur_dict()
