@@ -816,7 +816,8 @@ class TurkuOriginalImporter(Importer):
                 if ffimg == None:
                     try:
                         originid = json_event['drupal_nid_super']
-                        eventObj = Event.objects.get(origin_id=originid)
+                        childid = json_event['drupal_nid']
+                        eventObj = Event.objects.get(origin_id=childid)
                         test = '%s/%s.%s' % ('images', originid, 'jpg')
                         last_kuva_example = Image.objects.get(image=test)
                         print(test, last_kuva_example)
