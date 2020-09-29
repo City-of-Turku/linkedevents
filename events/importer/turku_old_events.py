@@ -513,7 +513,7 @@ class TurkuOriginalImporter(Importer):
             
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories']
-                logger.info(node_type)
+                logger.info(node_type[0])
                 if node_type == 'Virtual events':
                     logger.info("This is a Virtual Event.")
                     time.sleep(2)
