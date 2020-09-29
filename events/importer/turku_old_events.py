@@ -386,8 +386,13 @@ class TurkuOriginalImporter(Importer):
                 "sv": location_extra_info if location_extra_info else None,
                 "en": location_extra_info if location_extra_info else None
             }
-
-            logger.info(evItem['location_extra_info']['fi'])
+        
+            if eventTku['address'] not None:
+                evItem['location_extra_info'].update({
+                    "fi": eventTku['address']+'-'+evItem['location_extra_info']['fi'],
+                    "sv": eventTku['address']+'-'+evItem['location_extra_info']['sv'],
+                    "en": eventTku['address']+'-'+evItem['location_extra_info']['en']
+                })
 
 
             if eventTku['event_image_ext_url']:
