@@ -394,8 +394,10 @@ class TurkuOriginalImporter(Importer):
                 })
 
             if eventTku['event_image_ext_url']:
-                if int(eventTku['event_image_license']) == 1:
+                if int(eventTku['event_image_license']) == 1 and event_type == "m" or event_type == "s":
                     # Saves an image from the URL onto our server & database Image table.
+                    # We only want mother event images and single event images.
+
                     IMAGE_TYPE = 'jpg'
                     PATH_EXTEND = 'images'
 
@@ -799,8 +801,21 @@ class TurkuOriginalImporter(Importer):
 
             # Experimental Image.
             try:
-                originid = json_event['drupal_nid']
-                eventObj = Event.objects.get(origin_id=originid)
+                def sm_img(arg):
+                    try:
+                        # Single Events & Mothers
+                        originid = json_event[arg]
+                        eventObj = Event.objects.get(origin_id=originid)
+                        return originid, eventObj
+                    except:
+                        pass
+                    return None, None
+                #originid and eventObj get default None values.
+                originid, eventObj = sm_img('drupal_nid')
+                if eventObj == None:
+                    # Child events who find their mothers image.
+                    originid, eventObj = sm_img('drupal_nid_super')
+
                 #print("Event... preparing to add image...")
                 test = '%s/%s.%s' % ('images', originid, 'jpg')
                 # print(test)
