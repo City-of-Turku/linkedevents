@@ -513,9 +513,10 @@ class TurkuOriginalImporter(Importer):
             
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories']
+                logger.info(node_type)
                 if node_type == 'Virtual events':
                     logger.info("This is a Virtual Event.")
-                    time.sleep(.5)
+                    time.sleep(2)
                     evItem['location']['id'] = 'virtual:public'
 
                     if eventTku['palvelukanava_code'] is not "":
