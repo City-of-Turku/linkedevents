@@ -638,6 +638,8 @@ class TurkuOriginalImporter(Importer):
                 evItem['offers'] = [free_offer]
 
             if event_type == "m":
+                logger.info("test? this is a recurring event")
+                time.sleep(1)
                 evItem['super_event_type'] = Event.SuperEventType.RECURRING
             if event_type == "c" or event_type == "s":
                 evItem['super_event_type'] = ""
@@ -801,7 +803,7 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('twitter')
 
             # Save to the ManyToMany relationship table.
-            # Links an event together with the correct event image.
+            # Links an event together with the correct Event image.
             try:
                 originid = json_event['drupal_nid']
                 eventObj = Event.objects.get(origin_id=originid)
@@ -810,6 +812,7 @@ class TurkuOriginalImporter(Importer):
                 eventObj.images.add(img_rtrn.id)
             except:
                 pass
+
 
     def import_events(self):
         import requests
