@@ -806,6 +806,8 @@ class TurkuOriginalImporter(Importer):
                         # Single Events & Mothers
                         originid = json_event[arg]
                         eventObj = Event.objects.get(origin_id=originid)
+                        #test = '%s/%s.%s' % ('images', originid, 'jpg')
+                        print(originid)
                         # logger.info("Finding mother or singles image...")
                         return originid, eventObj
                     except:
