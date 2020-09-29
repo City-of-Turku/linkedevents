@@ -395,13 +395,31 @@ class TurkuOriginalImporter(Importer):
 
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1:
-                    evItem['images'] = [{
-                        'url': eventTku['event_image_ext_url']['src'],
-                        'license': self.cc_by_license,
-                        'alt_text': '',
-                        'name': '',
-                        'photographer_name': ''
-                    }]
+                    # Saves an image from the URL onto our server & database Image table.
+                    IMAGE_TYPE = 'jpg'
+                    PATH_EXTEND = 'images'
+
+                    def request_image_url():
+                        img = requests.get(eventTku['event_image_ext_url']['src'],
+                                           headers={'User-Agent': 'Mozilla/5.0'}).content
+                        imgfile = eventTku['drupal_nid']
+                        path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
+                            'root': settings.MEDIA_ROOT,
+                            'pathext': PATH_EXTEND,
+                            'img': imgfile,
+                            'type': IMAGE_TYPE
+                        })
+                        with open(path, 'wb') as file:
+                            file.write(img)
+                        return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
+
+                    self.image_obj, _ = Image.objects.update_or_create(
+                        defaults=dict(name='', photographer_name='', alt_text=''), **dict(
+                            license=self.cc_by_license,
+                            data_source=self.data_source,
+                            publisher=self.organization,
+                            image=request_image_url()))
+
 
             def set_attr(field_name, val):
                 if field_name in evItem:
@@ -585,34 +603,7 @@ class TurkuOriginalImporter(Importer):
                             str(evItem.get('data_source')),
                             origin_id
                             )  # Mimic tpr
-                        try:
-                            place_id = Place.objects.get(id=tpr)
-                        except:
-                            def place_info(data: dict, translated=[]) -> Place:
-                                p = Place()
-                                for k in data:
-                                    __setattr__(p, k, data[k])
-                                    if k in translated:
-                                        __setattr__(p, '%s_fi' % k, data[k])
-                                        __setattr__(p, '%s_en' % k, data[k])
-                                        __setattr__(p, '%s_sv' % k, data[k])
-                                return p
 
-                            place = \
-                                place_info({
-                                    'name': event_name,
-                                    'street_address': event_address_name,
-                                    'id': tpr,
-                                    'origin_id': origin_id,
-                                    'data_source': evItem.get('data_source'),
-                                    'publisher': evItem.get('publisher'),
-                                    'postal_code': event_postal_code
-                                }, translated=[
-                                    'name',
-                                    'street_address'
-                                    ]
-                                )
-                            place.save()
                         evItem['location']['id'] = tpr
 
             if event_type == "m" or event_type == "s":
@@ -805,6 +796,19 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('facebook')
             if json_event['twitter_url']:
                 fb_tw('twitter')
+
+            # Experimental Image.
+            try:
+                originid = json_event['drupal_nid']
+                eventObj = Event.objects.get(origin_id=originid)
+                #print("Event... preparing to add image...")
+                test = '%s/%s.%s' % ('images', originid, 'jpg')
+                # print(test)
+                last_kuva_example = Image.objects.get(image=test)
+                # print(last_kuva_example.id)
+                eventObj.images.add(last_kuva_example.id)
+            except:
+                pass
 
     def import_events(self):
         import requests
