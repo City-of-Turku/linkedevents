@@ -819,7 +819,7 @@ class TurkuOriginalImporter(Importer):
                         eventObj = Event.objects.get(origin_id=originid)
                         test = '%s/%s.%s' % ('images', originid, 'jpg')
                         last_kuva_example = Image.objects.get(image=test)
-                        print(last_kuva_example)
+                        print(test, last_kuva_example)
                         eventObj.images.add(last_kuva_example.id)
                     except:
                         pass
