@@ -456,6 +456,8 @@ class TurkuOriginalImporter(Importer):
                     if name == 'Theatre and other perfomance art':
                         name = 'Theatre and other performance art'
                         # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
+                    if name == 'Virtual events':
+                         evItem['location']['id'] = VIRTUAL_LOCATION_ID
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
@@ -506,12 +508,12 @@ class TurkuOriginalImporter(Importer):
 
             tprNo = ''
 
+            '''
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories']
-                print(node_type)
+                #print(node_type)
                 if node_type == 'Virtual events,':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
-                '''
                 if str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
@@ -523,7 +525,7 @@ class TurkuOriginalImporter(Importer):
                     if tprNo == '10129':
                         return
                     evItem['location']['id'] = ('tpr:' + tprNo)
-                '''
+            '''
 
             if event_type == "m" or event_type == "s":
                 # Add a default offer
