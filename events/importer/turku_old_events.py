@@ -535,7 +535,6 @@ class TurkuOriginalImporter(Importer):
                 evItem['offers'] = [free_offer]
 
             if event_type == "m":
-                print("SuperEventType Added for Mother event.")
                 evItem['super_event_type'] = Event.SuperEventType.RECURRING
             if event_type == "c" or event_type == "s":
                 evItem['super_event_type'] = ""
