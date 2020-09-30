@@ -379,20 +379,21 @@ class TurkuOriginalImporter(Importer):
             if location_extra_info.strip().endswith(','):
                 location_extra_info = location_extra_info.strip()[:-1]
 
+            '''
             evItem['location_extra_info'] = {
                 "fi": location_extra_info if location_extra_info else None,
                 "sv": location_extra_info if location_extra_info else None,
                 "en": location_extra_info if location_extra_info else None
             }
-
+            '''
             # Adds address data onto location info if address data exists.
-            if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is not None:
+            if eventTku['address'] is not None and evItem['location_extra_info'] is not "":
                 evItem['location_extra_info'].update({
-                    "fi": eventTku['address']+' / '+evItem['location_extra_info']['fi'],
-                    "sv": eventTku['address']+' / '+evItem['location_extra_info']['sv'],
-                    "en": eventTku['address']+' / '+evItem['location_extra_info']['en']
+                    "fi": eventTku['address']+' / '+evItem['location_extra_info'],
+                    "sv": eventTku['address']+' / '+evItem['location_extra_info'],
+                    "en": eventTku['address']+' / '+evItem['location_extra_info']
                 })
-            if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is None:
+            if eventTku['address'] is not None and evItem['location_extra_info'] is "":
                 evItem['location_extra_info'].update({
                     "fi": eventTku['address'],
                     "sv": eventTku['address'],
