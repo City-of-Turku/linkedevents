@@ -530,6 +530,9 @@ class TurkuOriginalImporter(Importer):
 
                     evItem['location']['id'] = ('tpr:' + tprNo)
                 else:
+                    print("-")
+                '''
+                else:
                     def numeric(string):
                         from hashlib import md5
                         h = md5()
@@ -607,7 +610,7 @@ class TurkuOriginalImporter(Importer):
                             )  # Mimic tpr
 
                         evItem['location']['id'] = tpr
-
+                '''
             if event_type == "m" or event_type == "s":
                 # Add a default offer
                 free_offer = {
