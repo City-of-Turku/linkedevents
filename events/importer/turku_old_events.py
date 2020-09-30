@@ -216,7 +216,7 @@ class TurkuOriginalImporter(Importer):
             name_sv='Virtuell evenemang',
             name_en='Virtual event',
             description='Virtuaalitapahtumat merkitään tähän paikkatietoon.'
-            )
+        )
         self.internet_location, _ = Place.objects.update_or_create(
             id=VIRTUAL_LOCATION_ID,
             defaults=defaults5
@@ -271,8 +271,8 @@ class TurkuOriginalImporter(Importer):
     def dt_parse(self, dt_str):
         """Convert a string to UTC datetime"""  # Times are in UTC+02:00 TZ
         return TZ.localize(
-                dateutil.parser.parse(dt_str),
-                is_dst=None).astimezone(pytz.utc)
+            dateutil.parser.parse(dt_str),
+            is_dst=None).astimezone(pytz.utc)
 
     def timeToTimestamp(self, origTime):
         timestamp = time.mktime(time.strptime(origTime, '%d.%m.%Y %H.%M'))
@@ -415,7 +415,6 @@ class TurkuOriginalImporter(Importer):
                             publisher=self.organization,
                             image=request_image_url()))
 
-
             def set_attr(field_name, val):
                 if field_name in evItem:
                     if evItem[field_name] != val:
@@ -457,7 +456,7 @@ class TurkuOriginalImporter(Importer):
                         name = 'Theatre and other performance art'
                         # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
                     if name == 'Virtual events':
-                         evItem['location']['id'] = VIRTUAL_LOCATION_ID
+                        evItem['location']['id'] = VIRTUAL_LOCATION_ID
                     if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
                         ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
                         if isinstance(ysoId, list):
@@ -513,7 +512,7 @@ class TurkuOriginalImporter(Importer):
                     'price': None,
                     'description': None,
                     'info_url': None,
-                    }
+                }
                 eventOffer_is_free = bool(int(eventTku['free_event']))
                 # Fill if events is not free price event
                 if not eventOffer_is_free:
@@ -709,9 +708,9 @@ class TurkuOriginalImporter(Importer):
                     except:
                         pass
                     return None
-                fetched_img = fetch_from_image_table('drupal_nid', 'drupal_nid') # Mothers and Singles
+                fetched_img = fetch_from_image_table('drupal_nid', 'drupal_nid')  # Mothers and Singles
                 if fetched_img == None:
-                    fetch_from_image_table('drupal_nid', 'drupal_nid_super') # Children inherit their Mothers images.
+                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')  # Children inherit their Mothers images.
             except:
                 pass
 
