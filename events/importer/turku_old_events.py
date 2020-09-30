@@ -506,27 +506,6 @@ class TurkuOriginalImporter(Importer):
                 "en": eventTku['website_url']
             }
 
-            tprNo = ''
-
-            '''
-            if eventTku.get('event_categories', None):
-                node_type = eventTku['event_categories']
-                #print(node_type)
-                if node_type == 'Virtual events,':
-                    evItem['location']['id'] = VIRTUAL_LOCATION_ID
-                if str(eventTku['palvelukanava_code']):
-                    tprNo = str(eventTku['palvelukanava_code'])
-                    if tprNo == '10123':
-                        tprNo = '148'
-                    if tprNo == '10132':
-                        return
-                    if tprNo == '10174':
-                        return
-                    if tprNo == '10129':
-                        return
-                    evItem['location']['id'] = ('tpr:' + tprNo)
-            '''
-
             if event_type == "m" or event_type == "s":
                 # Add a default offer
                 free_offer = {
@@ -719,21 +698,21 @@ class TurkuOriginalImporter(Importer):
             if json_event['twitter_url']:
                 fb_tw('twitter')
 
-            # Experimental Image.
+            # Match Events & Images together in the ManyToMany relationship table.
             try:
                 def fetch_from_image_table(p, p2):
                     try:
                         eventObj = Event.objects.get(origin_id=json_event[p])
-                        test = '%s/%s.%s' % ('images', json_event[p2], 'jpg')
-                        last_kuva_example = Image.objects.get(image=test)
-                        eventObj.images.add(last_kuva_example.id)
-                        return last_kuva_example
+                        img_format = '%s/%s.%s' % ('images', json_event[p2], 'jpg')
+                        img_obj_returned = Image.objects.get(image=img_format)
+                        eventObj.images.add(img_obj_returned.id)
+                        return img_obj_returned
                     except:
                         pass
                     return None
-                ffimg = fetch_from_image_table('drupal_nid', 'drupal_nid') # Mothers and Singles can be found from image objects.
-                if ffimg == None:
-                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')
+                fetched_img = fetch_from_image_table('drupal_nid', 'drupal_nid') # Mothers and Singles
+                if fetched_img == None:
+                    fetch_from_image_table('drupal_nid', 'drupal_nid_super') # Children inherit their Mothers images.
             except:
                 pass
 
