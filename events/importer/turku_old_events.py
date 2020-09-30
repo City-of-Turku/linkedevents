@@ -385,7 +385,6 @@ class TurkuOriginalImporter(Importer):
                 "en": location_extra_info if location_extra_info else None
             }
 
-
             # Adds address data onto location info if address data exists.
             if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is not None:
                 evItem['location_extra_info'].update({
@@ -393,7 +392,7 @@ class TurkuOriginalImporter(Importer):
                     "sv": eventTku['address']+' / '+evItem['location_extra_info']['sv'],
                     "en": eventTku['address']+' / '+evItem['location_extra_info']['en']
                 })
-            elif eventTku['address'] is not None and evItem['location_extra_info']['fi'] is None:
+            if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is None:
                 evItem['location_extra_info'].update({
                     "fi": eventTku['address'],
                     "sv": eventTku['address'],
@@ -573,7 +572,7 @@ class TurkuOriginalImporter(Importer):
             return evItem
 
     def _recur_fetch_paginated_url(self, url, lang, events):
-        max_tries = 5
+        max_tries = 10
         logger.info("Establishing connection to Drupal JSON...")
         for try_number in range(0, max_tries):
             response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
