@@ -381,9 +381,9 @@ class TurkuOriginalImporter(Importer):
 
             # Define location_extra_info dict.
             evItem['location_extra_info'] = {
-                "fi": eventTku['address']+' / '+location_extra_info if location_extra_info else eventTku['address'],
-                "sv": eventTku['address']+' / '+location_extra_info if location_extra_info else eventTku['address'],
-                "en": eventTku['address']+' / '+location_extra_info if location_extra_info else eventTku['address']
+                "fi": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
+                "sv": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
+                "en": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address']
             }
             '''
             # Adds address data onto location_extra_info if address data exists.
