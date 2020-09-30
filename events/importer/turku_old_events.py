@@ -385,12 +385,19 @@ class TurkuOriginalImporter(Importer):
                 "en": location_extra_info if location_extra_info else None
             }
 
+
             # Adds address data onto location info if address data exists.
             if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is not None:
                 evItem['location_extra_info'].update({
                     "fi": eventTku['address']+' / '+evItem['location_extra_info']['fi'],
                     "sv": eventTku['address']+' / '+evItem['location_extra_info']['sv'],
                     "en": eventTku['address']+' / '+evItem['location_extra_info']['en']
+                })
+            elif eventTku['address'] is not None and evItem['location_extra_info']['fi'] is None:
+                evItem['location_extra_info'].update({
+                    "fi": eventTku['address'],
+                    "sv": eventTku['address'],
+                    "en": eventTku['address']
                 })
 
             if eventTku['event_image_ext_url']:
@@ -517,7 +524,7 @@ class TurkuOriginalImporter(Importer):
                 node_type = eventTku['event_categories']
                 if node_type == 'Virtual events,':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
-                elif str(eventTku['palvelukanava_code']):
+                if str(eventTku['palvelukanava_code']):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
                         tprNo = '148'
@@ -527,7 +534,6 @@ class TurkuOriginalImporter(Importer):
                         return
                     elif tprNo == '10129':
                         return
-
                     evItem['location']['id'] = ('tpr:' + tprNo)
 
             if event_type == "m" or event_type == "s":
