@@ -1,13 +1,3 @@
-# Last updated 04/09/2020
-
-# PEP8 mode (Exceeding line length unavoidable at times),
-# Processing improvements (List comprehension, JSON update methods),
-# JSON re-usage through return instead of global. (Globals are bad practice),
-# Category key updated & JSON misspelling compensation,
-# Necessary Image field improvements (alt_text, name, photographer),
-# Images are shown on front-end without crash.
-
-# Dependencies
 import logging
 import requests
 import requests_cache
