@@ -728,7 +728,7 @@ class TurkuOriginalImporter(Importer):
                     return None
                 ffimg = fetch_from_image_table('drupal_nid', 'drupal_nid') # Mothers and Singles can be found from image objects.
                 if ffimg == None:
-                    fetch_from_image_table('drupal_nid_super', 'drupal_nid')
+                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')
                     '''
                     try:
                         originid = json_event['drupal_nid_super']
