@@ -508,7 +508,7 @@ class TurkuOriginalImporter(Importer):
 
             if eventTku.get('event_categories', None):
                 node_type = eventTku['event_categories']
-                print()
+                print(node_type)
                 if node_type == 'Virtual events,':
                     evItem['location']['id'] = VIRTUAL_LOCATION_ID
                 '''
