@@ -385,22 +385,7 @@ class TurkuOriginalImporter(Importer):
                 "sv": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
                 "en": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address']
             }
-            '''
-            # Adds address data onto location_extra_info if address data exists.
-            if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is not None:
-                evItem['location_extra_info'].update({
-                    "fi": eventTku['address']+' / '+evItem['location_extra_info']['fi'],
-                    "sv": eventTku['address']+' / '+evItem['location_extra_info']['sv'],
-                    "en": eventTku['address']+' / '+evItem['location_extra_info']['en']
-                })
-            # If location_extra_info is None, we still want to add the address data.
-            if eventTku['address'] is not None and evItem['location_extra_info']['fi'] is None:
-                evItem['location_extra_info'].update({
-                    "fi": eventTku['address'],
-                    "sv": eventTku['address'],
-                    "en": eventTku['address']
-                })
-            '''
+
             if eventTku['event_image_ext_url']:
                 if int(eventTku['event_image_license']) == 1 and event_type == "m" or event_type == "s":
                     # Saves an image from the URL onto our server & database Image table.
@@ -731,19 +716,20 @@ class TurkuOriginalImporter(Importer):
 
             # Experimental Image.
             try:
-                def fetch_from_image_table(arg):
+                def fetch_from_image_table(p, p2):
                     try:
-                        originid = json_event[arg]
-                        eventObj = Event.objects.get(origin_id=originid)
-                        test = '%s/%s.%s' % ('images', originid, 'jpg')
+                        eventObj = Event.objects.get(origin_id=json_event[p])
+                        test = '%s/%s.%s' % ('images', json_event[p2], 'jpg')
                         last_kuva_example = Image.objects.get(image=test)
                         eventObj.images.add(last_kuva_example.id)
                         return last_kuva_example
                     except:
                         pass
                     return None
-                ffimg = fetch_from_image_table('drupal_nid') # Mothers and Singles can be found from image objects.
+                ffimg = fetch_from_image_table('drupal_nid', 'drupal_nid') # Mothers and Singles can be found from image objects.
                 if ffimg == None:
+                    fetch_from_image_table('drupal_nid_super', 'drupal_nid')
+                    '''
                     try:
                         originid = json_event['drupal_nid_super']
                         childid = json_event['drupal_nid']
@@ -754,6 +740,7 @@ class TurkuOriginalImporter(Importer):
                         eventObj.images.add(last_kuva_example.id)
                     except:
                         pass
+                    '''
             except:
                 pass
 
