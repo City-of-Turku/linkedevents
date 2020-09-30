@@ -527,11 +527,11 @@ class TurkuOriginalImporter(Importer):
                     tprNo = str(eventTku['palvelukanava_code'])
                     if tprNo == '10123':
                         tprNo = '148'
-                    elif tprNo == '10132':
+                    if tprNo == '10132':
                         return
-                    elif tprNo == '10174':
+                    if tprNo == '10174':
                         return
-                    elif tprNo == '10129':
+                    if tprNo == '10129':
                         return
                     evItem['location']['id'] = ('tpr:' + tprNo)
 
