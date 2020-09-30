@@ -608,6 +608,7 @@ class TurkuOriginalImporter(Importer):
                             )  # Mimic tpr
 
                         evItem['location']['id'] = tpr
+                        print(evItem['location']['id'])
 
             if event_type == "m" or event_type == "s":
                 # Add a default offer
