@@ -370,10 +370,12 @@ class TurkuOriginalImporter(Importer):
                 location_extra_info = location_extra_info.strip()[:-1]
 
             # Define location_extra_info dict.
+            location_extra_info_formatted = '%(address)s / %(extra)s' % {'address': eventTku['address'], 'extra': location_extra_info} if location_extra_info else eventTku['address']
+
             evItem['location_extra_info'] = {
-                "fi": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
-                "sv": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
-                "en": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address']
+                "fi": location_extra_info_formatted,
+                "sv": location_extra_info_formatted,
+                "en": location_extra_info_formatted
             }
 
             if eventTku['event_image_ext_url']:
