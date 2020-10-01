@@ -759,4 +759,4 @@ class TurkuOriginalImporter(Importer):
             logger.warning('{} {}'.format(
                     'Moderator should add the missing Keywords:', notFoundKeys)
 
-        logger.info("{} events processed".format(len(events.values())))
+        print("{} events processed".format(len(events.values())))
