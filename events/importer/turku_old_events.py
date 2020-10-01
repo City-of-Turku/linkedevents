@@ -378,7 +378,7 @@ class TurkuOriginalImporter(Importer):
             }
 
             if eventTku['event_image_ext_url']:
-                if int(eventTku['event_image_license']) == 1 and event_type == "m" or event_type == "s":
+                if int(eventTku['event_image_license']) == 1 and event_type in ('m', 's'):
                     # Saves an image from the URL onto our server & database Image table.
                     # We only want mother event images and single event images.
 
@@ -496,7 +496,7 @@ class TurkuOriginalImporter(Importer):
                 "en": eventTku['website_url']
             }
 
-            if event_type == "m" or event_type == "s":
+            if event_type in ('m', 's'):
                 # Add a default offer
                 free_offer = {
                     'is_free': True,
@@ -700,7 +700,7 @@ class TurkuOriginalImporter(Importer):
                         pass
                     return None
                 fetched_img = fetch_from_image_table('drupal_nid', 'drupal_nid')  # Mothers and Singles
-                if fetched_img == None:
+                if not fetched_img:
                     fetch_from_image_table('drupal_nid', 'drupal_nid_super')  # Children inherit their Mothers images.
             except:
                 pass
