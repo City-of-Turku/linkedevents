@@ -291,7 +291,7 @@ class TurkuOriginalImporter(Importer):
         if not bool(int(eventTku['is_hobby'])):
             eid = int(eventTku['drupal_nid'])
             evItem = events[eid]
-            evItem['id'] = '{}:{}'.format(self.data_source.id, eid)
+            evItem['id'] = '%s:%s' % (self.data_source.id, eid)
             evItem['origin_id'] = eid
             evItem['data_source'] = self.data_source
             evItem['publisher'] = self.organization
@@ -351,37 +351,29 @@ class TurkuOriginalImporter(Importer):
             location_extra_info = ''
 
             if self.with_value(eventTku, 'address_extension', ''):
-                location_extra_info += '{}, '.format(
-                    bleach.clean(self.with_value(
-                        eventTku,
-                        'address_extension',
-                        ''), tags=[], strip=True))
-
+                location_extra_info += '%s, ' % bleach.clean(self.with_value(
+                    eventTku,
+                    'address_extension',
+                    ''), tags=[], strip=True)
             if self.with_value(eventTku, 'city_district', ''):
-                location_extra_info += '{}, '.format(
-                    bleach.clean(self.with_value(
-                        eventTku,
-                        'city_district',
-                        ''), tags=[], strip=True))
-
+                location_extra_info += '%s, ' % bleach.clean(self.with_value(
+                    eventTku,
+                    'city_district',
+                    ''), tags=[], strip=True)
             if self.with_value(eventTku, 'place', ''):
-                location_extra_info += '{}'.format(
-                    bleach.clean(self.with_value(
-                        eventTku,
-                        'place',
-                        ''), tags=[], strip=True))
+                location_extra_info += '%s' % bleach.clean(self.with_value(
+                    eventTku,
+                    'place',
+                    ''), tags=[], strip=True)
 
             if location_extra_info.strip().endswith(','):
                 location_extra_info = location_extra_info.strip()[:-1]
 
-            location_extra_info_format = '{} / {}'.format(
-                eventTku['address'], location_extra_info) if location_extra_info else eventTku['address']
-
             # Define location_extra_info dict.
             evItem['location_extra_info'] = {
-                "fi": location_extra_info_format,
-                "sv": location_extra_info_format,
-                "en": location_extra_info_format,
+                "fi": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
+                "sv": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address'],
+                "en": str(eventTku['address'])+' / '+location_extra_info if location_extra_info else eventTku['address']
             }
 
             if eventTku['event_image_ext_url']:
@@ -396,24 +388,15 @@ class TurkuOriginalImporter(Importer):
                         img = requests.get(eventTku['event_image_ext_url']['src'],
                                            headers={'User-Agent': 'Mozilla/5.0'}).content
                         imgfile = eventTku['drupal_nid']
-                        path = '{root}/{pathext}/{img}.{type}'.format(
-                            root=settings.MEDIA_ROOT,
-                            pathext=PATH_EXTEND,
-                            img=imgfile,
-                            type=IMAGE_TYPE
-                            )
-                        '''
                         path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
                             'root': settings.MEDIA_ROOT,
                             'pathext': PATH_EXTEND,
                             'img': imgfile,
                             'type': IMAGE_TYPE
                         })
-                        '''
                         with open(path, 'wb') as file:
                             file.write(img)
-
-                        return '{}/{}.{}'.format(PATH_EXTEND, imgfile, IMAGE_TYPE)
+                        return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
 
                     self.image_obj, _ = Image.objects.update_or_create(
                         defaults=dict(name='', photographer_name='', alt_text=''), **dict(
@@ -426,9 +409,9 @@ class TurkuOriginalImporter(Importer):
                 if field_name in evItem:
                     if evItem[field_name] != val:
                         logger.warning(
-                            "Event {{{}}}: {} mismatch ({} vs. {})".format(
+                            'Event %s: %s mismatch (%s vs. %s)' %
                             (eid, field_name, evItem[field_name], val)
-                        ))
+                        )
                         return
                 evItem[field_name] = val
 
@@ -554,8 +537,8 @@ class TurkuOriginalImporter(Importer):
             response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
             if response.status_code != 200:
                 logger.warning(
-                    "Drupal orig API reported HTTP {}".format(response.status_code
-                ))
+                    "Drupal orig API reported HTTP %d" % response.status_code
+                )
             if self.cache:
                 self.cache.delete_url(url)
                 continue
@@ -563,8 +546,9 @@ class TurkuOriginalImporter(Importer):
                 root_doc = response.json()
             except ValueError:
                 logger.warning(
-                    "Drupal orig API returned invalid JSON (try {} of {})".format(
-                        try_number + 1, max_tries))
+                    "Drupal orig API returned invalid JSON (try {} of {})"
+                    .format(try_number + 1, max_tries)
+                )
                 if self.cache:
                     self.cache.delete_url(url)
                     continue
@@ -707,7 +691,7 @@ class TurkuOriginalImporter(Importer):
                 def fetch_from_image_table(p, p2):
                     try:
                         eventObj = Event.objects.get(origin_id=json_event[p])
-                        img_format = '{}/{}.{}'.format('images', json_event[p2], 'jpg')
+                        img_format = '%s/%s.%s' % ('images', json_event[p2], 'jpg')
                         img_obj_returned = Image.objects.get(image=img_format)
                         eventObj.images.add(img_obj_returned.id)
                         return img_obj_returned
@@ -756,7 +740,8 @@ class TurkuOriginalImporter(Importer):
         self.syncher.finish(force=True)
 
         if len(notFoundKeys) != 0:
-            logger.warning('{} {}'.format(
-                    'Moderator should add the missing Keywords:', notFoundKeys)
+            logger.warning(
+                'Moderator should add the missing Keywords:'+str(notFoundKeys)
+            )
 
-        print("{} events processed".format(len(events.values())))
+        logger.info("%d events processed" % len(events.values()))
