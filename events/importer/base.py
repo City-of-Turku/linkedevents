@@ -223,11 +223,11 @@ class Importer(object):
     def _save_field(self, obj, obj_field_name, info,
                     info_field_name, max_length=None):
 
-        if info and info_field_name:
+        if info[info_field_name]:
             val = clean_text(info[info_field_name])
         else:
             val = None
-        if (max_length, val) and len(val) > max_length:
+        if max_length and len(val) > max_length:
             self.logger.warning("%s: field %s too long" % (obj, info_field_name))
             val = None
         self._set_field(obj, obj_field_name, val)
@@ -246,12 +246,12 @@ class Importer(object):
     def _save_field_multilevel(self, obj, obj_field_name, info,
                                info_field_name, max_length=None, nodeNames=[], lang=''):
         # Multilevel is used by tpr importer but does not use nodename or max length.
-        # We have retained some of these parameters & statements for future use if necessary.
+        # We have retained some of these parameters for future use.
         if info[info_field_name]:
             val = clean_text(info[info_field_name][lang])
         else:
             val = None
-        if (max_length, val) and len(val) > max_length:
+        if max_length and len(val) > max_length:
             self.logger.warning("%s: field %s too long" % (obj, info_field_name))
             val = None
 
