@@ -2,8 +2,6 @@ import asyncio
 import aiohttp
 import itertools
 import logging
-import string
-import logging
 import sys
 
 # Per module logger
