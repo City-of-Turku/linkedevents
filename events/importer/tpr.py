@@ -237,7 +237,7 @@ class TprekImporter(Importer):
         syncher = ModelSyncher(queryset, lambda obj: obj.origin_id, delete_func=self.mark_deleted,
                                check_deleted_func=self.check_deleted)
         for idx, infos in enumerate(obj_list, start=1):
-            logger.info("%s pages processed" % idx)
+            logger.info("Page: %s was processed." % idx)
             for info in infos:
                 self._import_unit(syncher, info)
 
