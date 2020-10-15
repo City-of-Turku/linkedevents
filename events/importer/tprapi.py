@@ -50,5 +50,5 @@ async def main(allow_errors=False):
 
 
 def async_main(x=None):
-    assert sys.version_info >= (3, 7), "Script requires Python 3.7+."
+    # assert sys.version_info >= (3, 7), "Script requires Python 3.7+."
     return asyncio.run(main(x))
