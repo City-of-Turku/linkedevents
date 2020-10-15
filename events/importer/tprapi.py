@@ -51,12 +51,12 @@ async def main(allow_errors=False):
 
 def async_main(x=None):
     # Currently works in 3.6 Python
-    if sys.version_info >= (3,7,0):
+    if sys.version_info >= (3, 7, 0):
         # 3.7+ feature.
         return asyncio.run(main(x))
     else:
         # 3.6 support.
-        futures = [main()]
+        futures = [main(x)]
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.wait(futures))
         return content

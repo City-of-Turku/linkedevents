@@ -188,6 +188,7 @@ class TprekImporter(Importer):
                 assert obj.position.srid == settings.PROJECTION_SRID
                 if position.distance(obj.position) < 0.10:
                     position = obj.position
+
             if position != obj.position:
                 obj._changed = True
                 obj._changed_fields.append('position')
@@ -237,10 +238,7 @@ class TprekImporter(Importer):
                                check_deleted_func=self.check_deleted)
         for idx, infos in enumerate(obj_list):
             logger.info("%s pages processed" % idx)
-            i = 0
             for info in infos:
-                i += 1
-                logger.info("%s units on pages %s" % (i, idx))
                 self._import_unit(syncher, info)
 
         syncher.finish(self.options.get('remap', False))
