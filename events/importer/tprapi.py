@@ -1,6 +1,5 @@
 import asyncio
 import aiohttp
-import itertools
 import logging
 import sys
 
@@ -50,12 +49,12 @@ async def main(allow_errors=False):
 
 
 def async_main(x=None):
-    # Currently works in 3.6 Python
+    # Works for both 3.6 and 3.7 Python versions.
     if sys.version_info >= (3, 7, 0):
-        # 3.7+ feature.
+        # 3.7+ support.
         return asyncio.run(main(x))
     else:
-        # 3.6 support.
+        # 3.6+ support.
         futures = [main(x)]
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.wait(futures))
