@@ -34,7 +34,7 @@ async def fetch(session, url, id):
 async def main(unit_pages=63):
     async with aiohttp.ClientSession() as session:
         tasks = []
-        for page_no in range(0, unit_pages):
+        for page_no in range(1, unit_pages):
             URL = 'https://palvelukartta.turku.fi/api/v2/unit/?page=%s' % page_no
             tasks.append(fetch(session, URL, page_no))
         try:
