@@ -1285,6 +1285,12 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             self.fields_needed_to_publish.remove('location')
             self.fields_needed_to_publish.append('virtualevent_url')
             self.fields_needed_to_publish = tuple(self.fields_needed_to_publish)
+
+        if 'super_event_type' in data:
+            if data['super_event_type'] == 'recurring':
+                self.fields_needed_to_publish = list (self.fields_needed_to_publish)
+                self.fields_needed_to_publish.remove('start_time')
+                self.fields_needed_to_publish = tuple(self.fields_needed_to_publish)
             
         # check that published events have a location, keyword and start_time
         languages = utils.get_fixed_lang_codes()
@@ -1345,12 +1351,6 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             raise serializers.ValidationError(errors)
 
         data = self.run_extension_validations(data)
-
-        if 'super_event_type' in data:
-            if data['super_event_type'] == 'recurring':
-                self.fields_needed_to_publish = list (self.fields_needed_to_publish)
-                self.fields_needed_to_publish.remove('start_time')
-                self.fields_needed_to_publish = tuple(self.fields_needed_to_publish)
 
         return data
 
