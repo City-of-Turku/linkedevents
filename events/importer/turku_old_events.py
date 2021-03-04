@@ -648,6 +648,7 @@ class TurkuOriginalImporter(Importer):
                                     }
                                 )
                             except Exception as ex:
+                                print("Child saving did not work... ------")
                                 pass
                         except Exception as ex:
                             pass
