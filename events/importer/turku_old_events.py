@@ -609,6 +609,14 @@ class TurkuOriginalImporter(Importer):
                         try:
                             child = Event.objects.get(origin_id=x['drupal_nid'])
                             mother = Event.objects.get(origin_id=json_event['drupal_nid'])
+
+                            sub_event_type = None
+                            #sub_recurring, sub_umbrella
+                            if mother.super_event_type == "recurring":
+                                sub_event_type = "sub_recurring"
+                            elif mother.super_event_type == "umbrella":
+                                sub_event_type = "sub_umbrella"
+
                             try:
                                 Event.objects.update_or_create(
                                     id=child.id,
@@ -636,6 +644,7 @@ class TurkuOriginalImporter(Importer):
                                         'info_url_sv': mother.info_url_fi,
                                         'info_url_en': mother.info_url_fi,
                                         'super_event': mother
+                                        'sub_event_type': sub_event_type
                                     }
                                 )
                             except Exception as ex:
