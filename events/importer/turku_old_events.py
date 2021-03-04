@@ -610,12 +610,15 @@ class TurkuOriginalImporter(Importer):
                             child = Event.objects.get(origin_id=x['drupal_nid'])
                             mother = Event.objects.get(origin_id=json_event['drupal_nid'])
 
+                            logger.info("savee lapsi tapahtumaa just nyt.")
+
                             sub_event_type = None
                             #sub_recurring, sub_umbrella
                             if mother.super_event_type == "recurring":
                                 sub_event_type = "sub_recurring"
                             elif mother.super_event_type == "umbrella":
                                 sub_event_type = "sub_umbrella"
+
 
                             try:
                                 Event.objects.update_or_create(
@@ -648,7 +651,7 @@ class TurkuOriginalImporter(Importer):
                                     }
                                 )
                             except Exception as ex:
-                                print("Child saving did not work... ------")
+                                logger.info("error saving child event: ", ex)
                                 pass
                         except Exception as ex:
                             pass
