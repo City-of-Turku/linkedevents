@@ -643,8 +643,8 @@ class TurkuOriginalImporter(Importer):
                                         'info_url_fi': mother.info_url_fi,
                                         'info_url_sv': mother.info_url_fi,
                                         'info_url_en': mother.info_url_fi,
-                                        'super_event': mother
-                                        'sub_event_type': sub_event_type
+                                        'super_event': mother,
+                                        'sub_event_type': sub_event_type,
                                     }
                                 )
                             except Exception as ex:
