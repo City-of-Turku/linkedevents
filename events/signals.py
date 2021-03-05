@@ -15,17 +15,13 @@ def post_update(instance, *args, **kwargs):
             
             try:
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
-
-                child_start_times = [v for x in ev_objs.start_time]
-                child_end_times = [v for x in ev_objs.end_time]
-
-                #for child_ev in ev_objs:
-                #    child_start_times.append(child_ev.start_time)
-                #    child_end_times.append(child_ev.end_time)
-
+                child_start_times = []
+                child_end_times = []
+                for child_ev in ev_objs:
+                    child_start_times.append(child_ev.start_time)
+                    child_end_times.append(child_ev.end_time)
                 instance.super_event.start_time = min(child_start_times)
                 instance.super_event.end_time = max(child_start_times)
-
                 instance.super_event.save()
             except Exception as e:
                 print(e)
