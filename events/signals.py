@@ -12,20 +12,13 @@ logger = logging.getLogger(__name__)
 def post_update(instance, *args, **kwargs):
     try:
         if instance.sub_event_type == 'sub_recurring':
-
-            # mother = Event.objects.get(origin_id=instance.super_event)
-
-            print("TESTI")
-            print(instance.super_event.id)
-            print(type(instance.super_event.id))
-
             try:
-                print("Täällä?")
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
-                print("ev objs : ", ev_objs)
-
                 for child_ev in ev_objs:
-                    print(child_ev.start_time)
+                    print("lapsi id: ", child.id, ", kannassa oleva aika: ", child_ev.start_time)
+
+                print("nykyinen lapsi id: ", instance.id, ", sen aika on: ", instance.start_time)
+
             except Exception as e:
                 print(e)
                 pass
