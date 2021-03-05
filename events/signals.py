@@ -18,6 +18,11 @@ def post_update(instance, *args, **kwargs):
             print("TESTI")
             print(instance.super_event.id)
             print(type(instance.super_event.id))
+
+            ev_objs = Event.objects.get(super_event_id=instance.super_event.id)
+
+            print(ev_objs)
+
             if instance.start_time < instance.super_event.start_time:
                 instance.super_event.start_time = instance.start_time             
             if instance.end_time > instance.super_event.end_time:
