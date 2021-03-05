@@ -15,8 +15,8 @@ def post_update(instance, *args, **kwargs):
 
             # mother = Event.objects.get(origin_id=instance.super_event)
 
-            logger.info("lapsen Super eventin ID on? : ", instance.super_event)
-
+            logger.info("lapsen Super eventin ID on? : ", instance.super_event.id)
+            
             if instance.start_time < instance.super_event.start_time:
                 instance.super_event.start_time = instance.start_time             
             if instance.end_time > instance.super_event.end_time:
