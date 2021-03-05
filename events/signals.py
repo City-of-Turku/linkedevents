@@ -3,6 +3,7 @@ import logging
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from events.models import Event
 from notifications.models import (NotificationType, NotificationTemplateException, render_notification_template)
 from smtplib import SMTPException
 
@@ -11,10 +12,16 @@ logger = logging.getLogger(__name__)
 def post_update(instance, *args, **kwargs):
     try:
         if instance.sub_event_type == 'sub_recurring':
+
+            # mother = Event.objects.get(origin_id=instance.super_event)
+
+            logger.info("lapsen Super eventin ID on? : ", instance.super_event)
+
             if instance.start_time < instance.super_event.start_time:
                 instance.super_event.start_time = instance.start_time             
             if instance.end_time > instance.super_event.end_time:
                 instance.super_event.end_time = instance.end_time
+
             instance.super_event.save()
     except:
         pass
