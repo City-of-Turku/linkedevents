@@ -15,7 +15,7 @@ def post_update(instance, *args, **kwargs):
             try:
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
                 for child_ev in ev_objs:
-                    print("lapsi id: ", child.id, ", kannassa oleva aika: ", child_ev.start_time)
+                    print("lapsi id: ", child_ev.id, ", kannassa oleva aika: ", child_ev.start_time)
 
                 print("nykyinen lapsi id: ", instance.id, ", sen aika on: ", instance.start_time)
 
