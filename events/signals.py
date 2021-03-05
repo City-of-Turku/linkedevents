@@ -15,9 +15,9 @@ def post_update(instance, *args, **kwargs):
             
             try:
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
-                
-                child_start_times = [v for x in child_ev.start_time]
-                child_end_times = [v for x in child_ev.end_time]
+
+                child_start_times = [v for x in ev_objs.start_time]
+                child_end_times = [v for x in ev_objs.end_time]
 
                 #for child_ev in ev_objs:
                 #    child_start_times.append(child_ev.start_time)
