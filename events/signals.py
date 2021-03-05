@@ -19,9 +19,9 @@ def post_update(instance, *args, **kwargs):
             print(instance.super_event.id)
             print(type(instance.super_event.id))
 
-            ev_objs = Event.objects.get(super_event_id=instance.super_event.id)
+            ev_objs = Event.objects.get(origin_id=instance.super_event.id)
 
-            print(ev_objs)
+            print("ev objects: ", ev_objs)
 
             if instance.start_time < instance.super_event.start_time:
                 instance.super_event.start_time = instance.start_time             
