@@ -21,7 +21,7 @@ def post_update(instance, *args, **kwargs):
 
             try:
                 print("Täällä?")
-                ev_objs = Event.objects.get(super_event_id=instance.super_event.id)
+                ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
                 print("ev objs : ", ev_objs)
 
                 for child_ev in ev_objs:
