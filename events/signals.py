@@ -25,7 +25,8 @@ def post_update(instance, *args, **kwargs):
                 instance.super_event.end_time = instance.end_time
 
             instance.super_event.save()
-    except:
+    except Exception as e:
+        logger.info(e)
         pass
 
 def post_save(instance, *args, **kwargs):
