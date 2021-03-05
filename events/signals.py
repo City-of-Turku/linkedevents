@@ -16,17 +16,15 @@ def post_update(instance, *args, **kwargs):
             # mother = Event.objects.get(origin_id=instance.super_event)
 
             print("TESTI")
-            print("TESTI: ",  instance.super_event)
-            logger.info("lapsen Super eventin ID on? : ", instance.super_event.id)
-
+            print(instance.super_event.id)
+            print(type(instance.super_event.id))
             if instance.start_time < instance.super_event.start_time:
                 instance.super_event.start_time = instance.start_time             
             if instance.end_time > instance.super_event.end_time:
                 instance.super_event.end_time = instance.end_time
 
             instance.super_event.save()
-    except Exception as e:
-        logger.info(e)
+    except:
         pass
 
 def post_save(instance, *args, **kwargs):
