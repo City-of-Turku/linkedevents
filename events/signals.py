@@ -23,6 +23,9 @@ def post_update(instance, *args, **kwargs):
                 print("Täällä?")
                 ev_objs = Event.objects.get(super_event_id=instance.super_event.id)
                 print("ev objs : ", ev_objs)
+
+                for child_ev in ev_objs:
+                    print(child_ev.start_time)
             except Exception as e:
                 print(e)
                 pass
