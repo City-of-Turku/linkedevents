@@ -12,14 +12,13 @@ logger = logging.getLogger(__name__)
 def post_update(instance, *args, **kwargs):
     try:
         if instance.sub_event_type == 'sub_recurring':
-            
             try:
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
-                child_start_times = []
-                child_end_times = []
-                for child_ev in ev_objs:
-                    child_start_times.append(child_ev.start_time)
-                    child_end_times.append(child_ev.end_time)
+                child_start_times = [x.start_time for x in ev_objs]
+                child_end_times = [x.end_time for x in ev_objs]
+                #for child_ev in ev_objs:
+                #    child_start_times.append(child_ev.start_time)
+                #    child_end_times.append(child_ev.end_time)
                 instance.super_event.start_time = min(child_start_times)
                 instance.super_event.end_time = max(child_start_times)
                 instance.super_event.save()
