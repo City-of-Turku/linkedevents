@@ -22,13 +22,6 @@ def post_update(instance, *args, **kwargs):
             except Exception as e:
                 print(e)
                 pass
-
-            #if instance.start_time < instance.super_event.start_time:
-            #    instance.super_event.start_time = instance.start_time             
-            #if instance.end_time > instance.super_event.end_time:
-            #    instance.super_event.end_time = instance.end_time
-
-            #instance.super_event.save()
     except:
         pass
 
