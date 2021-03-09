@@ -15,6 +15,11 @@ def post_update(instance, *args, **kwargs):
             try:
                 # Mothers values need to be updated based on the min child start_time and max end_time date.
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
+                '''
+                child_list appends both start_time and end_time values from the above returned query (mothers all children).
+                We can safely do this because logically, an end_time can never pre date a start_time. 
+                Max will always be an end_time and respectively; minimum will always be a start_time.
+                '''
                 child_list = [v for x in ev_objs for v in (x.start_time, x.end_time)]
                 instance.super_event.start_time = min(child_list)
                 instance.super_event.end_time = max(child_list)
