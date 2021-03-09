@@ -14,14 +14,10 @@ def post_update(instance, *args, **kwargs):
         if instance.sub_event_type == 'sub_recurring':
             try:
                 ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
-                #child_start_times = [x.start_time for x in ev_objs]
-                #child_end_times = [x.end_time for x in ev_objs]
-                child_list = [x for x in (ev_objs.start_time, ev_objs.end_time)]
-
+                child_start_times = [x.start_time for x in ev_objs]
+                child_end_times = [x.end_time for x in ev_objs]
                 instance.super_event.start_time = min(child_list)
                 instance.super_event.end_time = max(child_list)
-                #instance.super_event.start_time = min(child_start_times)
-                #instance.super_event.end_time = max(child_start_times)
                 instance.super_event.save()
             except Exception as e:
                 print(e)
