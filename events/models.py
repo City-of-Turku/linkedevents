@@ -517,6 +517,15 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
         (SuperEventType.UMBRELLA, _('Umbrella event')),
     )
 
+    class SubEventType:
+        SUB_RECURRING = 'sub_recurring'
+        SUB_UMBRELLA = 'sub_umbrella'
+
+    SUB_EVENT_TYPES = (
+        (SubEventType.SUB_RECURRING, _('Sub_Recurring')),
+        (SubEventType.SUB_UMBRELLA, _('Sub_Umbrella')),
+    )
+
     # Properties from schema.org/Thing
     info_url = models.URLField(verbose_name=_('Event home page'), blank=True, null=True, max_length=1000)
     description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
@@ -571,6 +580,9 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
     super_event_type = models.CharField(max_length=255, blank=True, null=True, db_index=True,
                                         default=None, choices=SUPER_EVENT_TYPES)
 
+    sub_event_type = models.CharField(max_length=255, blank=True, null=True, db_index=True, 
+                                        default=None, choices=SUB_EVENT_TYPES)
+
     in_language = models.ManyToManyField(Language, verbose_name=_('In language'), related_name='events', blank=True)
 
     images = models.ManyToManyField(Image, related_name='events', blank=True)
@@ -578,6 +590,7 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
     deleted = models.BooleanField(default=False, db_index=True)
 
     is_virtualevent = models.BooleanField(default=False, db_index=True)
+    virtualevent_url = models.URLField(verbose_name=_('Virtual event location'), blank=True, null=True, max_length=1000)
 
     replaced_by = models.ForeignKey('Event', on_delete=models.SET_NULL, related_name='aliases', null=True, blank=True)
 
