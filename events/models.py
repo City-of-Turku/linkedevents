@@ -150,7 +150,7 @@ class Image(models.Model):
     objects = BaseQuerySet.as_manager()
 
     # Properties from schema.org/Thing
-    name = models.CharField(verbose_name=_('Name'), max_length=255, db_index=True, default='')
+    name = models.CharField(verbose_name=_('Name'), max_length=255, db_index=True, blank=True, null=True)
 
     data_source = models.ForeignKey(
         DataSource, on_delete=models.CASCADE, related_name='provided_%(class)s_data', db_index=True, null=True)
@@ -310,9 +310,9 @@ class Keyword(BaseModel, ImageMixin, ReplacedByMixin):
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self._has_circular_replacement():
-            raise Exception("Trying to replace this keyword with a keyword that is replaced by this keyword"
-                            "Please refrain from creating circular replacements and"
-                            "remove one of the replacements.")
+            raise ValidationError(_("Trying to replace this keyword with a keyword that is replaced by this keyword. "
+                                    "Please refrain from creating circular replacements and"
+                                    "remove one of the replacements."))
 
         if self.replaced_by and not self.deprecated:
             self.deprecated = True
@@ -429,10 +429,9 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self._has_circular_replacement():
-            raise Exception("Trying to replace this place with a place that is replaced by this place"
-                            "Please refrain from creating circular replacements and"
-                            "remove one of the replacements."
-                            "We don't want homeless events.")
+            raise ValidationError(_("Trying to replace this place with a place that is replaced by this place. "
+                                    "Please refrain from creating circular replacements and remove one of the "
+                                    "replacements. We don't want homeless events."))
 
         if self.replaced_by and not self.deleted:
             self.deleted = True
@@ -518,6 +517,15 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
         (SuperEventType.UMBRELLA, _('Umbrella event')),
     )
 
+    class SubEventType:
+        SUB_RECURRING = 'sub_recurring'
+        SUB_UMBRELLA = 'sub_umbrella'
+
+    SUB_EVENT_TYPES = (
+        (SubEventType.SUB_RECURRING, _('Sub_Recurring')),
+        (SubEventType.SUB_UMBRELLA, _('Sub_Umbrella')),
+    )
+
     # Properties from schema.org/Thing
     info_url = models.URLField(verbose_name=_('Event home page'), blank=True, null=True, max_length=1000)
     description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
@@ -572,11 +580,17 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
     super_event_type = models.CharField(max_length=255, blank=True, null=True, db_index=True,
                                         default=None, choices=SUPER_EVENT_TYPES)
 
+    sub_event_type = models.CharField(max_length=255, blank=True, null=True, db_index=True, 
+                                        default=None, choices=SUB_EVENT_TYPES)
+
     in_language = models.ManyToManyField(Language, verbose_name=_('In language'), related_name='events', blank=True)
 
     images = models.ManyToManyField(Image, related_name='events', blank=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    is_virtualevent = models.BooleanField(default=False, db_index=True)
+    virtualevent_url = models.URLField(verbose_name=_('Virtual event location'), blank=True, null=True, max_length=1000)
 
     replaced_by = models.ForeignKey('Event', on_delete=models.SET_NULL, related_name='aliases', null=True, blank=True)
 
@@ -593,9 +607,9 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
 
     def save(self, *args, **kwargs):
         if self._has_circular_replacement():
-            raise Exception("Trying to replace this event with an event that is replaced by this event"
-                            "Please refrain from creating circular replacements and"
-                            "remove one of the replacements.")
+            raise ValidationError(_("Trying to replace this event with an event that is replaced by this event. "
+                                    "Please refrain from creating circular replacements and "
+                                    "remove one of the replacements."))
 
         if self.replaced_by and not self.deleted:
             self.deleted = True
@@ -626,8 +640,12 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
             if start > end:
                 raise ValidationError({'end_time': _('The event end time cannot be earlier than the start time.')})
 
-        if any([keyword.deprecated for keyword in self.keywords.all() | self.audience.all()]):
-            raise ValidationError({'keywords': _("Event can't have deprecated keywords")})
+        if (self.keywords.filter(deprecated=True) or self.audience.filter(deprecated=True)) and (
+                not self.deleted):
+            raise ValidationError({'keywords': _("Trying to save event with deprecated keywords " +
+                                                 str(self.keywords.filter(deprecated=True).values('id')) + " or " +
+                                                 str(self.audience.filter(deprecated=True).values('id')) +
+                                                 ". Please use up-to-date keywords.")})
 
         super(Event, self).save(*args, **kwargs)
 
@@ -643,7 +661,7 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
         # send notifications
         if old_publication_status == PublicationStatus.DRAFT and self.publication_status == PublicationStatus.PUBLIC:
             self.send_published_notification()
-        if old_deleted is False and self.deleted is True:
+        if self.publication_status == PublicationStatus.DRAFT and (old_deleted is False and self.deleted is True):
             self.send_deleted_notification()
         if created and self.publication_status == PublicationStatus.DRAFT:
             self.send_draft_posted_notification()
@@ -708,9 +726,9 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
 
     def _get_author_emails(self):
         author_emails = []
-        for user in (self.created_by, self.last_modified_by):
-            if user and user.email:
-                author_emails.append(user.email)
+        author = self.created_by
+        if author and author.email:
+            author_emails.append(author.email)
         return author_emails
 
     def send_deleted_notification(self, request=None):
@@ -777,7 +795,7 @@ class EventLink(models.Model, SimpleValueMixin):
 
 
 class Video(models.Model, SimpleValueMixin):
-    name = models.CharField(verbose_name=_('Name'), max_length=255, db_index=True, default='')
+    name = models.CharField(verbose_name=_('Name'), max_length=255, db_index=True, blank=True, null=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, db_index=True, related_name='videos')
     url = models.URLField()
     alt_text = models.CharField(verbose_name=_('Alt text'), max_length=320, null=True, blank=True)

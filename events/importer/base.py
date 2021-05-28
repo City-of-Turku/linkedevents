@@ -222,8 +222,8 @@ class Importer(object):
 
     def _save_field(self, obj, obj_field_name, info,
                     info_field_name, max_length=None):
-        # atm only used by place importers, do some extra cleaning and validation before setting value
-        if info_field_name in info:
+
+        if info and info_field_name and info[info_field_name]:
             val = clean_text(info[info_field_name])
         else:
             val = None
@@ -234,7 +234,7 @@ class Importer(object):
 
     def _save_translated_field(self, obj, obj_field_name, info,
                                info_field_name, max_length=None):
-        # atm only used by place importers, do some extra cleaning and validation before setting value
+
         for lang in self.supported_languages:
             key = '%s_%s' % (info_field_name, lang)
             obj_key = '%s_%s' % (obj_field_name, lang)
@@ -243,8 +243,35 @@ class Importer(object):
             if lang == 'fi':
                 self._save_field(obj, obj_field_name, info, key, max_length)
 
+    def _save_field_multilevel(self, obj, obj_field_name, info,
+                               info_field_name, max_length=None, nodeNames=[], lang=''):
+        # Multilevel is used by tpr importer but does not use nodename or max length.
+        # We have retained some of these parameters for future use.
+        if info and info_field_name and info[info_field_name]:
+            if info[info_field_name][lang] != None:
+                val = clean_text(info[info_field_name][lang])
+            else:
+                val = info[info_field_name][lang]
+        else:
+            val = None
+        if max_length and val and len(val) > max_length:
+            self.logger.warning("%s: field %s too long" % (obj, info_field_name))
+            val = None
+
+        self._set_field(obj, obj_field_name, val)
+
+    def _save_translated_field_multilevel(self, obj, obj_field_name, info,
+                                          info_field_name, max_length=None, nodeNames=[]):
+
+        for lang in self.supported_languages:
+            obj_key = '%s_%s' % (obj_field_name, lang)
+
+            self._save_field_multilevel(obj, obj_key, info, info_field_name, max_length, nodeNames, lang)
+            if lang == 'fi':
+                self._save_field_multilevel(obj, obj_field_name, info, info_field_name, max_length, nodeNames, lang)
+
     def _update_fields(self, obj, info, skip_fields):
-        # all non-place importers use this method, automatically takes care of translated fields
+
         obj_fields = list(obj._meta.fields)
         trans_fields = translator.get_options_for_model(type(obj)).fields
         for field_name, lang_fields in trans_fields.items():
@@ -342,7 +369,9 @@ class Importer(object):
 
         self._set_field(obj, 'deleted', False)
 
-        if obj._created or obj._changed:
+        if obj._created:
+            # We have to save new objects here to be able to add related fields.
+            # Changed objects will be saved only *after* related fields have been changed.
             try:
                 obj.save()
             except ValidationError as error:
@@ -366,6 +395,7 @@ class Importer(object):
             else:
                 obj.keywords.set(new_keywords)
                 obj._changed = True
+            obj._changed_fields.append('keywords')
         audience = info.get('audience', [])
         new_audience = set([kw.id for kw in audience])
         old_audience = set(obj.audience.values_list('id', flat=True))
@@ -378,6 +408,7 @@ class Importer(object):
             else:
                 obj.audience.set(new_audience)
                 obj._changed = True
+            obj._changed_fields.append('audience')
         in_language = info.get('in_language', [])
         new_languages = set([lang.id for lang in in_language])
         old_languages = set(obj.in_language.values_list('id', flat=True))
@@ -390,6 +421,7 @@ class Importer(object):
             else:
                 obj.in_language.set(in_language)
                 obj._changed = True
+            obj._changed_fields.append('in_language')
 
         # one-to-many fields with foreign key pointing to event
 
@@ -407,6 +439,7 @@ class Importer(object):
                 for o in offers:
                     o.save()
                 obj._changed = True
+                obj._changed_fields.append('offers')
 
         links = []
         if 'external_links' in info:
@@ -436,6 +469,7 @@ class Importer(object):
                         link_obj.name = link['name']
                     link_obj.save()
                 obj._changed = True
+                obj._changed_fields.append('links')
 
         if 'extension_course' in settings.INSTALLED_APPS:
             extension_data = info.get('extension_course')
@@ -461,9 +495,15 @@ class Importer(object):
 
                 if course_changed:
                     obj._changed = True
+                    obj._changed_fields.append('extension_course')
+
+        # If event start time changed, it was rescheduled.
+        if 'start_time' in obj._changed_fields:
+            self._set_field(obj, 'event_status', Event.Status.RESCHEDULED)
 
         if obj._changed or obj._created:
-            # save again after adding related fields to update last_modified_time!
+            # Finally, we must save the whole object, even when only related fields changed.
+            # Also, we want to log all that happened.
             try:
                 obj.save()
             except ValidationError as error:

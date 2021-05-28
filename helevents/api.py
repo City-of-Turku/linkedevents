@@ -5,10 +5,10 @@ from rest_framework import permissions, serializers, generics, viewsets
 all_views = []
 
 
-def register_view(klass, name, base_name=None):
+def register_view(klass, name, basename=None):
     entry = {'class': klass, 'name': name}
-    if base_name is not None:
-        entry['base_name'] = base_name
+    if basename is not None:
+        entry['basename'] = basename
     all_views.append(entry)
 
 
@@ -22,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             rep['organization'] = default_org.id
         rep['admin_organizations'] = [org.id for org in obj.admin_organizations.all()]
         rep['organization_memberships'] = [org.id for org in obj.organization_memberships.all()]
+        rep['public_memberships'] = [org.id for org in obj.public_memberships.all()]
         return rep
 
     class Meta:

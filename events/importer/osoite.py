@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.utils.module_loading import import_string
 from django_orghierarchy.models import Organization
+from django_orghierarchy.models import OrganizationClass
 
 from events.models import DataSource, Place
 from .sync import ModelSyncher
@@ -14,8 +15,9 @@ from .base import Importer, register_importer
 # Per module logger
 logger = logging.getLogger(__name__)
 
-GK25_SRID = 3879
+GK23_SRID = 3877
 
+#NOTE! this import uses munigeo library component and there must be turku specific file turku.py
 
 @register_importer
 class OsoiteImporter(Importer):
@@ -23,39 +25,51 @@ class OsoiteImporter(Importer):
     supported_languages = ['fi', 'sv']
 
     def setup(self):
-        ds_args = dict(id='osoite')
-        defaults = dict(name='Pääkaupunkiseudun osoiteluettelo')
-        self.data_source, _ = DataSource.objects.get_or_create(defaults=defaults, **ds_args)
-
-        ds_args = dict(id='ahjo')
-        defaults = dict(name='Ahjo')
-        ahjo_ds, _ = DataSource.objects.get_or_create(defaults=defaults, **ds_args)
-
-        org_args = dict(origin_id='u541000', data_source=ahjo_ds)
-        defaults = dict(name='Kaupunkiympäristön toimiala')
-        self.organization, _ = Organization.objects.get_or_create(defaults=defaults, **org_args)
+    
+    
+        #public data source for organizations model
+        ds_args = dict(id='org', user_editable=True)
+        defaults = dict(name='Ulkoa tuodut organisaatiotiedot')
+        self.data_source, _ = DataSource.objects.update_or_create(defaults=defaults, **ds_args)         
+        
+        #public organization class for all places
+        ds_args = dict(origin_id='12', data_source=self.data_source)
+        defaults = dict(name='Paikkatieto')
+        self.organizationclass, _ =  OrganizationClass.objects.update_or_create(defaults=defaults, **ds_args)
+    
+        #address data source  
+        ds_args = dict(id='osoite', user_editable=True)
+        defaults = dict(name='Ulkoa tuodut osoitetiedot (sis. paikan)')
+        self.data_source, _ = DataSource.objects.update_or_create(defaults=defaults, **ds_args)
+        
+        #Organization for addresses
+        org_args = dict(origin_id='1000', data_source=self.data_source, classification_id="org:12")
+        defaults = dict(name='Osoiterekisteri')
+        self.organization, _ = Organization.objects.update_or_create(defaults=defaults, **org_args)
         if self.options.get('remap', None):
             # This will prevent deletion checking, marking all deleted places as deleted
             # again and remapping them accordingly! Otherwise, places already deleted
             # will not be remapped by the syncher.
             self.check_deleted = lambda x: False
             self.mark_deleted = self.delete_and_replace
-
+            
     def get_street_address(self, address, language):
         # returns the address sans municipality in the desired language, or Finnish as fallback
-        street = getattr(address.street, 'name_' + language) or getattr(address.street, 'name_fi')
-        s = '%s %s' % (street, address.number)
-        if address.number_end:
-            s += '-%s' % address.number_end
-        if address.letter:
-            s += '%s' % address.letter
-        return s
+        street = getattr(address.street, 'name_' + language)
+        if street:
+            s = '%s %s' % (street, address.number)
+            if address.number_end:
+                s += '-%s' % address.number_end
+            if address.letter:
+                s += '%s' % address.letter
+            return s
 
     def get_whole_address(self, address, language):
         # returns the address plus municipality in the desired language, or Finnish as fallback
-        municipality = getattr(address.street.municipality, 'name_' + language) \
-            or getattr(address.street.municipality, 'name_fi')
-        return self.get_street_address(address, language) + ', ' + municipality
+        municipality = getattr(address.street.municipality, 'name_' + language)
+        rtn = self.get_street_address(address, language)
+        if rtn:
+            return rtn + ', ' + municipality
 
     def pk_get(self, resource_name, res_id=None):
         # support all munigeo resources, not just addresses
@@ -117,13 +131,16 @@ class OsoiteImporter(Importer):
         self._save_translated_field(obj, 'address_locality', info, 'municipality')
 
         position = address_obj.location
-
+        #print("[OSOITE.PY]: ---> POSITION: ", position)
+        #position = None
+        obj._changed = True
         if position and obj.position:
             # If the distance is less than 10cm, assume the location
             # hasn't changed.
             assert obj.position.srid == settings.PROJECTION_SRID
             if position.distance(obj.position) < 0.10:
                 position = obj.position
+                #position = None
         if position != obj.position:
             obj._changed = True
             obj._changed_fields.append('position')
@@ -155,10 +172,13 @@ class OsoiteImporter(Importer):
     def import_places(self):
         # munigeo saves addresses in local db, we just create Places from them.
         # note that the addresses only change daily and the import is time-consuming, so we should not run this hourly
-
+        
+        #NOTE! this use munigeo library component and there is turku specific file turku.py
+        #Check at munigeo import in requirements files django-munigeo==0.2.26 includes this turku.py file 
         # addresses require the municipalities to be present in the db
         call_command('geo_import', 'finland', municipalities=True)
-        call_command('geo_import', 'helsinki', addresses=True)
+        #call_command('geo_import', 'helsinki', addresses=True)
+        call_command('geo_import', 'turku', addresses=True)
 
         queryset = Place.objects.filter(data_source=self.data_source)
         if self.options.get('single', None):
