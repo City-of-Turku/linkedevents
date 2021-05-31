@@ -15,6 +15,7 @@ django-leaflet
 django-modeltranslation
 django-mptt
 django-munigeo
+django-munigeo-turku>=0.2.31
 django-orghierarchy
 django-reversion
 django==2.2.11
