@@ -79,7 +79,7 @@ django-parler==2.0.1
     #   django-parler-rest
 django-reversion==3.0.7
     # via -r requirements.in
-django==2.2.24
+django==3.1.13
     # via
     #   -r requirements.in
     #   django-admin-autocomplete-filter
