@@ -513,11 +513,13 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
         GENERAL = 1
         COURSE = 2
         VOLUNTEERING = 3
+        HOBBIES = 4
 
     TYPE_IDS = (
         (Type_Id.GENERAL, _("General")),
         (Type_Id.COURSE, _("Course")),
         (Type_Id.VOLUNTEERING, _("Volunteering")),
+        (Type_Id.HOBBIES, _("Hobbies")),
     )
 
     class SuperEventType:
