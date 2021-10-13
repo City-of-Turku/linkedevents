@@ -1494,11 +1494,9 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         event = super().create(validated_data)
 
         for offer in offers:
-            payment_method = offer.pop('payment_method', None)
+            payment_methods = offer.pop('payment_methods', [])
             offer_instance = Offer.objects.create(event=event, **offer)
-            if payment_method:
-                # offer_instance.payment_methods.create(**payment_method)
-                payment_method = PaymentMethod(**payment_method)
+            for payment_method in payment_methods:
                 offer_instance.payment_methods.add(payment_method)
         for link in links:
             EventLink.objects.create(event=event, **link)
