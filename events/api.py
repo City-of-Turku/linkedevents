@@ -63,7 +63,7 @@ from events.custom_elasticsearch_search_backend import (
 from events.extensions import apply_select_and_prefetch, get_extensions_from_request
 from events.models import (
     Place, Event, Keyword, KeywordSet, Language, OpeningHoursSpecification, EventLink,
-    Offer, DataSource, Image, PublicationStatus, PUBLICATION_STATUSES, License, Video
+    Offer, DataSource, Image, PublicationStatus, PUBLICATION_STATUSES, License, Video, PaymentMethod
 )
 from events.translation import EventTranslationOptions, ImageTranslationOptions
 from helevents.models import User
@@ -260,6 +260,10 @@ class JSONLDRelatedField(relations.HyperlinkedRelatedField):
                 self.invalid_json_error % type(value).__name__)
 
         url = value['@id']
+
+        if not isinstance(url, str):
+            url = str(url)
+
         if not url:
             if self.required:
                 raise serializers.ValidationError(_('This field is required.'))
@@ -1134,7 +1138,29 @@ class EventLinkSerializer(serializers.ModelSerializer):
         exclude = ['id', 'event']
 
 
+class PaymentMethodSerializer(LinkedEventsSerializer):
+    view_name = 'paymentmethod-detail'
+    id = serializers.CharField(required=False)
+    name = serializers.CharField(required=False)
+
+    class Meta:
+        model = PaymentMethod
+        fields = '__all__'
+
+
+class PaymentViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = PaymentMethod.objects.all()
+    serializer_class = PaymentMethodSerializer
+
+
+register_view(PaymentViewSet, 'paymentmethod')
+
+
 class OfferSerializer(TranslatedModelSerializer):
+    payment_methods = JSONLDRelatedField(
+        serializer=PaymentMethodSerializer, many=True, required=True, allow_empty=True,
+        view_name='paymentmethod-detail', queryset=PaymentMethod.objects.all())
+
     class Meta:
         model = Offer
         exclude = ['id', 'event']
@@ -1467,9 +1493,13 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
 
         event = super().create(validated_data)
 
-        # create and add related objects
         for offer in offers:
-            Offer.objects.create(event=event, **offer)
+            payment_method = offer.pop('payment_method', None)
+            offer_instance = Offer.objects.create(event=event, **offer)
+            if payment_method:
+                # offer_instance.payment_methods.create(**payment_method)
+                payment_method = PaymentMethod(**payment_method)
+                offer_instance.payment_methods.add(payment_method)
         for link in links:
             EventLink.objects.create(event=event, **link)
         for video in videos:
