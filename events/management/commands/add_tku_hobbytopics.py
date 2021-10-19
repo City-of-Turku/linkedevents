@@ -14,7 +14,7 @@ TURKU_KEYWORD_SET_DATA = {
     'usage': KeywordSet.KEYWORD,
 }
 
-# Valmis.
+
 TURKU_KEYWORD_IDS = [
     # Hobby content target:
     'tsl:p1',  # Ajanvietepelit
