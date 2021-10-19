@@ -49,7 +49,6 @@ class Command(BaseCommand):
     def create_tsl_hobbytopics_keyword_set(self):
         self.stdout.write('creating Turku TSL hobbytopics keyword set...')
 
-        # create the set itself
         keyword_set, created = KeywordSet.objects.update_or_create(
             id=TURKU_KEYWORD_SET_DATA['id'],
             defaults=TURKU_KEYWORD_SET_DATA
@@ -61,7 +60,6 @@ class Command(BaseCommand):
             self.stdout.write('keyword set "%s" already exist' %
                               TURKU_KEYWORD_SET_DATA['id'])
 
-        # add the keywords to the set
         existing_keywords = set(keyword_set.keywords.all())
         for keyword_id in TURKU_KEYWORD_IDS:
             keyword = self.get_keyword_obj(keyword_id)
@@ -73,8 +71,6 @@ class Command(BaseCommand):
                                   (keyword.name, keyword_id))
 
     def handle(self, *args, **options):
-        # turku data source must be created if missing. Note that it is not necessarily the system data source.
-        # If we are creating it, it *may* still be the system data source, so it must be user editable!
         turku_data_source_defaults = {
             'name': 'Kuntakohtainen data Turun Kaupunki', 'user_editable': True}
         DataSource.objects.get_or_create(id=TURKU_KEYWORD_SET_DATA['data_source_id'],
