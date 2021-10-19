@@ -2,11 +2,6 @@
 
 # Dependencies.
 
-# RDFLIB:
-import rdflib
-from rdflib import RDF, URIRef
-from rdflib.namespace import DCTERMS, OWL, SKOS
-
 # Logging:
 import time
 import logging
@@ -16,13 +11,13 @@ from os.path import abspath, join, dirname, exists, basename, splitext
 # Django:
 from django_orghierarchy.models import Organization
 from django_orghierarchy.models import OrganizationClass
-from events.models import DataSource, BaseModel
+from events.models import DataSource, BaseModel, Keyword
 
 # Importer specific:
 from .base import Importer, register_importer
 
 # Type checking:
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 # Setup Logging:
 if not exists(join(dirname(__file__), 'logs')):
@@ -47,11 +42,11 @@ logger.addHandler(
 
 
 def tsl() -> dict:
-
-    # These are custom with multilang support.
-    # Prefix & ID are hardcoded as visual cues for mapping the management commands.
-    hobby_content_target = {
-        # Hobby content target:
+    '''
+    These are custom with multilang support.
+    Prefix & ID are hardcoded as visual cues for mapping the management commands.
+    '''
+    data = {
         'tsl:p1': {'fi': 'Ajanvietepelit', 'sv': 'Underhållningsspel', 'en': 'Recreational games'},
         'tsl:p2': {'fi': 'Eläimet', 'sv': 'Djur', 'en': 'Animals'},
         'tsl:p3': {'fi': 'Kielet', 'sv': 'Språk', 'en': 'Languages'},
@@ -65,11 +60,7 @@ def tsl() -> dict:
         'tsl:p11': {'fi': 'Teatteri, tanssi ja sirkus', 'sv': 'Teater, dans och cirkus', 'en': 'Theater, dance and circus'},
         'tsl:p12': {'fi': 'Tiede ja tekniikka', 'sv': 'Vetenskap och teknologi', 'en': 'Science and technology'},
         'tsl:p13': {'fi': 'Yhteisöllisyys ja auttaminen', 'sv': 'Kommunalitet och hjälpandet', 'en': 'Communality and assistance'},
-        'tsl:p14': {'fi': 'Muut', 'sv': 'Övriga', 'en': 'Other'},
-    }
-
-    hobby_target_audience = {
-        # Hobby target audience:
+        'tsl:p14': {'fi': 'Muut', 'sv': 'Övriga', 'en': 'Other'},  # Shared.
         'tsl:p15': {'fi': 'Maahanmuuttaneet', 'sv': 'Immigrerade', 'en': 'Immigrated'},
         'tsl:p16': {'fi': 'Toimintarajoitteiset', 'sv': 'Funktionshindrade', 'en': 'Functional limitations'},
         'tsl:p17': {'fi': 'Vauvat ja taaperot', 'sv': 'Spädbarn och småbarn', 'en': 'Babies and toddlers'},
@@ -78,19 +69,11 @@ def tsl() -> dict:
         'tsl:p20': {'fi': 'Nuoret aikuiset', 'sv': 'Unga vuxna', 'en': 'Young adults'},
         'tsl:p21': {'fi': 'Aikuiset', 'sv': 'Vuxna', 'en': 'Adults'},
         'tsl:p22': {'fi': 'Ikääntyneet', 'sv': 'Äldre', 'en': 'Elderly'},
-    }
-
-    event_target_audience = {
-        # Event target audience:
         'tsl:p23': {'fi': 'Opiskelijat', 'sv': 'Studenter', 'en': 'Students'},
         'tsl:p24': {'fi': 'Matkailijat', 'sv': 'Resenärer', 'en': 'Travelers'},
         'tsl:p25': {'fi': 'Työnhakijat', 'sv': 'Arbetssökande', 'en': 'Job seekers'},
         'tsl:p26': {'fi': 'Yrittäjät', 'sv': 'Företagare', 'en': 'Entrepreneurs'},
         'tsl:p27': {'fi': 'Harrastajat', 'sv': 'Hobbyister', 'en': 'Hobbyists'},
-    }
-
-    event_content_based = {
-        # Event content based:
         'tsl:p28': {'fi': 'Kuvataide', 'sv': 'Bildkonst', 'en': 'Visual art'},
         'tsl:p29': {'fi': 'Tanssi', 'sv': 'Dans', 'en': 'Dancing'},
         'tsl:p30': {'fi': 'Elokuva', 'sv': 'Film', 'en': 'Movie'},
@@ -100,32 +83,27 @@ def tsl() -> dict:
         'tsl:p34': {'fi': 'Uskonto ja hengellisyys', 'sv': 'Religion och andlighet', 'en': 'Religion and spirituality'},
         'tsl:p35': {'fi': 'Yritystoiminta ja työelämä', 'sv': 'Företagsverksamhet och arbetsliv', 'en': 'Business and worklife'},
         'tsl:p36': {'fi': 'Yhteiskunta', 'sv': 'Samhället', 'en': 'Society'},
-        'tsl:p36': {'fi': 'Historia', 'sv': 'Historia', 'en': 'History'},
+        'tsl:p37': {'fi': 'Historia', 'sv': 'Historia', 'en': 'History'},
+        'tsl:p38': {'fi': 'Festivaalit', 'sv': 'Festivaler', 'en': 'Festivals'},
+        'tsl:p39': {'fi': 'Kaupunkitapahtumat', 'sv': 'Stadsevenemang', 'en': 'City events'},
+        'tsl:p40': {'fi': 'Keskustelutilaisuudet', 'sv': 'Diskussionshändelser', 'en': 'Discussion events'},
+        'tsl:p41': {'fi': 'Kilpailut', 'sv': 'Tävlingar', 'en': 'Competitions'},
+        'tsl:p42': {'fi': 'Kokoukset, seminaarit ja kongressit', 'sv': 'Möten, seminarier och kongresser', 'en': 'Meetings, seminars and congresses'},
+        'tsl:p43': {'fi': 'Konsertit', 'sv': 'Konserter', 'en': 'Concerts'},
+        'tsl:p44': {'fi': 'Koulutustapahtumat', 'sv': 'Utbildningsevenemang', 'en': 'Educational events'},
+        'tsl:p45': {'fi': 'Leirit', 'sv': 'Läger', 'en': 'Camps'},
+        'tsl:p46': {'fi': 'Luennot', 'sv': '', 'en': ''},
+        'tsl:p47': {'fi': 'Markkinat', 'sv': '', 'en': ''},
+        'tsl:p48': {'fi': 'Messut', 'sv': '', 'en': ''},
+        'tsl:p49': {'fi': 'Myyjäiset', 'sv': '', 'en': ''},
+        'tsl:p50': {'fi': 'Näyttelyt', 'sv': '', 'en': ''},
+        'tsl:p51': {'fi': 'Opastukset', 'sv': '', 'en': ''},
+        'tsl:p52': {'fi': 'Retket', 'sv': '', 'en': ''},
+        'tsl:p53': {'fi': 'Työpajat', 'sv': 'Verkstad', 'en': 'Workshop'},
+        'tsl:p54': {'fi': 'Verkostoitumistapahtumat', 'sv': '', 'en': ''},
+        'tsl:p55': {'fi': 'Muu', 'sv': '', 'en': ''},
     }
-
-    event_type_based = {
-        # Event type based:
-        'tsl:p37': {'fi': 'Festivaalit', 'sv': 'Festivaler', 'en': 'Festivals'},
-        'tsl:p38': {'fi': 'Kaupunkitapahtumat', 'sv': 'Stadsevenemang', 'en': 'City events'},
-        'tsl:p39': {'fi': 'Keskustelutilaisuudet', 'sv': 'Diskussionshändelser', 'en': 'Discussion events'},
-        'tsl:p40': {'fi': 'Kilpailut', 'sv': 'Tävlingar', 'en': 'Competitions'},
-        'tsl:p41': {'fi': 'Kokoukset, seminaarit ja kongressit', 'sv': 'Möten, seminarier och kongresser', 'en': 'Meetings, seminars and congresses'},
-        'tsl:p42': {'fi': 'Konsertit', 'sv': 'Konserter', 'en': 'Concerts'},
-        'tsl:p43': {'fi': 'Koulutustapahtumat', 'sv': 'Utbildningsevenemang', 'en': 'Educational events'},
-        'tsl:p44': {'fi': 'Leirit', 'sv': 'Läger', 'en': 'Camps'},
-        'tsl:p45': {'fi': 'Luennot', 'sv': '', 'en': ''},
-        'tsl:p46': {'fi': 'Markkinat', 'sv': '', 'en': ''},
-        'tsl:p47': {'fi': 'Messut', 'sv': '', 'en': ''},
-        'tsl:p48': {'fi': 'Myyjäiset', 'sv': '', 'en': ''},
-        'tsl:p49': {'fi': 'Näyttelyt', 'sv': '', 'en': ''},
-        'tsl:p50': {'fi': 'Opastukset', 'sv': '', 'en': ''},
-        'tsl:p51': {'fi': 'Retket', 'sv': '', 'en': ''},
-        'tsl:p52': {'fi': 'Työpajat', 'sv': 'Verkstad', 'en': 'Workshop'},
-        'tsl:p53': {'fi': 'Verkostoitumistapahtumat', 'sv': '', 'en': ''},
-        # Word "Muu" is already existing as "Muut" ?
-    }
-
-    # Unfinished.
+    return data
 
 
 @register_importer
@@ -153,8 +131,22 @@ class TslImporter(Importer):
             except Exception as e:
                 logger.error(e)
 
-    # Setup our class attributes & Add to DB.
-    def setup(self) -> None:
+    def save_kw(self: 'events.importer.tsl.TslImporter') -> None:
+        try:
+            for k, v in self.keywords.items():
+                kw = Keyword(data_source=getattr(self, 'data_source'))
+                kw.id = k
+                for lang, lang_val in v.items():
+                    langformat = 'name_%s' % lang
+                    setattr(kw, langformat, lang_val)
+                kw.created_time = BaseModel.now()
+                kw.save()
+                logger.info("Saved TSL keyword ID: %s" % k)
+        except Exception as e:
+            logger.error(e)
+            pass
+
+    def setup(self: 'events.importer.tsl.TslImporter') -> None:
         # Data mapped by models order:
         self.data = {
             # TSL and the Public DataSource for Organizations model.
@@ -194,11 +186,12 @@ class TslImporter(Importer):
         for args in mapped:
             self.iterator(
                 data=self.data, key=args[0], query=args[1], obj_model=args[2], attr_map=args[3])
-        logger.info(
-            "#1: Setup finished in: %s. Fetching JUPO turtle graph file..." % time.process_time())
-
+        logger.info("Setup finished...")
         self.handle()
 
-    def handle()
-    logger.info("Gather TSL keywords...")
-    self.keywords = tsl()
+    def handle(self: 'events.importer.tsl.TslImporter') -> None:
+        logger.info("Gather TSL keywords...")
+        self.keywords = tsl()
+        logger.info("Saving TSL keywords...")
+        self.save_kw()
+        logger.info("Importer finished in: %s" % time.process_time())
