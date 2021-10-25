@@ -47,46 +47,61 @@ VIRTUAL_LOCATION_ID = "virtual:public"
 KEYW_LIST = []
 
 TURKU_KEYWORD_IDS = {
-    'Festivaalit': 'yso:p1304',  # Festivaalit
-    'Konferenssit ja kokoukset': 'yso:p38203',  # Konferenssit (ja kokoukset)
-    'Messut': 'yso:p4892',  # Messut
-    'Myyjäiset': 'yso:p9376',  # Myyjäiset
-    'Musiikki': 'yso:p1808',  # Musiikki
-    'Museot': 'yso:p4934',  # Museot
-    'Näyttelyt': 'yso:p5121',  # Näyttelyt
-    'Luennot': 'yso:p15875',  # Luennot
-    'Osallisuus': 'yso:p5164',  # Osallisuus
-    'Monikulttuurisuus': 'yso:p10647',  # Monikulttuurisuus
-    'Retket': 'yso:p25261',  # Retket
-    'Risteilyt': 'yso:p1917',  # Risteilyt
-    'Matkat': 'yso:p366',  # Matkat
-    'Matkailu': 'yso:p3917',  # Matkailu
-    'Opastus': 'yso:p2149',  # Opastus
-    'Teatteritaide': 'yso:p2625',  # Teatteritaide
-    'Muu esittävä taide': 'yso:p2850',  # Muu esittävä taide
-    'Urheilu': 'yso:p965',  # Urheilu
-    'Kirjallisuus': 'yso:p8113',  # Kirjallisuus
-    'Tapahtumat ja toiminnat': 'yso:p15238',  # Tapahtumat ja toiminnat
-    'Ruoka': 'yso:p3670',  # Ruoka
-    'Tanssi': 'yso:p1278',  # Tanssi
-    'Työpajat': 'yso:p19245',  # Työpajat
-    'Ulkoilu': 'yso:p2771',  # Ulkoilu
-    'Etäosallistuminen': 'yso:p26626',  # Etäosallistuminen
-}
-
-TURKU_AUDIENCES_KEYWORD_IDS = {
-    'Aikuiset': 'yso:p5590',  # Aikuiset
-    'Lapsiperheet': 'yso:p13050',  # Lapsiperheet
-    'Maahanmuttajat': 'yso:p6165',  # Maahanmuuttujat
-    'Matkailijat': 'yso:p16596',  # Matkailijat
-    'Nuoret': 'yso:p11617',  # Nuoret
-    'Seniorit': 'yso:p2433',  # Seniorit
-    'Työnhakijat': 'yso:p9607',  # Työnhakijat
-    'Vammaiset': 'yso:p7179',  # Vammaiset
-    'Vauvat': 'yso:p15937',  # Vauvat
-    'Viranomaiset': 'yso:p6946',  # Viranomaiset
-    'Järjestöt': 'yso:p1393',  # järjestöt
-    'Yrittäjät': 'yso:p1178',  # Yrittäjät
+    'Ajanvietepelit': 'tsl:p1',
+    'Eläimet': 'tsl:p2',
+    'Kielet': 'tsl:p3',
+    'Kirjallisuus ja sanataide': 'tsl:p4',
+    'Kuvataide ja media': 'tsl:p5',
+    'Kädentaidot': 'tsl:p6',
+    'Liikunta ja urheilu': 'tsl:p7',
+    'Luonto': 'tsl:p8',
+    'Musiikki': 'tsl:p9',
+    'Ruoka ja juoma': 'tsl:p10',
+    'Teatteri, performanssi ja sirkus': 'tsl:p11',
+    'Tiede ja tekniikka': 'tsl:p12',
+    'Yhteisöllisyys ja auttaminen': 'tsl:p13',
+    'Muut': 'tsl:p14',
+    'Maahanmuuttaneet': 'tsl:p15',
+    'Toimintarajoitteiset': 'tsl:p16',
+    'Vauvat ja taaperot': 'tsl:p17',
+    'Lapset ja lapsiperheet': 'tsl:p18',
+    'Nuoret': 'tsl:p19',
+    'Nuoret aikuiset': 'tsl:p20',
+    'Aikuiset': 'tsl:p21',
+    'Ikääntyneet': 'tsl:p22',
+    'Opiskelijat': 'tsl:p23',
+    'Matkailijat': 'tsl:p24',
+    'Työnhakijat': 'tsl:p25',
+    'Yrittäjät': 'tsl:p26',
+    'Harrastajat': 'tsl:p27',
+    'Kuvataide': 'tsl:p28',
+    'Tanssi': 'tsl:p29',
+    'Elokuva': 'tsl:p30',
+    'Käsityöt': 'tsl:p31',
+    'Terveys ja hyvinvointi': 'tsl:p32',
+    'Luonto ja kulttuuriympäristö': 'tsl:p33',
+    'Uskonto ja hengellisyys': 'tsl:p34',
+    'Yritystoiminta ja työelämä': 'tsl:p35',
+    'Yhteiskunta': 'tsl:p36',
+    'Historia': 'tsl:p37',
+    'Festivaalit': 'tsl:p38',
+    'Kaupunkitapahtumat': 'tsl:p39',
+    'Keskustelutilaisuudet': 'tsl:p40',
+    'Kilpailut': 'tsl:p41',
+    'Kokoukset, seminaarit ja kongressit': 'tsl:p42',
+    'Konsertit': 'tsl:p43',
+    'Koulutustapahtumat': 'tsl:p44',
+    'Leirit': 'tsl:p45',
+    'Luennot': 'tsl:p46',
+    'Markkinat': 'tsl:p47',
+    'Messut': 'tsl:p48',
+    'Myyjäiset': 'tsl:p49',
+    'Näyttelyt': 'tsl:p50',
+    'Opastukset': 'tsl:p51',
+    'Retket': 'tsl:p52',
+    'Työpajat': 'tsl:p53',
+    'Verkostoitumistapahtumat': 'tsl:p54',
+    'Muu': 'tsl:p55'
 }
 
 TURKU_DRUPAL_CATEGORY_EN_YSOID = {
@@ -102,7 +117,8 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'cruises and tours': ['yso:p1917', 'yso:p366'],  # Risteily, Matkat
     'Trips': 'yso:p25261',  # Retket
     'Guided tours and sightseeing tours': 'yso:p2149',  # Guidning, Opastukset
-    'Theatre and other performance art': ['yso:p2850', 'yso:p2625'],  # Esittävä taide
+    # Esittävä taide
+    'Theatre and other performance art': ['yso:p2850', 'yso:p2625'],
     'Sports': 'yso:p965',  # Urheilu, Idrott
     'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
     'Virtual events': 'yso:p26626',  # Etäosallistuminen
@@ -297,7 +313,7 @@ class TurkuOriginalImporter(Importer):
         evItem['data_source'] = self.data_source
         evItem['publisher'] = self.organization
         evItem['end_time'] = end_time
-        
+
         ok_tags = (
             'u', 'b', 'h2', 'h3', 'em', 'ul',
             'li', 'strong', 'br', 'p', 'a'
@@ -370,7 +386,8 @@ class TurkuOriginalImporter(Importer):
         if location_extra_info.strip().endswith(','):
             location_extra_info = location_extra_info.strip()[:-1]
 
-        location_extra_info_formatted = '%(address)s / %(extra)s' % {'address': eventTku['address'], 'extra': location_extra_info} if location_extra_info else eventTku['address']
+        location_extra_info_formatted = '%(address)s / %(extra)s' % {
+            'address': eventTku['address'], 'extra': location_extra_info} if location_extra_info else eventTku['address']
         # Define location_extra_info dict.
         evItem['location_extra_info'] = {
             "fi": location_extra_info_formatted,
@@ -388,7 +405,7 @@ class TurkuOriginalImporter(Importer):
 
                 def request_image_url():
                     img = requests.get(eventTku['event_image_ext_url']['src'],
-                                        headers={'User-Agent': 'Mozilla/5.0'}).content
+                                       headers={'User-Agent': 'Mozilla/5.0'}).content
                     imgfile = eventTku['drupal_nid']
                     path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
                         'root': settings.MEDIA_ROOT,
@@ -531,7 +548,7 @@ class TurkuOriginalImporter(Importer):
             evItem['super_event_type'] = None
 
         evItem['is_hobby'] = eventTku['is_hobby']
-        
+
         return evItem
 
     def _recur_fetch_paginated_url(self, url, lang, events):
@@ -610,7 +627,8 @@ class TurkuOriginalImporter(Importer):
 
             try:
                 # Updating the existing DB events that need is_hobby.
-                eventToUpdate = Event.objects.get(origin_id=json_event['drupal_nid'])
+                eventToUpdate = Event.objects.get(
+                    origin_id=json_event['drupal_nid'])
                 if int(json_event['is_hobby']) == 1:
                     eventToUpdate.type_id = 4
                 else:
@@ -624,8 +642,10 @@ class TurkuOriginalImporter(Importer):
                 for x in childList:
                     if json_event['drupal_nid'] == x['drupal_nid_super']:
                         try:
-                            child = Event.objects.get(origin_id=x['drupal_nid'])
-                            mother = Event.objects.get(origin_id=json_event['drupal_nid'])
+                            child = Event.objects.get(
+                                origin_id=x['drupal_nid'])
+                            mother = Event.objects.get(
+                                origin_id=json_event['drupal_nid'])
 
                             sub_event_type = None
                             #sub_recurring, sub_umbrella
@@ -672,11 +692,14 @@ class TurkuOriginalImporter(Importer):
 
                         try:
                             # Re-get object from Event once saved.
-                            child = Event.objects.get(origin_id=x['drupal_nid'])
-                            mother = Event.objects.get(origin_id=json_event['drupal_nid'])
+                            child = Event.objects.get(
+                                origin_id=x['drupal_nid'])
+                            mother = Event.objects.get(
+                                origin_id=json_event['drupal_nid'])
                             # Get object from Offer once we have the Event object.
                             try:
-                                motherOffer = Offer.objects.get(event_id=mother.id)
+                                motherOffer = Offer.objects.get(
+                                    event_id=mother.id)
                                 Offer.objects.update_or_create(
                                     event_id=child.id,
                                     price=motherOffer.price,
@@ -719,16 +742,19 @@ class TurkuOriginalImporter(Importer):
                 def fetch_from_image_table(p, p2):
                     try:
                         eventObj = Event.objects.get(origin_id=json_event[p])
-                        img_format = '%s/%s.%s' % ('images', json_event[p2], 'jpg')
+                        img_format = '%s/%s.%s' % ('images',
+                                                   json_event[p2], 'jpg')
                         img_obj_returned = Image.objects.get(image=img_format)
                         eventObj.images.add(img_obj_returned.id)
                         return img_obj_returned
                     except:
                         pass
                     return None
-                fetched_img = fetch_from_image_table('drupal_nid', 'drupal_nid')  # Mothers and Singles
+                fetched_img = fetch_from_image_table(
+                    'drupal_nid', 'drupal_nid')  # Mothers and Singles
                 if not fetched_img:
-                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')  # Children inherit their Mothers images.
+                    # Children inherit their Mothers images.
+                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')
             except:
                 pass
 
@@ -738,7 +764,8 @@ class TurkuOriginalImporter(Importer):
         lang = self.supported_languages
         # Fetch JSON for post-processing but also process & import events.
         try:
-            RESPONSE_JSON, mother_events, child_events = self._recur_fetch_paginated_url(URL, lang, events)
+            RESPONSE_JSON, mother_events, child_events = self._recur_fetch_paginated_url(
+                URL, lang, events)
         except APIBrokenError:
             return
 
