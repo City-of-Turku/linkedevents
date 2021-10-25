@@ -57,7 +57,7 @@ def tsl() -> dict:
         'tsl:p8': {'fi': 'Luonto', 'sv': 'Natur', 'en': 'Nature'},
         'tsl:p9': {'fi': 'Musiikki', 'sv': 'Musik', 'en': 'Music'},
         'tsl:p10': {'fi': 'Ruoka ja juoma', 'sv': 'Mat och dryck', 'en': 'Food and beverage'},
-        'tsl:p11': {'fi': 'Teatteri, tanssi ja sirkus', 'sv': 'Teater, dans och cirkus', 'en': 'Theater, dance and circus'},
+        'tsl:p11': {'fi': 'Teatteri, performanssi ja sirkus', 'sv': 'Teater, performans och cirkus', 'en': 'Theater, performance and circus'},
         'tsl:p12': {'fi': 'Tiede ja tekniikka', 'sv': 'Vetenskap och teknologi', 'en': 'Science and technology'},
         'tsl:p13': {'fi': 'Yhteisöllisyys ja auttaminen', 'sv': 'Kommunalitet och hjälpandet', 'en': 'Communality and assistance'},
         'tsl:p14': {'fi': 'Muut', 'sv': 'Övriga', 'en': 'Other'},  # Shared.
