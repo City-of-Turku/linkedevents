@@ -16,7 +16,6 @@ from django.conf import settings
 from .util import clean_text
 from .sync import ModelSyncher
 from .base import Importer, register_importer, recur_dict
-from .yso import KEYWORDS_TO_ADD_TO_AUDIENCE
 from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
 from copy import copy
@@ -46,97 +45,95 @@ logger.addHandler(
 VIRTUAL_LOCATION_ID = "virtual:public"
 KEYW_LIST = []
 
-TURKU_KEYWORD_IDS = {
-    'Ajanvietepelit': 'tsl:p1',
-    'Eläimet': 'tsl:p2',
-    'Kielet': 'tsl:p3',
-    'Kirjallisuus ja sanataide': 'tsl:p4',
-    'Kuvataide ja media': 'tsl:p5',
-    'Kädentaidot': 'tsl:p6',
-    'Liikunta ja urheilu': 'tsl:p7',
-    'Luonto': 'tsl:p8',
-    'Musiikki': 'tsl:p9',
-    'Ruoka ja juoma': 'tsl:p10',
-    'Teatteri, performanssi ja sirkus': 'tsl:p11',
-    'Tiede ja tekniikka': 'tsl:p12',
-    'Yhteisöllisyys ja auttaminen': 'tsl:p13',
-    'Muut': 'tsl:p14',
-    'Maahanmuuttaneet': 'tsl:p15',
-    'Toimintarajoitteiset': 'tsl:p16',
-    'Vauvat ja taaperot': 'tsl:p17',
-    'Lapset ja lapsiperheet': 'tsl:p18',
-    'Nuoret': 'tsl:p19',
-    'Nuoret aikuiset': 'tsl:p20',
-    'Aikuiset': 'tsl:p21',
-    'Ikääntyneet': 'tsl:p22',
-    'Opiskelijat': 'tsl:p23',
-    'Matkailijat': 'tsl:p24',
-    'Työnhakijat': 'tsl:p25',
-    'Yrittäjät': 'tsl:p26',
-    'Harrastajat': 'tsl:p27',
-    'Kuvataide': 'tsl:p28',
-    'Tanssi': 'tsl:p29',
-    'Elokuva': 'tsl:p30',
-    'Käsityöt': 'tsl:p31',
-    'Terveys ja hyvinvointi': 'tsl:p32',
-    'Luonto ja kulttuuriympäristö': 'tsl:p33',
-    'Uskonto ja hengellisyys': 'tsl:p34',
-    'Yritystoiminta ja työelämä': 'tsl:p35',
-    'Yhteiskunta': 'tsl:p36',
-    'Historia': 'tsl:p37',
-    'Festivaalit': 'tsl:p38',
-    'Kaupunkitapahtumat': 'tsl:p39',
-    'Keskustelutilaisuudet': 'tsl:p40',
-    'Kilpailut': 'tsl:p41',
-    'Kokoukset, seminaarit ja kongressit': 'tsl:p42',
-    'Konsertit': 'tsl:p43',
-    'Koulutustapahtumat': 'tsl:p44',
-    'Leirit': 'tsl:p45',
-    'Luennot': 'tsl:p46',
-    'Markkinat': 'tsl:p47',
-    'Messut': 'tsl:p48',
-    'Myyjäiset': 'tsl:p49',
-    'Näyttelyt': 'tsl:p50',
-    'Opastukset': 'tsl:p51',
-    'Retket': 'tsl:p52',
-    'Työpajat': 'tsl:p53',
-    'Verkostoitumistapahtumat': 'tsl:p54',
-    'Muu': 'tsl:p55'
+TURKU_LUOKITUS_KEYWORD_IDS = {
+    # Hobby content target:
+    'Ajanvietepelit': 'tsl:p1',  # Ajanvietepelit
+    'Eläimet': 'tsl:p2',  # Eläimet
+    'Kielet': 'tsl:p3',  # Kielet
+    'Kirjallisuus ja sanataide': 'tsl:p4',  # Kirjallisuus ja sanataide
+    'Kuvataide ja media': 'tsl:p5',  # Kuvataide ja media
+    'Kädentaidot': 'tsl:p6',  # Kädentaidot
+    'Liikunta ja urheilu': 'tsl:p7',  # Liikunta ja urheilu
+    'Luonto': 'tsl:p8',  # Luonto
+    'Musiikki': 'tsl:p9',  # Musiikki
+    'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
+    'Teatteri, performanssi ja sirkus': 'tsl:p11',  # Teatteri, performanssi ja sirkus
+    'Tiede ja tekniikka': 'tsl:p12',  # Tiede ja tekniikka
+    'Yhteisöllisyys ja auttaminen': 'tsl:p13',  # Yhteisöllisyys ja auttaminen
+    'Muut': 'tsl:p14',  # Muut
+
+    # Event content based:
+    'Kuvataide': 'tsl:p28',  # Kuvataide
+    'Tanssi': 'tsl:p29',  # Tanssi
+    'Musiikki': 'tsl:p9',  # Musiikki
+    'Teatteri, performanssi ja sirkus': 'tsl:p11',  # Teatteri, performanssi ja sirkus
+    'Kirjallisuus ja sanataide': 'tsl:p4',  # Kirjallisuus ja sanataide
+    'Elokuva': 'tsl:p30',  # Elokuva
+    'Käsityöt': 'tsl:p31',  # Käsityöt
+    'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
+    'Liikunta ja urheilu': 'tsl:p7',  # Liikunta ja urheilu
+    'Terveys ja hyvinvointi': 'tsl:p32',  # Terveys ja hyvinvointi
+    'Luonto ja kulttuuriympäristö': 'tsl:p33',  # Luonto ja kulttuuriympäristö
+    'Uskonto ja hengellisyys': 'tsl:p34',  # Uskonto ja hengellisyys
+    'Yritystoiminta ja työelämä': 'tsl:p35',  # Yritystoiminta ja työelämä
+    'Yhteiskunta': 'tsl:p36',  # Yhteiskunta
+    'Historia': 'tsl:p37',  # Historia
+    'Muut': 'tsl:p14',  # Muut
+
+    # Event type based:
+    'Festivaalit': 'tsl:p38',  # Festivaalit
+    'Kaupunkitapahtumat': 'tsl:p39',  # Kaupunkitapahtumat
+    'Keskustelutilaisuudet': 'tsl:p40',  # Keskustelutilaisuudet
+    'Kilpailut': 'tsl:p41',  # Kilpailut
+    'Kokoukset, seminaarit ja kongressit': 'tsl:p42',  # Kokoukset, seminaarit ja kongressit
+    'Konsertit': 'tsl:p43',  # Konsertit
+    'Koulutustapahtumat': 'tsl:p44',  # Koulutustapahtumat
+    'Leirit': 'tsl:p45',  # Leirit
+    'Luennot': 'tsl:p46',  # Luennot
+    'Markkinat': 'tsl:p47',  # Markkinat
+    'Messut': 'tsl:p48',  # Messut
+    'Myyjäiset': 'tsl:p49',  # Myyjäiset
+    'Näyttelyt': 'tsl:p50',  # Näyttelyt
+    'Opastukset': 'tsl:p51',  # Opastukset
+    'Retket': 'tsl:p52',  # Retket
+    'Työpajat': 'tsl:p53',  # Työpajat
+    'Verkostoitumistapahtumat': 'tsl:p54',  # Verkostoitumistapahtumat
+    'Muu': 'tsl:p55',  # Muu
 }
 
+# These words are not meant to be changed, as they come from the API.
 TURKU_DRUPAL_CATEGORY_EN_YSOID = {
-    'Exhibits': 'yso:p5121',  # Utställningar, Näyttelyt
-    'Festival and major events': 'yso:p1304',  # Festivaalit ja suurtapahtumat
-    'Meetings and congress ': 'yso:p7500',  # Möten, Kokoukset
-    'Trade fair and fair': 'yso:p4892',  # Messut, mässor
-    'Music': 'yso:p1808',  # Musiikki, musik
-    'Museum': 'yso:p4934',  # Museo,  museum (en), museer
-    'Lectures': 'yso:p15875',  # Luennot, föreläsningar
-    'Participation': 'yso:p5164',  # Osallisuus, delaktighet
-    'Multiculturalism': 'yso:p10647',  # Monikulttuurisuus, multikulturalism
-    'cruises and tours': ['yso:p1917', 'yso:p366'],  # Risteily, Matkat
-    'Trips': 'yso:p25261',  # Retket
-    'Guided tours and sightseeing tours': 'yso:p2149',  # Guidning, Opastukset
-    # Esittävä taide
-    'Theatre and other performance art': ['yso:p2850', 'yso:p2625'],
-    'Sports': 'yso:p965',  # Urheilu, Idrott
-    'Literature': 'yso:p8113',  # Kirjallisuus, litteratur
-    'Virtual events': 'yso:p26626',  # Etäosallistuminen
+    'Exhibits': 'tsl:p50',  # Näyttelyt
+    'Festival and major events': 'tsl:p38',  # Festivaalit
+    'Meetings and congress ': 'tsl:p42',  # Kokoukset, seminaarit ja kongressit
+    'Trade fair and fair': 'tsl:p48',  # Messut
+    'Music': 'tsl:p9',  # Musiikki
+    'Museum': 'tsl:p37',  # Historia
+    'Lectures': 'tsl:p46',  # Luennot
+    'Participation': 'tsl:p55',  # Muu
+    'Multiculturalism': 'tsl:p14',  # Muut
+    'cruises and tours': 'tsl:p52',  # Retket
+    'Trips': 'tsl:p52',  # Retket
+    'Guided tours and sightseeing tours': 'tsl:p51',  # Opastukset
+    'Theatre and other performance art': 'tsl:p11',  # Teatteri, performanssi ja sirkus
+    'Sports': 'tsl:p7',  # Liikunta ja urheilu
+    'Literature': 'tsl:p4',  # Kirjallisuus, litteratur
+    'Virtual events': 'tsl:p55',  # Muu
 }
 
 TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
-    'Adults': 'yso:p5590',
-    'Child families': 'yso:p13050',
-    'Immigrants': 'yso:p6165',
-    'Travellers': 'yso:p16596',
-    'Youth': 'yso:p11617',
-    'Elderly': 'yso:p2433',
-    'Jobseekers': 'yso:p9607',
-    'Disabled': 'yso:p7179',
-    'Infants and toddlers': 'yso:p15937',
-    'Authorities': 'yso:p6946',
-    'Associations and communities': 'yso:p1393',
-    'Entrepreneurs': 'yso:p1178',
+    'Adults': 'tsl:p21',  # Aikuiset
+    'Child families': 'tsl:p18',  # Lapset ja lapsiperheet
+    'Immigrants': 'tsl:p15',  # Maahamuuttaneet
+    'Travellers': 'tsl:p24',  # Matkailijat
+    'Youth': 'tsl:p19',  # Nuoret
+    'Elderly': 'tsl:p22',  # Ikääntyneet
+    'Jobseekers': 'tsl:p25',  # Työnhakijat
+    'Disabled': 'tsl:p16',  # Toimintarajoitteiset
+    'Infants and toddlers': 'tsl:p17',  # Vauvat ja taaperot
+    'Authorities': 'tsl:p26',  # Yrittäjät
+    'Associations and communities': 'tsl:p26',  # Yrittäjät
+    'Entrepreneurs': 'tsl:p26',  # Yrittäjät
 }
 
 LANGUAGES_TURKU_OLD = ['fi', 'sv', 'en']
@@ -239,23 +236,23 @@ class TurkuOriginalImporter(Importer):
             self.cc_by_license = None
 
         try:
-            yso_data_source = DataSource.objects.get(id='yso')
+            tsl_data_source = DataSource.objects.get(id='tsl')
         except DataSource.DoesNotExist:
-            yso_data_source = None
+            tsl_data_source = None
 
-        if yso_data_source:  # Build a cached list of YSO keywords
+        if tsl_data_source:  # Build a cached list of YSO keywords
             cat_id_set = set()
-            for yso_val in TURKU_KEYWORD_IDS.values():
-                if isinstance(yso_val, tuple):
-                    for t_v in yso_val:
+            for tsl_val in TURKU_LUOKITUS_KEYWORD_IDS.values():
+                if isinstance(tsl_val, tuple):
+                    for t_v in tsl_val:
                         cat_id_set.add(t_v)
                 else:
-                    cat_id_set.add(yso_val)
-            KEYW_LIST = Keyword.objects.filter(data_source=yso_data_source).\
+                    cat_id_set.add(tsl_val)
+            KEYW_LIST = Keyword.objects.filter(data_source=tsl_data_source).\
                 filter(id__in=cat_id_set)
-            self.yso_by_id = {p.id: p for p in KEYW_LIST}
+            self.tsl_by_id = {p.id: p for p in KEYW_LIST}
         else:
-            self.yso_by_id = {}
+            self.tsl_by_id = {}
 
         if self.options['cached']:
             requests_cache.install_cache('turku')
