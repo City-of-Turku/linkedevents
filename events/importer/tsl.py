@@ -114,7 +114,9 @@ class TslImporter(Importer):
 
     def iterator(self: 'events.importer.tsl.TslImporter', data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
         ''' Main class data logic. Create DB objects & set class attributes.
-            This was created with easy expandability of the setup data dictionary in mind.'''
+            This was created with easy expandability of the setup data dictionary in mind.
+            We are using save() throughout this program to avoid race conditions with update_or_create()
+            '''
         for idx, sub_key in enumerate(data[key]):
             try:
                 q_obj = query()
