@@ -113,7 +113,8 @@ class TslImporter(Importer):
     supported_languages = ['fi', 'sv', 'en']  # Base file requirement.
 
     def iterator(self: 'events.importer.tsl.TslImporter', data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
-        # Main class data logic. Create DB objects & set class attributes.
+        ''' Main class data logic. Create DB objects & set class attributes.
+            This was created with easy expandability of the setup data dictionary in mind.'''
         for idx, sub_key in enumerate(data[key]):
             try:
                 q_obj = query()
@@ -181,8 +182,10 @@ class TslImporter(Importer):
                 'termobjs': (DataSource, OrganizationClass, Organization)
             },
         }
+        # Keys in data share per element relevant information. Bring together element per key in data dict for iterator params.
         mapped = list(map(lambda f, fto, mm, atm: [f, fto, self.data['model_maps'][mm], self.data['attr_maps'][atm]],
                       self.data['funcargs']['terms'], self.data['funcargs']['termobjs'], self.data['model_maps'], self.data['attr_maps']))
+        # Call the iterator function. Params use the mapped elements.
         for args in mapped:
             self.iterator(
                 data=self.data, key=args[0], query=args[1], obj_model=args[2], attr_map=args[3])
