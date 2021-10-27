@@ -150,7 +150,24 @@ class TslImporter(Importer):
             pass
 
     def setup(self: 'events.importer.tsl.TslImporter') -> None:
-        # Data mapped by models order:
+        ''' 
+            This can be used as a template for other importers as it's constructed
+            to be very easily expandable. It also avoids race condition issues by utiling save().
+
+            To add a new model we just define it as a key, add the attribute name to attr_maps,
+            add the model values to model_maps and add the required values mapped by those
+            model_maps within. Remember that the values that are underneath each other
+            are creater later than the former so you'd want to follow this mindset throughout the data dict.
+
+            This might look like a static assignment importer but
+            we use the magic of setattr to create the necessary objects before assignment.
+
+            Typically we define data_sources to organisations after they have been created,
+            but here we don't even have to worry about long update_or_create chains or get chains
+            should our data be large. If you take a look at "org", the data_source is defined as
+            'ds' followed by '_tsl'. The importer by itself finds the correct data_source when it is
+            trying to create the organization 'tsl'.
+        '''
         self.data = {
             # TSL and the Public DataSource for Organizations model.
             'ds': {
