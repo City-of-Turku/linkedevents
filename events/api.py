@@ -517,12 +517,13 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 if not instance.data_source == self.data_source:
                     raise PermissionDenied()
             else:
-                if not isinstance(instance, Image):
-                    ''' Without the API key, the user needs Admin rights.
-                        An exception to allow users to publish events using default images from the Imagebank
-                        even if they aren't bound to the Imagebank-organization for regular or admin rights. '''
-                    if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
-                        raise PermissionDenied()
+                if hasattr(instance, 'is_user_editable'):
+                    if not isinstance(instance, Image):
+                        ''' Without the API key, the user needs Admin rights.
+                            An exception to allow users to publish events using default images from the Imagebank
+                            even if they aren't bound to the Imagebank-organization for regular or admin rights. '''
+                        if not instance.is_user_editable() or not instance.can_be_edited_by(self.user):
+                            raise PermissionDenied()
 
     def to_internal_value(self, data):
         for field in self.system_generated_fields:
