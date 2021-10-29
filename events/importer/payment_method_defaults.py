@@ -61,7 +61,11 @@ class PMDImporter(Importer):
             'Lasku',
         ]
 
-        for word in data:
-            pm = PaymentMethod()
-            pm.name = word
-            pm.save()
+        for idx, word in enumerate(data):
+            try:
+                pm = PaymentMethod()
+                pm.id = str(idx)
+                pm.name = word
+                pm.save()
+            except Exception as e:
+                logger.error(e)
