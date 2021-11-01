@@ -61,7 +61,7 @@ class PMDImporter(Importer):
             'Lasku',
         ]
 
-        for idx, word in enumerate(data):
+        for idx, word in enumerate(data, start=1):
             try:
                 pm = PaymentMethod()
                 pm.id = str(idx)
