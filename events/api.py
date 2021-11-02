@@ -1159,7 +1159,7 @@ register_view(PaymentViewSet, 'paymentmethod')
 
 class OfferSerializer(TranslatedModelSerializer):
     payment_methods = JSONLDRelatedField(
-        serializer=PaymentMethodSerializer, many=True, required=True, allow_empty=True,
+        serializer=PaymentMethodSerializer, many=True, required=False, allow_empty=True, expanded=True,
         view_name='paymentmethod-detail', queryset=PaymentMethod.objects.all())
 
     class Meta:
@@ -1568,7 +1568,10 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         if isinstance(offers, list):
             instance.offers.all().delete()
             for offer in offers:
-                Offer.objects.create(event=instance, **offer)
+                payment_methods = offer.pop('payment_methods', [])
+                offer_instance = Offer.objects.create(event=instance, **offer)
+                for payment_method in payment_methods:
+                    offer_instance.payment_methods.add(payment_method)
 
         # update ext links
         if isinstance(links, list):
