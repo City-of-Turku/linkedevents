@@ -31,7 +31,7 @@ from mptt.querysets import TreeQuerySet
 from django.contrib.contenttypes.models import ContentType
 from events import translation_utils
 from django.utils.encoding import python_2_unicode_compatible
-from django.contrib.postgres.fields import HStoreField, JSONField
+from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.db import transaction
