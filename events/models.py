@@ -641,6 +641,9 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
     enrolment_end_time = models.DateTimeField(
         verbose_name=_('enrolment end time'), null=True, blank=True)
 
+    enrolment_url = models.URLField(verbose_name=_(
+        'Enrolment URL'), blank=True, null=True)
+
     super_event = TreeForeignKey('self', null=True, blank=True,
                                  on_delete=models.SET_NULL, related_name='sub_events')
 
