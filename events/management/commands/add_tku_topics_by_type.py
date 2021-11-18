@@ -9,7 +9,7 @@ TURKU_KEYWORD_SET_DATA = {
     'id': 'turku:topic_type',
     'name_en': 'Type based Turku topics',
     'name_fi': 'Turku-aihepiirit tyypin mukaan',
-    'name_sv': 'Åbo-tema',
+    'name_sv': 'Åbo-ämnen efter typ',
     'data_source_id': 'turku',
     'usage': KeywordSet.KEYWORD,
 }
