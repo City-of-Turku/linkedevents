@@ -9,7 +9,7 @@ TURKU_KEYWORD_SET_DATA = {
     'id': 'turku:hobbytopics',
     'name_en': 'Turku hobbytopics',
     'name_fi': 'Turku-harrastusaihepiirit',
-    'name_sv': 'Åbo-hobbyteman',
+    'name_sv': 'Åbo-hobbyämnen',
     'data_source_id': 'turku',
     'usage': KeywordSet.KEYWORD,
 }
@@ -27,10 +27,10 @@ TURKU_KEYWORD_IDS = [
     'tsl:p8',  # Luonto
     'tsl:p9',  # Musiikki
     'tsl:p10',  # Ruoka ja juoma
-    'tsl:p11',  # Teatteri, tanssi ja sirkus
+    'tsl:p56',  # Teatteri, tanssi ja sirkus (previously "Teatteri, performanssi ja sirkus - tsl:p11")
     'tsl:p12',  # Tiede ja tekniikka
     'tsl:p13',  # Yhteisöllisyys ja auttaminen
-    'tsl:p14',  # Muut
+    'tsl:p55',  # Muu (previously "Muut - tsl:p14")
 ]
 
 
