@@ -9,7 +9,7 @@ TURKU_KEYWORD_SET_DATA = {
     'id': 'turku:topic_content',
     'name_en': 'Content based Turku topics',
     'name_fi': 'Turku-aihepiirit sisällön mukaan',
-    'name_sv': 'Åbo-tema',
+    'name_sv': 'Åbo-ämnen efter innehåll',
     'data_source_id': 'turku',
     'usage': KeywordSet.KEYWORD,
 }
@@ -31,7 +31,7 @@ TURKU_KEYWORD_IDS = [
     'tsl:p35',  # Yritystoiminta ja työelämä
     'tsl:p36',  # Yhteiskunta
     'tsl:p37',  # Historia
-    'tsl:p14',  # Muut
+    'tsl:p55',  # Muu (Previously "Muut - tsl:p14")
 ]
 
 
