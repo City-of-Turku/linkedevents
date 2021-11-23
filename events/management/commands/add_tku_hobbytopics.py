@@ -30,7 +30,7 @@ TURKU_KEYWORD_IDS = [
     'tsl:p56',  # Teatteri, tanssi ja sirkus (previously "Teatteri, performanssi ja sirkus - tsl:p11")
     'tsl:p12',  # Tiede ja tekniikka
     'tsl:p13',  # Yhteisöllisyys ja auttaminen
-    'tsl:p55',  # Muu (previously "Muut - tsl:p14")
+    'tsl:p58',  # Muu (previously "Muut - tsl:p14")
 ]
 
 

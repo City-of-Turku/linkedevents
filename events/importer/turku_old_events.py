@@ -61,7 +61,7 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Teatteri, tanssi ja sirkus': 'tsl:p56',
     'Tiede ja tekniikka': 'tsl:p12',  # Tiede ja tekniikka
     'Yhteisöllisyys ja auttaminen': 'tsl:p13',  # Yhteisöllisyys ja auttaminen
-    'Muu': 'tsl:p55',  # Muu (Previously "Muut - tsl:p14")
+    'Muu': 'tsl:p58',  # Muu (Previously "Muut - tsl:p14")
 
     # Event content based:
     'Kuvataide': 'tsl:p28',  # Kuvataide
