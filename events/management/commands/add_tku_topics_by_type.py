@@ -33,7 +33,7 @@ TURKU_KEYWORD_IDS = [
     'tsl:p52',  # Retket
     'tsl:p53',  # Työpajat
     'tsl:p54',  # Verkostoitumistapahtumat
-    'tsl:p55',  # Muu
+    'tsl:p57',  # Muu tapahtumatyyppi
 ]
 
 

@@ -57,7 +57,8 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Luonto': 'tsl:p8',  # Luonto
     'Musiikki': 'tsl:p9',  # Musiikki
     'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
-    'Teatteri, tanssi ja sirkus': 'tsl:p56',  # Teatteri, tanssi ja sirkus (Previously "Teatteri, performanssi ja sirkus - tsl:p11")
+    # Teatteri, tanssi ja sirkus (Previously "Teatteri, performanssi ja sirkus - tsl:p11")
+    'Teatteri, tanssi ja sirkus': 'tsl:p56',
     'Tiede ja tekniikka': 'tsl:p12',  # Tiede ja tekniikka
     'Yhteisöllisyys ja auttaminen': 'tsl:p13',  # Yhteisöllisyys ja auttaminen
     'Muu': 'tsl:p55',  # Muu (Previously "Muut - tsl:p14")
@@ -78,7 +79,7 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Yritystoiminta ja työelämä': 'tsl:p35',  # Yritystoiminta ja työelämä
     'Yhteiskunta': 'tsl:p36',  # Yhteiskunta
     'Historia': 'tsl:p37',  # Historia
-    'Muu': 'tsl:p55',  # Muu (Previously "Muut - tsl:p14")
+    'Muu sisältö': 'tsl:p55',  # Muu sisältö
 
     # Event type based:
     'Festivaalit': 'tsl:p38',  # Festivaalit
@@ -98,7 +99,7 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Retket': 'tsl:p52',  # Retket
     'Työpajat': 'tsl:p53',  # Työpajat
     'Verkostoitumistapahtumat': 'tsl:p54',  # Verkostoitumistapahtumat
-    'Muu': 'tsl:p55',  # Muu
+    'Muu tapahtumatyyppi': 'tsl:p57',  # Muu tapahtumatyyppi
 }
 
 # These words are not meant to be changed, as they come from the API.

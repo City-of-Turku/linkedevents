@@ -31,7 +31,7 @@ TURKU_KEYWORD_IDS = [
     'tsl:p35',  # Yritystoiminta ja työelämä
     'tsl:p36',  # Yhteiskunta
     'tsl:p37',  # Historia
-    'tsl:p55',  # Muu (Previously "Muut - tsl:p14")
+    'tsl:p55',  # Muu sisältö
 ]
 
 
