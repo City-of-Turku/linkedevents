@@ -749,6 +749,17 @@ class JSONAPIViewMixin(object):
         return context
 
 
+class KeywordFilterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Keyword
+        exclude = ['id', 'parents', 'children']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['name'] = instance.name
+        return ret
+
+
 class KeywordSerializer(LinkedEventsSerializer):
     view_name = 'keyword-detail'
     alt_labels = serializers.SlugRelatedField(
@@ -758,9 +769,44 @@ class KeywordSerializer(LinkedEventsSerializer):
     last_modified_time = DateTimeField(
         default_timezone=pytz.UTC, required=False, allow_null=True)
 
+    #parents = KeywordTestSerializer(many=True, read_only=True)
+    parents = JSONLDRelatedField(
+        serializer=KeywordFilterSerializer, many=True, required=True, allow_empty=False,
+        view_name='keyword-detail', queryset=Keyword.objects.all())
+
+    children = JSONLDRelatedField(
+        serializer=KeywordFilterSerializer, many=True, required=True, allow_empty=False,
+        view_name='keyword-detail', queryset=Keyword.objects.all())
+
+    ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
+    top_concept_parent = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Keyword
         exclude = ('n_events_changed',)
+
+    def get_top_concept_parent(self, obj):
+        nsc = []
+        for x in obj.parents.all():
+            # print(x.name)
+            if x.ontology_type == 'Concept':
+                nsc.append(x)
+        parents_concept = KeywordFilterSerializer(
+            nsc, many=True, read_only=True).data
+        return parents_concept
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        children = []
+        for child in instance.children.all():
+            data = serializers.HyperlinkedRelatedField(
+                view_name='joku-view', read_only=True, context={'request': self.request}).to_representation(child)
+            data.update(**KeywordFilterSerializer().to_representation(child))
+            TranslatedModelSerializer().translated_fields_to_representation(child, data)
+            children.append(data)
+        ret['children'] = children
+        ret['children'][0]['hah'] = 'joujou'
+        return ret
 
 
 class KeywordRetrieveViewSet(JSONAPIViewMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
