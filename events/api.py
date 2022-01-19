@@ -760,7 +760,7 @@ class KeywordSerializer(LinkedEventsSerializer):
 
     class Meta:
         model = Keyword
-        exclude = ('n_events_changed',)
+        exclude = ('n_events_changed', 'is_hidden')
 
 
 class KeywordRetrieveViewSet(JSONAPIViewMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -798,6 +798,7 @@ class KeywordListViewSet(JSONAPIViewMixin, mixins.ListModelMixin, viewsets.Gener
         If the request has no filter parameters, we only return keywords that meet the following criteria:
         -the keyword has events
         -the keyword is not deprecated
+        -the keyword is not hidden
 
         Supported keyword filtering parameters:
         data_source (only keywords with the given data sources are included)
@@ -806,6 +807,7 @@ class KeywordListViewSet(JSONAPIViewMixin, mixins.ListModelMixin, viewsets.Gener
         show_deprecated (deprecated keywords are included)
         """
         queryset = Keyword.objects.all()
+        queryset = queryset.exclude(is_hidden=True)
         data_source = self.request.query_params.get('data_source')
         # Filter by data source, multiple sources separated by comma
         if data_source:
@@ -842,6 +844,10 @@ class KeywordSetSerializer(LinkedEventsSerializer):
         default_timezone=pytz.UTC, required=False, allow_null=True)
     last_modified_time = DateTimeField(
         default_timezone=pytz.UTC, required=False, allow_null=True)
+
+    def to_representation(self, obj):
+        obj.keywords.set(obj.keywords.exclude(is_hidden=True))
+        return super().to_representation(obj)
 
     class Meta:
         model = KeywordSet
