@@ -749,18 +749,16 @@ class JSONAPIViewMixin(object):
         return context
 
 
-class KeywordFilterSerializer(serializers.ModelSerializer):
+class KeywordFilterSerializer(TranslatedModelSerializer):
     class Meta:
         model = Keyword
-        exclude = ['id', 'parents', 'children']
+        fields = ('name', )
 
 
     def to_representation(self, instance):
         request = self.context['request']
         parent = self.context.get('parent', None)
-
         ret = super().to_representation(instance)
-        ret['name'] = instance.name
         ret['@id'] = utils.build_url(request, instance.pk, parent=parent)
         return ret
 
