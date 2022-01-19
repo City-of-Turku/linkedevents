@@ -754,9 +754,14 @@ class KeywordFilterSerializer(serializers.ModelSerializer):
         model = Keyword
         exclude = ['id', 'parents', 'children']
 
+
     def to_representation(self, instance):
+        request = self.context['request']
+        parent = self.context.get('parent', None)
+
         ret = super().to_representation(instance)
         ret['name'] = instance.name
+        ret['@id'] = utils.build_url(request, instance.pk, parent=parent)
         return ret
 
 
@@ -783,7 +788,7 @@ class KeywordSerializer(LinkedEventsSerializer):
 
     class Meta:
         model = Keyword
-        exclude = ('n_events_changed',)
+        exclude = ('n_events_changed', )
 
     def get_top_concept_parent(self, obj):
         nsc = []
@@ -799,13 +804,9 @@ class KeywordSerializer(LinkedEventsSerializer):
         ret = super().to_representation(instance)
         children = []
         for child in instance.children.all():
-            data = serializers.HyperlinkedRelatedField(
-                view_name='joku-view', read_only=True, context={'request': self.request}).to_representation(child)
-            data.update(**KeywordFilterSerializer().to_representation(child))
-            TranslatedModelSerializer().translated_fields_to_representation(child, data)
+            data = KeywordFilterSerializer(context={'request':self.request, 'parent': instance}).to_representation(child)
             children.append(data)
         ret['children'] = children
-        ret['children'][0]['hah'] = 'joujou'
         return ret
 
 
