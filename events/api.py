@@ -806,8 +806,7 @@ class KeywordListViewSet(JSONAPIViewMixin, mixins.ListModelMixin, viewsets.Gener
         show_all_keywords (keywords without events are included)
         show_deprecated (deprecated keywords are included)
         """
-        queryset = Keyword.objects.all()
-        queryset = queryset.exclude(is_hidden=True)
+        queryset = Keyword.objects.exclude(is_hidden=True)
         data_source = self.request.query_params.get('data_source')
         # Filter by data source, multiple sources separated by comma
         if data_source:
