@@ -750,10 +750,11 @@ class JSONAPIViewMixin(object):
 
 
 class KeywordFilterSerializer(TranslatedModelSerializer):
+    ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
+
     class Meta:
         model = Keyword
-        fields = ('name', )
-
+        fields = ('name', 'ontology_type')
 
     def to_representation(self, instance):
         request = self.context['request']
@@ -771,40 +772,31 @@ class KeywordSerializer(LinkedEventsSerializer):
         default_timezone=pytz.UTC, required=False, allow_null=True)
     last_modified_time = DateTimeField(
         default_timezone=pytz.UTC, required=False, allow_null=True)
-
-    #parents = KeywordTestSerializer(many=True, read_only=True)
     parents = JSONLDRelatedField(
         serializer=KeywordFilterSerializer, many=True, required=True, allow_empty=False,
         view_name='keyword-detail', queryset=Keyword.objects.all())
-
     children = JSONLDRelatedField(
         serializer=KeywordFilterSerializer, many=True, required=True, allow_empty=False,
         view_name='keyword-detail', queryset=Keyword.objects.all())
-
     ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
-    top_concept_parent = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Keyword
         exclude = ('n_events_changed', )
 
-    def get_top_concept_parent(self, obj):
-        nsc = []
-        for x in obj.parents.all():
-            # print(x.name)
-            if x.ontology_type == 'Concept':
-                nsc.append(x)
-        parents_concept = KeywordFilterSerializer(
-            nsc, many=True, read_only=True).data
-        return parents_concept
-
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        children = []
-        for child in instance.children.all():
-            data = KeywordFilterSerializer(context={'request':self.request, 'parent': instance}).to_representation(child)
-            children.append(data)
-        ret['children'] = children
+
+        def _cp(val):
+            c_or_p = []
+            for value in getattr(instance, val).all():
+                data = KeywordFilterSerializer(
+                    context={'request': self.request, 'parent': instance}).to_representation(value)
+                c_or_p.append(data)
+            return c_or_p
+
+        ret['children'] = _cp('children')
+        ret['parents'] = _cp('parents')
         return ret
 
 
