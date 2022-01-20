@@ -760,7 +760,7 @@ class KeywordSerializer(LinkedEventsSerializer):
 
     class Meta:
         model = Keyword
-        exclude = ('n_events_changed', 'is_hidden')
+        exclude = ('n_events_changed',)
 
 
 class KeywordRetrieveViewSet(JSONAPIViewMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -845,9 +845,12 @@ class KeywordSetSerializer(LinkedEventsSerializer):
     last_modified_time = DateTimeField(
         default_timezone=pytz.UTC, required=False, allow_null=True)
 
+
     def to_representation(self, obj):
-        obj.keywords.set(obj.keywords.exclude(is_hidden=True))
-        return super().to_representation(obj)
+        data = super(KeywordSetSerializer, self).to_representation(obj)
+        non_hidden_keywords = [keyword for keyword in data.get('keywords') if not keyword.get('is_hidden')]
+        data['keywords'] = non_hidden_keywords
+        return data
 
     class Meta:
         model = KeywordSet
