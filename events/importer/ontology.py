@@ -2,6 +2,11 @@
 
 # Dependencies.
 
+# RDFLIB:
+import rdflib
+from rdflib import RDF, URIRef
+from rdflib.namespace import DCTERMS, OWL, SKOS
+
 # Logging:
 import time
 import logging
@@ -11,13 +16,14 @@ from os.path import abspath, join, dirname, exists, basename, splitext
 # Django:
 from django_orghierarchy.models import Organization
 from django_orghierarchy.models import OrganizationClass
-from events.models import DataSource, BaseModel, Keyword
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from events.models import Keyword, KeywordLabel, DataSource, BaseModel, Language
 
 # Importer specific:
 from .base import Importer, register_importer
 
 # Type checking:
-from typing import Any
+from typing import TYPE_CHECKING, Any, Tuple, List
 
 # Setup Logging:
 if not exists(join(dirname(__file__), 'logs')):
@@ -42,12 +48,12 @@ logger.addHandler(
 
 
 @register_importer
-class TslImporter(Importer):
+class OntologyImporter(Importer):
     # Importer class dependant attributes:
-    name = "tsl"  # Command calling name.
+    name = "ontology"  # Command calling name.
     supported_languages = ['fi', 'sv', 'en']  # Base file requirement.
 
-    def iterator(self: 'events.importer.tsl.TslImporter', data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
+    def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
         ''' Main class data logic. Create DB objects & set class attributes.
             This was created with easy expandability of the setup data dictionary in mind.
             We are using save() throughout this program to avoid race conditions with update_or_create()
@@ -69,61 +75,29 @@ class TslImporter(Importer):
             except Exception as e:
                 logger.error(e)
 
-    def save_kw(self: 'events.importer.tsl.TslImporter') -> None:
-        try:
-            for k, v in self.keywords.items():
-                kw = Keyword(data_source=getattr(self, 'data_source'))
-                kw.id = k
-                kw.publisher = getattr(self, 'organization')
-                for lang, lang_val in v.items():
-                    langformat = 'name_%s' % lang
-                    setattr(kw, langformat, lang_val)
-                kw.created_time = BaseModel.now()
-                kw.save()
-                logger.info("Saved TSL keyword ID: %s" % k)
-        except Exception as e:
-            logger.error(e)
-            pass
-
-    def setup(self: 'events.importer.tsl.TslImporter') -> None:
-        ''' 
-            This can be used as a template for other importers as it's constructed
-            to be very easily expandable. It also avoids race condition issues by utiling save().
-
-            To add a new model we just define it as a key, add the attribute name to attr_maps,
-            add the model values to model_maps and add the required values mapped by those
-            model_maps within. Remember that the values that are underneath each other
-            are creater later than the former so you'd want to follow this mindset throughout the data dict.
-
-            This might look like a static assignment importer but
-            we use the magic of setattr to create the necessary objects before assignment.
-
-            Typically we define data_sources to organisations after they have been created,
-            but here we don't even have to worry about long update_or_create chains or get chains
-            should our data be large. If you take a look at "org", the data_source is defined as
-            'ds' followed by '_tsl'. The importer by itself finds the correct data_source when it is
-            trying to create the organization 'tsl'.
-        '''
+    def setup(self) -> None:
         self.data = {
-            # TSL and the Public DataSource for Organizations model.
+            # YSO, JUPO, Liito, and the Public DataSource for Organizations model.
             'ds': {
-                'tsl': ('tsl', 'Turun sanalista', True),
+                'yso': ('yso', 'Yleinen suomalainen ontologia', True),
+                'jupo': ('jupo', 'Julkisen hallinnon palveluontologia', True),
+                'liito': ('liito', 'Liiketoimintaontologia', True),
                 'org': ('org', 'Ulkoa tuodut organisaatiotiedot', True),
             },
             # Public organization class for all instances.
             'orgclass': {
                 'sanasto': ['org:13', '13', 'Sanasto', BaseModel.now(), 'ds_org'],
             },
-            # TSL organization.
+            # General ontology organization for keywords.
             'org': {
-                'tsl': ['tsl:3000', '3000', 'TSL', BaseModel.now(), 'org:13', 'ds_tsl'],
+                'onto': ['onto:1200', '1200', 'Ontology', BaseModel.now(), 'org:13', 'ds_org']
             },
             # Attribute name mapping for all due to class related attributes (ex. data_source and organization are necessary).
             'attr_maps': {
-                'ds': ('data_source', 'data_source_org'),
+                'ds': ('data_source', 'data_source_jupo', 'data_source_liito', 'data_source_org'),
                 # Tuples get converted to strings for single values if they don't contain , at the end
-                'orgclass': ('organization_class_13',),
-                'org': ('organization',),
+                'orgclass': ('organization_class_13', ),
+                'org': ('organization', ),
             },
             # Models for easy iteration (Selected attributes):
             'model_maps': {
@@ -147,9 +121,5 @@ class TslImporter(Importer):
         logger.info("Setup finished...")
         self.handle()
 
-    def handle(self: 'events.importer.tsl.TslImporter') -> None:
-        logger.info("Gather TSL keywords...")
-        self.keywords = tsl()
-        logger.info("Saving TSL keywords...")
-        self.save_kw()
+    def handle(self) -> None:
         logger.info("Importer finished in: %s" % time.process_time())
