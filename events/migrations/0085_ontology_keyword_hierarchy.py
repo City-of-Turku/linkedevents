@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0083_auto_20211102_1005'),
+        ('events', '0084_keyword_is_hidden'),
     ]
 
     operations = [
@@ -18,7 +18,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='keyword',
             name='ontology_type',
-            field=models.SmallIntegerField(choices=[(1, 'OntologyConcept'), (2, 'OntologyHierarchy')], default=1, verbose_name='Ontology type'),
+            field=models.SmallIntegerField(
+                choices=[(1, 'OntologyConcept'), (2, 'OntologyHierarchy')], default=1, verbose_name='Ontology type'),
         ),
         migrations.AddField(
             model_name='keyword',
