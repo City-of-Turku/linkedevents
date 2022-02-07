@@ -82,7 +82,7 @@ admin.site.register(Event, EventAdmin)
 class KeywordAdmin(AutoIdBaseAdmin, TranslationAdmin, VersionAdmin):
     # TODO: only allow user_editable editable fields
     fields = ('id', 'data_source', 'origin_id',  'publisher',
-              'name', 'replaced_by', 'deprecated', 'parents', 'children', 'ontology_type', 'is_hidden', 'deprecated')
+              'name', 'replaced_by', 'deprecated', 'parents', 'children', 'ontology_type', 'is_hidden')
     search_fields = ('name',)
     list_display = ('id', 'name', 'n_events')
     list_filter = ('data_source',)
