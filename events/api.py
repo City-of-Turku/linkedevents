@@ -751,10 +751,11 @@ class JSONAPIViewMixin(object):
 
 class KeywordFilterSerializer(TranslatedModelSerializer):
     ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
+    id = serializers.CharField(required=False)
 
     class Meta:
         model = Keyword
-        fields = ('name', 'ontology_type')
+        fields = ('id', 'name', 'ontology_type')
 
     def to_representation(self, instance):
         request = self.context['request']
