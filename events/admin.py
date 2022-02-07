@@ -82,16 +82,15 @@ admin.site.register(Event, EventAdmin)
 class KeywordAdmin(AutoIdBaseAdmin, TranslationAdmin, VersionAdmin):
     # TODO: only allow user_editable editable fields
     fields = ('id', 'data_source', 'origin_id',  'publisher',
-              'name', 'replaced_by', 'deprecated', 'parents', 'children', 'ontology_type',)
-              'name', 'replaced_by', 'is_hidden', 'deprecated')
-    search_fields=('name',)
-    list_display=('id', 'name', 'n_events')
-    list_filter=('data_source',)
-    ordering=('-n_events',)
-    autocomplete_fields=('publisher', 'replaced_by', 'parents', 'children',)
-    readonly_fields=('id',)
+              'name', 'replaced_by', 'deprecated', 'parents', 'children', 'ontology_type', 'is_hidden', 'deprecated')
+    search_fields = ('name',)
+    list_display = ('id', 'name', 'n_events')
+    list_filter = ('data_source',)
+    ordering = ('-n_events',)
+    autocomplete_fields = ('publisher', 'replaced_by', 'parents', 'children',)
+    readonly_fields = ('id',)
 
-    def get_readonly_fields(self, request, obj = None):
+    def get_readonly_fields(self, request, obj=None):
         if obj:
             return ['id', 'data_source', 'origin_id']
         else:
@@ -102,10 +101,10 @@ admin.site.register(Keyword, KeywordAdmin)
 
 
 class KeywordSetAdmin(AutoIdBaseAdmin):
-    fields=('id', 'data_source', 'origin_id', 'name', 'keywords', 'usage')
-    autocomplete_fields=('keywords', )
+    fields = ('id', 'data_source', 'origin_id', 'name', 'keywords', 'usage')
+    autocomplete_fields = ('keywords', )
 
-    def get_readonly_fields(self, request, obj = None):
+    def get_readonly_fields(self, request, obj=None):
         if obj:
             return ['id', 'origin_id', 'data_source']
         else:
@@ -116,7 +115,7 @@ admin.site.register(KeywordSet, KeywordSetAdmin)
 
 
 class HelsinkiGeoAdmin(LeafletGeoAdmin):
-    settings_overrides={
+    settings_overrides = {
         'DEFAULT_CENTER': (60.171944, 24.941389),
         'DEFAULT_ZOOM': 11,
         'MIN_ZOOM': 3,
