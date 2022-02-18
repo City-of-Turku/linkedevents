@@ -2,14 +2,8 @@
 
 # Dependencies.
 
-# RDFLIB:
-import rdflib
-from rdflib import RDF, URIRef
-from rdflib.namespace import DCTERMS, OWL, SKOS
-
 # Logging:
-import time
-import math
+from asyncio import DatagramTransport
 import logging
 from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
@@ -21,6 +15,9 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from events.models import Keyword, KeywordLabel, DataSource, BaseModel, Language
 
 # Importer specific:
+import time
+import math
+import requests
 from .base import Importer, register_importer
 
 # Type checking:
@@ -47,7 +44,23 @@ logger.addHandler(
     logFile
 )
 
-def proc_time_frmt(stage) -> None:
+def connect() -> List:
+    # Lounaistieto geoserver API which contains approximately 5.1K places from PTV and OSM.
+    url = "https://geoserver.lounaistieto.fi/geoserver/service_points/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=service_points%3Apalvelukohteet&outputFormat=application%2Fjson"
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0'
+    }
+    try: 
+        fetch = requests.get(url, headers=headers)
+        response = fetch.json()
+        return response
+    except Exception as e:
+        logger.error("Something went wrong while requesting Lounaistieto geoserver API... %s" % e)
+
+def proc_time_frmt(stage: str) -> None:
+    # Formatter for logs.
     ft = math.modf(time.process_time())
     curtime = float(str(ft[0])[:3])+ft[1]
     logger.info("%s finished after %s seconds from the initial start!" % (stage, curtime))
@@ -84,9 +97,9 @@ class PlaceCombinationImporter(Importer):
 
     def setup(self) -> None:
         self.data = {
-            # YSO, JUPO and the Public DataSource for Organizations model.
+            # Public organization, PTV and OSM data_source.
             'ds': {
-                'org': ('org', 'Ulkoa tuodut paikkatiedot toimipisteille', True),
+                'org': ('org', 'Ulkoa tuodut organisaatiotiedot', True),
                 'ptv': ('ptv', 'Palvelutietovaranto (PTV)', True),
                 'osm': ('osm', 'OpenStreetMap (OSM)', True),
             },
@@ -128,5 +141,8 @@ class PlaceCombinationImporter(Importer):
         self.handle()
 
     def handle(self) -> None:
-        # Handler function for passing the graph between functions. More organized at the cost of more function calls.
+        # Handler function for passing data between functions. More organized at the cost of more function calls.
+        place_data = connect()
+        if place_data:
+            logger.info("Successfully gathered place data!")
         proc_time_frmt("Importer")
