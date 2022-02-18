@@ -11,6 +11,11 @@ from django.core.management import call_command
 from django_orghierarchy.models import Organization
 from django_orghierarchy.models import OrganizationClass
 
+from django.contrib.gis.gdal import DataSource, SpatialReference, CoordTransform
+from django.contrib.gis.gdal.error import GDALException
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
+from django.contrib.gis import gdal
+
 from events.importer.util import replace_location
 from events.models import DataSource, Place
 from .sync import ModelSyncher
@@ -21,11 +26,17 @@ from .tprapi import async_main
 logger = logging.getLogger(__name__)
 
 URL_BASE = 'https://palvelukartta.turku.fi/api/v2/'
-GK23_SRID = 3877
+GK23_SRID = 3877 # 3877
 
 POSITIONERROR = []
 NONEVALUES = []
 
+def convert_from_gk23(n, e):
+    pointti = Point(n, e, srid=4326)
+    gps_srs = SpatialReference(4326)
+    target_sourc = SpatialReference(3067)
+    pointti.transform(CoordTransform(gps_srs, target_sourc))
+    return pointti
 
 @register_importer
 class TprekImporter(Importer):
@@ -166,28 +177,34 @@ class TprekImporter(Importer):
             if n and e:
                 if os.name == 'nt':
                     p = Point(e, n, srid=4326)  # GPS coordinate system (WGS 84)
+                    #print(p)
                 else:
                     p = Point(n, e, srid=4326)  # GPS coordinate system (WGS 84)
-
+                    location = convert_from_gk23(n, e)# Old code conversion uses ETRS-GK25 (Helsinki region). NOTE! Check the result
+                    p = location
+                position = p
+                print(position, obj)
+                '''
                 if p.within(self.bounding_box):
                     if self.target_srid != 4326:
-                        p.transform(self.gps_to_target_ct)
+                        #p.transform(self.gps_to_target_ct)
+                        print("HERE???", p)
                     position = p
                 else:
                     logger.warning("Invalid coordinates (%f, %f) for %s" % (n, e, obj))
-
+                '''
             try:
                 picture_url = info.get('picture_url', '').strip()
             except:
                 NONEVALUES.append('unit ID: ' + str(info['id']) + ' picture_url field is empty!')
                 pass
 
-            if position and obj.position:
+            #if position and obj.position:
                 # If the distance is less than 10cm, assume the location
                 # hasn't changed.
-                assert obj.position.srid == settings.PROJECTION_SRID
-                if position.distance(obj.position) < 0.10:
-                    position = obj.position
+                #assert obj.position.srid == settings.PROJECTION_SRID
+                #if position.distance(obj.position) < 0.10:
+                #    position = obj.position
 
             if position != obj.position:
                 obj._changed = True
