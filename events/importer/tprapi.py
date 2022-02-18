@@ -38,7 +38,8 @@ async def main(unit_pages) -> dict:
 
         tasks = []
         for page_no in range(1, unit_pages):
-            URL = 'https://palvelukartta.turku.fi/api/v2/unit/?page=%s' % page_no
+            # Testipalvelukartta needs turku VPN connection.
+            URL = 'https://testipalvelukartta.turku.fi/api/v2/unit/?page=%s' % page_no
             tasks.append(fetch(session, URL, page_no))
         try:
             res = await asyncio.gather(*tasks, return_exceptions=False)
@@ -54,7 +55,8 @@ def async_main(retry_count=3) -> dict:
     
     # Fetch page_count by calculating page_size 'count'
     # by dividing it with default value 20 (servicemap).
-    url = "https://palvelukartta.turku.fi/api/v2/unit"
+    # Testipalvelukartta needs turku VPN connection.
+    url = "https://testipalvelukartta.turku.fi/api/v2/unit"
 
     try:
         fetch = requests.get(url, headers=headers)
