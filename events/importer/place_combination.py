@@ -12,7 +12,11 @@ from os.path import abspath, join, dirname, exists, basename, splitext
 from django_orghierarchy.models import Organization
 from django_orghierarchy.models import OrganizationClass
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from events.models import Keyword, KeywordLabel, DataSource, BaseModel, Language
+from events.models import Keyword, KeywordLabel, DataSource, BaseModel, Language, Place
+from django.contrib.gis.gdal import SpatialReference, CoordTransform
+from django.contrib.gis.gdal.error import GDALException
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
+from django.contrib.gis import gdal
 
 # Importer specific:
 import time
@@ -140,9 +144,43 @@ class PlaceCombinationImporter(Importer):
         proc_time_frmt("Setup")
         self.handle()
 
+    def process(self, place: List) -> None:
+        # Processing phase.
+
+
+        address_data = Place.objects.filter(data_source__id="tpr")
+        #for addresses in address_data:
+        #    logger.info(addresses.position)
+
+        all_pnts = []
+
+        for obj in place["features"]:
+            geom = obj.get("geometry", None)
+            props = obj.get("properties", None)
+            coords = None
+            if geom and props:
+                if geom.get("coordinates", None):
+                    coords = geom["coordinates"]
+                    pnt = Point(coords[0], coords[1], srid=3067)
+                    print(pnt, coords)
+                    time.sleep(.5)
+                    all_pnts.append(pnt)
+                target_name = props.get("kohteen_nimi", None)
+                datalahde = props.get("datalahde", None)
+                service_target_type = props.get("palvelukohdetyyppi", None)
+                #if target_name == "":
+                #    print("test")
+        #for addresses in address_data:
+        #    logger.info(addresses.position)
+        #    if addresses.position in all_pnts:
+        #        print("Match found-")
+
+
     def handle(self) -> None:
         # Handler function for passing data between functions. More organized at the cost of more function calls.
         place_data = connect()
         if place_data:
             logger.info("Successfully gathered place data!")
+            self.process(place=place_data)
+
         proc_time_frmt("Importer")
