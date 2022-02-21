@@ -21,6 +21,7 @@ from django.contrib.gis import gdal
 # Importer specific:
 import time
 import math
+import difflib
 import requests
 from .base import Importer, register_importer
 
@@ -146,35 +147,37 @@ class PlaceCombinationImporter(Importer):
 
     def process(self, place: List) -> None:
         # Processing phase.
-
-
         address_data = Place.objects.filter(data_source__id="tpr")
-        #for addresses in address_data:
-        #    logger.info(addresses.position)
-
-        all_pnts = []
+        '''
+         First, we want to import those lounaistieto places that do not already exist.
+         If they exist, we can most likely fix faulty coordinates as well.
+        '''
+        tpr_names = [tpr.name_fi for tpr in address_data if tpr.name_fi and tpr.name_fi != ""]
 
         for obj in place["features"]:
             geom = obj.get("geometry", None)
             props = obj.get("properties", None)
-            coords = None
             if geom and props:
-                if geom.get("coordinates", None):
-                    coords = geom["coordinates"]
-                    pnt = Point(coords[0], coords[1], srid=3067)
-                    print(pnt, coords)
-                    time.sleep(.5)
-                    all_pnts.append(pnt)
+                coords = geom.get("coordinates", None)
                 target_name = props.get("kohteen_nimi", None)
+                if target_name and target_name != "" and target_name in tpr_names:
+                    if coords:
+                        # Dev note: Before I override a new coordinate,
+                        # I should check if the tpr place address matches or if it has changed... might cause issues.
+                        # If it's a null address, we can just override, if it has an address we can check it.
+                        try:
+                            pw = Place.objects.get(name_fi=target_name)
+                            pw.position = Point(coords[0], coords[1], srid=3067)
+                            pw.save()
+                            logger.info("Saved new accurate position %s for %s" % (pw.position, target_name))
+                        except Exception as e:
+                            ''' 
+                            This most likely happens when there are 2 of the same. 
+                            It is too risky to automate this process, therefore this should be mapped manually. 
+                            '''
+                            logger.error("Something went wrong while saving new coordinate for: %s with error: %s" % (target_name, e))
+                            continue
                 datalahde = props.get("datalahde", None)
-                service_target_type = props.get("palvelukohdetyyppi", None)
-                #if target_name == "":
-                #    print("test")
-        #for addresses in address_data:
-        #    logger.info(addresses.position)
-        #    if addresses.position in all_pnts:
-        #        print("Match found-")
-
 
     def handle(self) -> None:
         # Handler function for passing data between functions. More organized at the cost of more function calls.
