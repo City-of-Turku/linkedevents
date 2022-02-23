@@ -146,38 +146,60 @@ class PlaceCombinationImporter(Importer):
         self.handle()
 
     def process(self, place: List) -> None:
-        # Processing phase.
-        address_data = Place.objects.filter(data_source__id="tpr")
+        # 1) First we get all the tpr places.
+        tpr_places = Place.objects.filter(data_source__id="tpr")
         '''
-         First, we want to import those lounaistieto places that do not already exist.
-         If they exist, we can most likely fix faulty coordinates as well.
+        2)
+        Our primary objective is to fill the place data with missing Swedish
+        addresses. The real unique identifier between all places ofcourse are the coordinates...
+        We might have duplicate names between TPR and Lounaistieto like "McDonalds"...
+        If we simply rely with overriding a more precise place or introduce a 'new' place
+        based on the actual name (duplicate issue), we might seriously affect the coordinate data of an existing
+        event that uses that place. We can narrow down this problem scenario with creating
+        a list of all TPR (and later Lounaistieto places) with a similarity metric ratio threshold
+        per place name and later on compare the distance between those coordinates.
+        This issue is something we have to tackle once we start filling more addresses
         '''
-        tpr_names = [tpr.name_fi for tpr in address_data if tpr.name_fi and tpr.name_fi != ""]
+        proc_data = []
+        for tpr_place_a in tpr_places:
+            tpra_name = tpr_place_a.name_fi
+            ''' 
+            We take this current place, loop through the list again
+            and find 'similar' places based on the name.
+            '''
+            dupe_names = []
+            dupe_osoite = []
+            dupe_coords = []
+            for tpr_place_b in tpr_places:
+                tprb_name = tpr_place_b.name_fi
+                if tprb_name == tpra_name:
+                    dupe_names.append(tprb_name)
+                    dupe_osoite.append(tpr_place_b.street_address_fi)
+                    dupe_coords.append(tpr_place_b.position)
+            if len(dupe_names) > 1 and dupe_names not in proc_data:
+                proc_data.append(dupe_names)
+                print("\n")
+                logger.info("%s has %s duplicates with osoitteet: %s" % (dupe_names[0], len(dupe_names), dupe_osoite))
+                if tpr_place_a.position:
+                    a_geom = GEOSGeometry(tpr_place_a.position)
+                    coord_dists = []
+                    for coord in dupe_coords:
+                        if coord:
+                            b_geom = GEOSGeometry(coord)
+                            dist_calc = b_geom.distance(a_geom)
+                            coord_dists.append(dist_calc)
+                        else:
+                            coord_dists.append(None)
+                    #coord_dists.sort(reverse=True)
+                    logger.info("Furthermore... Distances: %s" % coord_dists)
+                else:
+                    print("Skipping current unit coordinate because no coordinate was found...")
 
-        for obj in place["features"]:
-            geom = obj.get("geometry", None)
-            props = obj.get("properties", None)
-            if geom and props:
-                coords = geom.get("coordinates", None)
-                target_name = props.get("kohteen_nimi", None)
-                if target_name and target_name != "" and target_name in tpr_names:
-                    if coords:
-                        # Dev note: Before I override a new coordinate,
-                        # I should check if the tpr place address matches or if it has changed... might cause issues.
-                        # If it's a null address, we can just override, if it has an address we can check it.
-                        try:
-                            pw = Place.objects.get(name_fi=target_name)
-                            pw.position = Point(coords[0], coords[1], srid=3067)
-                            pw.save()
-                            logger.info("Saved new accurate position %s for %s" % (pw.position, target_name))
-                        except Exception as e:
-                            ''' 
-                            This most likely happens when there are 2 of the same. 
-                            It is too risky to automate this process, therefore this should be mapped manually. 
-                            '''
-                            logger.error("Something went wrong while saving new coordinate for: %s with error: %s" % (target_name, e))
-                            continue
-                datalahde = props.get("datalahde", None)
+                
+                #ratio_calc = difflib.SequenceMatcher(None, tpr_place_a.name_fi, tpr_place_b.name_fi).ratio() * 100
+                #if ratio_calc > 90:
+                #    proc_data.update({tpr_place_a.name_fi: )
+
 
     def handle(self) -> None:
         # Handler function for passing data between functions. More organized at the cost of more function calls.
