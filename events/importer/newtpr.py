@@ -86,7 +86,7 @@ def async_main(retry_count=3) -> dict:
         fetch = requests.get(url, headers=headers)
         response = fetch.json()
         calc = math.modf(response['count'] / 20)
-        
+
         if calc[0] != float(0):
             page_count = int(calc[1]+1)
         else:
@@ -193,7 +193,7 @@ class NewTprImporter(Importer):
     def handle(self) -> None:
         obj_list = async_main()
         existing_addresses = Place.objects.filter(data_source__id="osoite")
-        address_corrections = 0
+        address_corrections = not_needed = mcs = 0
         for idx, infos in enumerate(obj_list, start=1):
             logger.info("Page: %s was processed." % idx)
             for info in infos:
@@ -214,6 +214,7 @@ class NewTprImporter(Importer):
                 if addresses:
                     cur_address_fi = addresses.get("fi", None)
                     cur_address_sv = addresses.get("sv", None)
+                    # The reason we have to loop through and match based on this is because regexing is not commutative.
                     for existing_address in existing_addresses:
                         street_fi = existing_address.name_fi
                         street_sv = existing_address.name_sv
@@ -226,10 +227,26 @@ class NewTprImporter(Importer):
                                     formatted_sv = street_sv.split(',')[0]
                                 if cur_address_sv == formatted_sv:
                                     logger.info("SV - Match for Swedish API address: %s with existing address: %s" % (cur_address_sv, formatted_sv))
+                                    not_needed += 1
                                 if formatted_sv and cur_address_sv != formatted_sv:
                                     logger.info("SV - A more ACCURATE Swedish address was found! Before: %s After: %s " % (cur_address_sv, formatted_sv))
                                     address_corrections += 1
                                 break
                 else:
                     logger.warn("tpr:%s has no addresses?" % ids)
-        logger.info("In total we corrected: %s addresses!" % address_corrections)
+                    if pnt:
+                        min_calc = 10**1000
+                        approx_address = None
+                        for address_coords in existing_addresses:
+                            a_geom = GEOSGeometry(address_coords.position)
+                            b_geom = GEOSGeometry(pnt)
+                            dist_calc = b_geom.distance(a_geom)
+                            if dist_calc < min_calc:
+                                min_calc = dist_calc
+                                approx_address = address_coords.name_fi
+                                if dist_calc == 0:
+                                    break
+                        logger.info("Distance approximated for tpr:%s with distance: %s and found address: %s" % (ids, min_calc, approx_address))
+                        mcs += 1
+        logger.info("In total we corrected: %s addresses! Not needed: %s and %s addresses approximated." % (address_corrections, not_needed, mcs))
+        proc_time_frmt("Importer")
