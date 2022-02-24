@@ -20,6 +20,7 @@ from .base import Importer, register_importer
 from django.conf import settings
 
 # GeoDjango:
+from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.gdal.error import GDALException
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
@@ -204,13 +205,9 @@ class NewTprImporter(Importer):
                 if location:
                     coordinates = location.get("coordinates", [])
                     if len(coordinates) == 2:
-                        northing = coordinates[0] # Latitude
-                        easting = coordinates[1] # Longitude
-                        pnt = Point(northing, easting, srid=4326) # TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
-                        gps_srid = SpatialReference(4326)
-                        target_srid = SpatialReference(settings.PROJECTION_SRID) # Setting uses 3067.
+                        pnt = Point(coordinates[0], coordinates[1], srid=4326) # TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
                         # Transform the coordinates to the default database supported SRID.
-                        pnt.transform(CoordTransform(gps_srid, target_srid))
+                        pnt.transform(CoordTransform(SpatialReference(4326), SpatialReference(settings.PROJECTION_SRID)))
                 if addresses:
                     cur_address_fi = addresses.get("fi", None)
                     cur_address_sv = addresses.get("sv", None)
@@ -235,18 +232,8 @@ class NewTprImporter(Importer):
                 else:
                     logger.warn("tpr:%s has no addresses?" % ids)
                     if pnt:
-                        min_calc = 10**1000
-                        approx_address = None
-                        for address_coords in existing_addresses:
-                            a_geom = GEOSGeometry(address_coords.position)
-                            b_geom = GEOSGeometry(pnt)
-                            dist_calc = b_geom.distance(a_geom)
-                            if dist_calc < min_calc:
-                                min_calc = dist_calc
-                                approx_address = address_coords.name_fi
-                                if dist_calc == 0:
-                                    break
-                        logger.info("Distance approximated for tpr:%s with distance: %s and found address: %s" % (ids, min_calc, approx_address))
+                        address = existing_addresses.annotate(distance=Distance('position', pnt, spheroid=True)).order_by("distance").first()
+                        logger.info("Approximated address: %s for tpr:%s" % (address.name_fi, ids))
                         mcs += 1
         logger.info("In total we corrected: %s addresses! Not needed: %s and %s addresses approximated." % (address_corrections, not_needed, mcs))
         proc_time_frmt("Importer")
