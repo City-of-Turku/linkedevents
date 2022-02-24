@@ -192,6 +192,26 @@ class NewTprImporter(Importer):
         proc_time_frmt("Setup")
         self.handle()
 
+    def singular_request(self, muni, address, query, lang) -> Any:
+        if muni:
+            # We can make an equal match like so:
+            address = "%s, %s" % (address, muni.capitalize())
+            try:
+                # Make an exact match since we have the full format.
+                return query.get(**{"name_%s" % lang: address})
+            except:
+                # Might have a slim chance that duplicates or some other unknown error gets returned.
+                pass
+
+    def coord_approx(self, pnt, query, rng=200) -> Any:
+        if pnt:
+            # Approximates the closest address to a point within a specified range.
+            return query.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=rng).order_by("distance").first()
+
+    def regex_contains(self, query, lang, address) -> Any:
+        # 23x faster than __contains because of the SQL ~ operator rather than LIKE.
+        return query.filter(**{"name_%s__regex" % lang: r'^%s' % address})
+
     def handle(self) -> None:
         obj_list = async_main()
         existing_addresses = Place.objects.filter(data_source__id="osoite")
@@ -204,55 +224,38 @@ class NewTprImporter(Importer):
                 location = info.get("location", None)
                 municipality = info.get("municipality", None)
                 name = info.get("name", None)
-                pnt = None
-                if location:
-                    coordinates = location.get("coordinates", [])
-                    if len(coordinates) == 2:
-                        pnt = Point(coordinates[0], coordinates[1], srid=4326) # TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
-                        # Transform the coordinates to the default database supported SRID.
-                        pnt.transform(CoordTransform(SpatialReference(4326), SpatialReference(settings.PROJECTION_SRID)))
-                if addresses:
-                    cur_address_fi = addresses.get("fi", None)
-                    cur_address_sv = addresses.get("sv", None)
-                    if cur_address_fi:
-                        ag = existing_addresses.filter(name_fi__regex=r'^%s' % cur_address_fi) # 23x faster than __contains
-                        if len(ag) == 1:
-                            # Full match.
-                            not_needed += 1
-                        #elif len(ag) > 1:
-                        #    print("elif")
-                        #    print(cur_address_fi, municipality)
-                        #    print(ag)
-                        #else:
-                        #    print("else")
-                        #    print(cur_address_fi)
-                        #    print(ag)
-                        #if cur_address_fi in existing_addresses:
-                        
-                        
-                    # The reason we have to loop through and match based on this is because regexing is not commutative.
-                    #for existing_address in existing_addresses:
-                    #    street_fi = existing_address.name_fi
-                    #    street_sv = existing_address.name_sv
-                    #    if street_fi:
-                    #        formatted_fi = street_fi.split(',')[0]
-                    #        if cur_address_fi == formatted_fi:
-                    #            #print("FI - before:", cur_address_fi, "---> after:", formatted_fi)
-                    #            formatted_sv = None
-                    #            if street_sv:
-                    #                formatted_sv = street_sv.split(',')[0]
-                    #            if cur_address_sv == formatted_sv:
-                    #                logger.info("SV - Match for Swedish API address: %s with existing address: %s" % (cur_address_sv, formatted_sv))
-                    #                not_needed += 1
-                    #            if formatted_sv and cur_address_sv != formatted_sv:
-                    #                logger.info("SV - A more ACCURATE Swedish address was found! Before: %s After: %s " % (cur_address_sv, formatted_sv))
-                    #                address_corrections += 1
-                    #            break
-                else:
-                    logger.warn("tpr:%s has no addresses?" % ids)
-                    if pnt:
-                        address = existing_addresses.annotate(distance=Distance('position', pnt, spheroid=True)).order_by("distance").first()
-                        logger.info("Approximated address: %s for tpr:%s" % (address.name_fi, ids))
-                        mcs += 1
+                if name:
+                    namef = name.get("fi", None)
+                    if namef and namef != "":
+                        logger.info("[ NAME ]: The name is: %s" % namef)
+                        pnt = None
+                        if location:
+                            coordinates = location.get("coordinates", [])
+                            if len(coordinates) == 2:
+                                # TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
+                                pnt = Point(coordinates[0], coordinates[1], srid=4326)
+                                # Transform the coordinates to the default database supported SRID.
+                                pnt.transform(CoordTransform(SpatialReference(4326), SpatialReference(settings.PROJECTION_SRID)))
+                        if addresses:
+                            cur_address_fi = addresses.get("fi", None)
+                            if cur_address_fi:
+                                found = self.singular_request(muni=municipality, address=cur_address_fi, query=existing_addresses, lang="fi")
+                                if found:
+                                    logger.info("[ DIRECT ]: Direct address found! Finnish: %s -> Swedish: %s" % (found.name_fi, found.name_sv))
+                                    not_needed += 1
+                                else:
+                                    #lr = existing_addresses.filter(name_fi__regex=r'^%s' % cur_address_fi) # 23x faster than __contains
+                                    lr = self.regex_contains(query=existing_addresses, lang="fi", address=cur_address_fi)
+                                    approximated_address = self.coord_approx(pnt=pnt, query=lr, rng=200)
+                                    if approximated_address:
+                                        logger.info("[ APPROXIMATED ]: %s" % approximated_address)
+                                        address_corrections += 1
+                        else:
+                            logger.warn("tpr:%s has no addresses?" % ids)
+                            if pnt:
+                                address = existing_addresses.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=200).order_by("distance").first()
+                                if address:
+                                    logger.info("Approximated address: %s for tpr:%s" % (address.name_fi, ids))
+                                    mcs += 1
         logger.info("In total we corrected: %s addresses! Not needed: %s and %s addresses approximated." % (address_corrections, not_needed, mcs))
         proc_time_frmt("Importer")
