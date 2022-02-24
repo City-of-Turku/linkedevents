@@ -25,6 +25,7 @@ from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.gdal.error import GDALException
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
 from django.contrib.gis import gdal
+from django.db import connection, reset_queries
 
 # Type checking:
 from typing import TYPE_CHECKING, Any, Tuple, List
@@ -201,6 +202,8 @@ class NewTprImporter(Importer):
                 ids = info.get("id", None)
                 addresses = info.get("street_address", None)
                 location = info.get("location", None)
+                municipality = info.get("municipality", None)
+                name = info.get("name", None)
                 pnt = None
                 if location:
                     coordinates = location.get("coordinates", [])
@@ -211,24 +214,40 @@ class NewTprImporter(Importer):
                 if addresses:
                     cur_address_fi = addresses.get("fi", None)
                     cur_address_sv = addresses.get("sv", None)
+                    if cur_address_fi:
+                        ag = existing_addresses.filter(name_fi__regex=r'^%s' % cur_address_fi) # 23x faster than __contains
+                        if len(ag) == 1:
+                            # Full match.
+                            not_needed += 1
+                        #elif len(ag) > 1:
+                        #    print("elif")
+                        #    print(cur_address_fi, municipality)
+                        #    print(ag)
+                        #else:
+                        #    print("else")
+                        #    print(cur_address_fi)
+                        #    print(ag)
+                        #if cur_address_fi in existing_addresses:
+                        
+                        
                     # The reason we have to loop through and match based on this is because regexing is not commutative.
-                    for existing_address in existing_addresses:
-                        street_fi = existing_address.name_fi
-                        street_sv = existing_address.name_sv
-                        if street_fi:
-                            formatted_fi = street_fi.split(',')[0]
-                            if cur_address_fi == formatted_fi:
-                                #print("FI - before:", cur_address_fi, "---> after:", formatted_fi)
-                                formatted_sv = None
-                                if street_sv:
-                                    formatted_sv = street_sv.split(',')[0]
-                                if cur_address_sv == formatted_sv:
-                                    logger.info("SV - Match for Swedish API address: %s with existing address: %s" % (cur_address_sv, formatted_sv))
-                                    not_needed += 1
-                                if formatted_sv and cur_address_sv != formatted_sv:
-                                    logger.info("SV - A more ACCURATE Swedish address was found! Before: %s After: %s " % (cur_address_sv, formatted_sv))
-                                    address_corrections += 1
-                                break
+                    #for existing_address in existing_addresses:
+                    #    street_fi = existing_address.name_fi
+                    #    street_sv = existing_address.name_sv
+                    #    if street_fi:
+                    #        formatted_fi = street_fi.split(',')[0]
+                    #        if cur_address_fi == formatted_fi:
+                    #            #print("FI - before:", cur_address_fi, "---> after:", formatted_fi)
+                    #            formatted_sv = None
+                    #            if street_sv:
+                    #                formatted_sv = street_sv.split(',')[0]
+                    #            if cur_address_sv == formatted_sv:
+                    #                logger.info("SV - Match for Swedish API address: %s with existing address: %s" % (cur_address_sv, formatted_sv))
+                    #                not_needed += 1
+                    #            if formatted_sv and cur_address_sv != formatted_sv:
+                    #                logger.info("SV - A more ACCURATE Swedish address was found! Before: %s After: %s " % (cur_address_sv, formatted_sv))
+                    #                address_corrections += 1
+                    #            break
                 else:
                     logger.warn("tpr:%s has no addresses?" % ids)
                     if pnt:
