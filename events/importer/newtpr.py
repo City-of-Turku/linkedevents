@@ -212,10 +212,20 @@ class NewTprImporter(Importer):
         # 23x faster than __contains because of the SQL ~ operator rather than LIKE.
         return query.filter(**{"name_%s__regex" % lang: r'^%s' % address})
 
-    def handle(self) -> None:
-        obj_list = async_main()
+    def validate_multilang_json_obj(self, obj) -> str:
+        '''
+        Validate unit name and address languages.
+        We can only support languages: fi, sv and en from the API.
+        '''
+        for lang in ("fi", "sv", "en"):
+            cur_unit_value = obj.get(lang, None)
+            if cur_unit_value and cur_unit_value != "":
+                return lang, cur_unit_value
+
+    def process(self, obj_list) -> None:
         existing_addresses = Place.objects.filter(data_source__id="osoite")
-        address_corrections = not_needed = mcs = 0
+        address_corrections = not_needed = mcs = uns = 0
+        data = [] # Will be used to fill the finished parsed data.
         for idx, infos in enumerate(obj_list, start=1):
             logger.info("Page: %s was processed." % idx)
             for info in infos:
@@ -225,37 +235,50 @@ class NewTprImporter(Importer):
                 municipality = info.get("municipality", None)
                 name = info.get("name", None)
                 if name:
-                    namef = name.get("fi", None)
-                    if namef and namef != "":
-                        logger.info("[ NAME ]: The name is: %s" % namef)
+                    valid_unit_lang, valid_unit_name = self.validate_multilang_json_obj(obj=name)
+                    if valid_unit_lang:
                         pnt = None
                         if location:
                             coordinates = location.get("coordinates", [])
+                            # Validate 2D vector:
                             if len(coordinates) == 2:
                                 # TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
                                 pnt = Point(coordinates[0], coordinates[1], srid=4326)
                                 # Transform the coordinates to the default database supported SRID.
                                 pnt.transform(CoordTransform(SpatialReference(4326), SpatialReference(settings.PROJECTION_SRID)))
                         if addresses:
-                            cur_address_fi = addresses.get("fi", None)
-                            if cur_address_fi:
-                                found = self.singular_request(muni=municipality, address=cur_address_fi, query=existing_addresses, lang="fi")
+                            valid_address_lang, valid_address = self.validate_multilang_json_obj(obj=addresses)
+                            if valid_address:
+                                found = self.singular_request(muni=municipality, address=valid_address, query=existing_addresses, lang=valid_address_lang)
                                 if found:
                                     logger.info("[ DIRECT ]: Direct address found! Finnish: %s -> Swedish: %s" % (found.name_fi, found.name_sv))
-                                    not_needed += 1
+                                    if not found.name_sv:
+                                        logger.info("[ SV DIRECT ] Couldn't find Swedish address name... getting unit sv address name: %s" % addresses.get("sv", None))
+                                    not_needed += 1 # temporary
                                 else:
-                                    #lr = existing_addresses.filter(name_fi__regex=r'^%s' % cur_address_fi) # 23x faster than __contains
-                                    lr = self.regex_contains(query=existing_addresses, lang="fi", address=cur_address_fi)
+                                    # Since we found multiple addresses, we have to filter through and find the closest...
+                                    lr = self.regex_contains(query=existing_addresses, lang=valid_address_lang, address=valid_address)
                                     approximated_address = self.coord_approx(pnt=pnt, query=lr, rng=200)
                                     if approximated_address:
                                         logger.info("[ APPROXIMATED ]: %s" % approximated_address)
-                                        address_corrections += 1
+                                        mcs += 1 # temporary
                         else:
-                            logger.warn("tpr:%s has no addresses?" % ids)
-                            if pnt:
-                                address = existing_addresses.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=200).order_by("distance").first()
-                                if address:
-                                    logger.info("Approximated address: %s for tpr:%s" % (address.name_fi, ids))
-                                    mcs += 1
-        logger.info("In total we corrected: %s addresses! Not needed: %s and %s addresses approximated." % (address_corrections, not_needed, mcs))
+                            logger.warn("[ ADDRESS ] tpr:%s has no addresses? Approximating..." % ids)
+                            # We have to filter and approximate through the entire address registry.
+                            approximated_address = self.coord_approx(pnt=pnt, query=existing_addresses, rng=200)
+                            if approximated_address:
+                                logger.info("[ APPROXIMATED ]: %s" % approximated_address)
+                                mcs += 1 # temporary
+
+                            # Will change this vvvvv since there are functions for this now.
+                            #if pnt:
+                            #    address = existing_addresses.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=200).order_by("distance").first()
+                            #    if address:
+                            #        logger.info("Approximated address: %s for tpr:%s" % (address.name_fi, ids))
+                            #        mcs += 1 # temporary
+        logger.info("In total we corrected: %s addresses! Not needed: %s and %s addresses approximated. %s had unsupported name." % (address_corrections, not_needed, mcs, uns))
+
+    def handle(self) -> None:
+        obj_list = async_main()
+        self.process(obj_list=obj_list)
         proc_time_frmt("Importer")
