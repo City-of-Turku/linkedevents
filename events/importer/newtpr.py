@@ -222,6 +222,12 @@ class NewTprImporter(Importer):
             if cur_unit_value and cur_unit_value != "":
                 return lang, cur_unit_value
 
+    def multilang_search(self, muni, address, query) -> Any:
+        for lang in self.supported_languages:
+            found = self.singular_request(muni=muni, address=address, query=query, lang=lang)
+            if found:
+                return found
+
     def process(self, obj_list) -> None:
         existing_addresses = Place.objects.filter(data_source__id="osoite")
         address_corrections = not_needed = mcs = uns = 0
@@ -249,34 +255,27 @@ class NewTprImporter(Importer):
                         if addresses:
                             valid_address_lang, valid_address = self.validate_multilang_json_obj(obj=addresses)
                             if valid_address:
-                                found = self.singular_request(muni=municipality, address=valid_address, query=existing_addresses, lang=valid_address_lang)
+                                '''
+                                Usually with unit Swedish addresses, TPR writes them in Finnish which our DB might not have with direct language based requests.
+                                Therefore, scan all the languages til a result is found:
+                                '''
+                                found = self.multilang_search(muni=municipality, address=valid_address, query=existing_addresses)
                                 if found:
                                     logger.info("[ DIRECT ]: Direct address found! Finnish: %s -> Swedish: %s" % (found.name_fi, found.name_sv))
                                     if not found.name_sv:
                                         logger.info("[ SV DIRECT ] Couldn't find Swedish address name... getting unit sv address name: %s" % addresses.get("sv", None))
-                                    not_needed += 1 # temporary
                                 else:
                                     # Since we found multiple addresses, we have to filter through and find the closest...
                                     lr = self.regex_contains(query=existing_addresses, lang=valid_address_lang, address=valid_address)
                                     approximated_address = self.coord_approx(pnt=pnt, query=lr, rng=200)
                                     if approximated_address:
                                         logger.info("[ APPROXIMATED ]: %s" % approximated_address)
-                                        mcs += 1 # temporary
                         else:
                             logger.warn("[ ADDRESS ] tpr:%s has no addresses? Approximating..." % ids)
                             # We have to filter and approximate through the entire address registry.
                             approximated_address = self.coord_approx(pnt=pnt, query=existing_addresses, rng=200)
                             if approximated_address:
                                 logger.info("[ APPROXIMATED ]: %s" % approximated_address)
-                                mcs += 1 # temporary
-
-                            # Will change this vvvvv since there are functions for this now.
-                            #if pnt:
-                            #    address = existing_addresses.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=200).order_by("distance").first()
-                            #    if address:
-                            #        logger.info("Approximated address: %s for tpr:%s" % (address.name_fi, ids))
-                            #        mcs += 1 # temporary
-        logger.info("In total we corrected: %s addresses! Not needed: %s and %s addresses approximated. %s had unsupported name." % (address_corrections, not_needed, mcs, uns))
 
     def handle(self) -> None:
         obj_list = async_main()
