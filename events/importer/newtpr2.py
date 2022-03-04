@@ -8,12 +8,14 @@ import logging
 import math
 import time
 import json
+import copy
 import sys
 
 # requires langdetect package.
 from langdetect import detect, detect_langs
 
 # Django:
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django_orghierarchy.models import Organization, OrganizationClass
 from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
@@ -196,7 +198,7 @@ class NewTprTwoImporter(Importer):
         proc_time_frmt('Setup')
         self.handle()
 
-    def __multilang_validator(self, field_name) -> Tuple[bool, dict]:
+    def __multilang_validator(self, field_name: dict) -> bool:
         # Validator specific method for validating multilang json objects.
         ml_pass = False
         for lang in self.supported_languages:
@@ -209,14 +211,15 @@ class NewTprTwoImporter(Importer):
                         ml_pass = True
         return ml_pass
 
-    def validate_fields(self, fields) -> None:
+    def validate_fields(self, fields: dict) -> None:
         '''
-        Fields like id, name and either one of street addresses or location coordinate datas are the absolute minimum requirements.
+        Fields id, name and either one of street addresses or location coordinate datas are the absolute minimum requirements.
         '''
         id_pass = name_pass = street_address_pass = location_pass = False
 
         # Validate & format Unit ID.
         if fields['id'] > -1:
+            # We assume unit IDs start from 0 and move up.
             fields['id'] = "tpr:%s" % fields['id']
             id_pass = True
 
@@ -224,23 +227,30 @@ class NewTprTwoImporter(Importer):
         if fields['name']:
             name_pass = self.__multilang_validator(field_name=fields['name'])
 
-        # Validate & format unit street addresses.
+        #Validate & format unit street addresses.
         if fields['street_address']:
             street_address_pass = self.__multilang_validator(field_name=fields['street_address'])
 
-        # Validate unit coordinate data.
+        # Validate unit coordinate data & re-format location to serve coordinate data.
         if fields['location']:
             vec2 = [0]*2 # 2D Vector coordinate template.
             coords = fields['location'].get('coordinates', None)
             if isinstance(coords, type(vec2)):
                 if len(coords) == len(vec2):
                     if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
+                        '''
+                        TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
+                        Transform the coordinates to the default database supported SRID.
+                        '''
+                        pnt = Point(coords[0], coords[1], srid=4326)
+                        pnt.transform(CoordTransform(SpatialReference(4326), SpatialReference(settings.PROJECTION_SRID)))
+                        fields['location'] = pnt
                         location_pass = True
 
         if id_pass and name_pass and street_address_pass or location_pass:
-            return True
+            return {'street_address_pass': street_address_pass, 'location_pass': location_pass}
 
-    def get_json_fields(self, unit) -> None:
+    def get_json_fields(self, unit: dict) -> dict:
         # Which fields do we want from the API?
         fields = {
             'id': -1,
@@ -256,16 +266,89 @@ class NewTprTwoImporter(Importer):
                 fields.update({field: unit_field})
         return fields
 
-    def process(self, obj_list) -> None:
+    def singular_request(self, muni, address, query, lang) -> Any:
+        # We can make an equal match like so:
+        address = "%s, %s" % (address, muni.capitalize())
+        try:
+            # Make an exact match since we have the full format.
+            return query.get(**{"name_%s" % lang: address})
+        except (MultipleObjectsReturned, ObjectDoesNotExist):
+            # Might have a slim chance that duplicates are returned.
+            pass
+
+    def regex_contains(self, query, lang, address) -> Any:
+        # 23x faster than __contains because of the SQL ~ operator rather than LIKE.
+        #if muni != '':
+        #    address = "%s, %s" % (address, muni.capitalize())
+        return query.filter(**{"name_%s__regex" % lang: r'^%s' % address})
+
+    def coord_approx(self, pnt, query, rng=200) -> Any:
+        # Approximates the closest address to a point within a specified range.
+        return query.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=rng).order_by("distance").first()
+
+    def __multilang_iterate(self, func, **kwargs):
+        # API supports 3 languages:
+        for lang in ('fi', 'sv', 'en'):
+            # API language names do not matter at all due data quality issues.
+            has_street_lang = kwargs['address'].get(lang, None)
+            if has_street_lang:
+                tmp = kwargs['address']
+                kwargs['address'] = has_street_lang
+                for iter_lang in self.supported_languages:
+                    # Search the language object against supported languages.
+                    kwargs['lang'] = iter_lang
+                    val = func(**kwargs)
+                    if val:
+                        return {'found': val, 'found_lang': iter_lang}
+                kwargs['address'] = tmp
+
+
+    def process(self, obj_list: dict) -> None:
+        valids = tots = 0
+        qset = Place.objects.filter(data_source__id="osoite")
         for idx, units in enumerate(obj_list, start=1):
             logger.info('Page: %s was processed.' % idx)
             for unit in units:
+                tots += 1
                 data = self.get_json_fields(unit=unit) # Get all fields & construct dict.
                 # Validate to make sure we can process this unit:
-                if self.validate_fields(fields=data):
-                    logger.info("Validated %s" % data['id'])
+                geo_pack = self.validate_fields(fields=data)
+                if geo_pack:
+                    if geo_pack['street_address_pass']:
+                        # Data originates from MDS and has human mapped data which is never 100% parseable due to data quality issues.
+                        #db_street_found = self.__multilang_iterate(muni=data['municipality'], addresses=data['street_address'], query=qset)
+                        data_sr = data_regx = copy.deepcopy(data)
+                        db_street_found = self.__multilang_iterate(self.singular_request, muni=data_sr['municipality'], address=data_sr['street_address'], query=qset, lang=None)
+                        if db_street_found:
+                            # A valid street address has been found and can be added to que.
+                            logger.info('Found -> %s', db_street_found)
+                            valids += 1
+                        else:
+                            # We can do a regex contain search:
+                            # This will make a direct match as well but it will 'contain' whatever is passed. 
+                            # So we're likely to iterate through units with no street numbers.
+                            regx_filter = self.__multilang_iterate(self.regex_contains, query=qset, lang=None, address=data_regx['street_address'])
+                            if regx_filter:
+                                # We need to do a val found lowest to highest (sorted) string parsing. 0 index is temp.
+                                logger.info("%s -> %s" % (data['street_address'], regx_filter['found'][0]))
+        logger.info("%s out of %s" % (tots, valids))
 
     def handle(self) -> None:
         obj_list = async_main()
         self.process(obj_list=obj_list)
         proc_time_frmt('Importer')
+
+        '''
+        1) Data gets imported from Turku palvelukartta. The data originates from 
+        MDS and is manually filled by humans, therefore the data quality might not be the best.
+    
+        2) I've added validators to make sure nothing malicious and un-processable can pass through the importer.
+
+        3) Then I make sure we make a direct match.
+
+        4) If nothing is found, I make a regex comparison search and from that I will parse the closest matched address.
+        This might need a similarity metric if parsing is flawed.
+        Some units do not import municipalities, so I will manually fill in an address from a specific municipality.
+        This is because we need accurate data and unique identifiers between different places to avoid duplicates between
+        place APIs.
+        '''
