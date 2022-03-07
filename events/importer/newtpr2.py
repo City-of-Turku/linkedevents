@@ -301,7 +301,7 @@ class NewTprTwoImporter(Importer):
                 kwargs['address'] = tmp
 
 
-    def cnn_matcher(self, strconv: str, mp_type='fit': str, mp_size=6: int) -> None:
+    def cnn_matcher(self, strconv: str, mp_type='fit', mp_size=6, fit_len=None) -> list:
         # Convolutional Neural Network Similarity Metric.
         def __kernel_map(mp: int) -> None:
             return [[data[(mp*y)+x] if (mp*y)+x < len(data) else 0 for x in range(mp)] for y in range(mp)]
@@ -311,7 +311,9 @@ class NewTprTwoImporter(Importer):
         # Calculate square value size for the kernel matrix and map the data.
         if mp_type == 'fit':
             for mp in range(10):
-                if mp * mp >= len(data):
+                if not fit_len:
+                    fit_len = len(data)
+                if mp * mp >= fit_len:
                     kernel = __kernel_map(mp=mp)
                     break
         else:
@@ -338,8 +340,7 @@ class NewTprTwoImporter(Importer):
                         calc = kernel[(mxf_y + y)][(mxf_x + x)] * filter_mat[y][x]
                         if calc >= 1:
                             output[mxf_y][mxf_x] += calc
-
-        print(output)
+        return output
 
     def process(self, obj_list: dict) -> None:
         valids = tots = 0
@@ -369,9 +370,12 @@ class NewTprTwoImporter(Importer):
                             regx_filter = self.__multilang_iterate(self.regex_contains, query=qset, lang=None, address=data_regx['street_address'])
                             if regx_filter:
                                 # Use a similarity metric to determine the closest sort. (Decided to make my own).
-                                if len(regx_filter['found']) > 1:
-                                    for xa in regx_filter['found']:
-                                        print(xa.name_fi)
+                                filter_results = regx_filter['found']
+                                if len(filter_results) > 1:
+                                    longest_addr = max(len(addr.name_fi) for addr in filter_results)
+                                    for addrs in filter_results:
+                                        outpt = self.cnn_matcher(strconv=addrs.name_fi, mp_type='fit', fit_len=longest_addr)
+                                        print(outpt, longest_addr)
 
                                 
                                 logger.info("%s -> %s" % (data['street_address'], regx_filter['found'][0]))
