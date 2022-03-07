@@ -278,8 +278,6 @@ class NewTprTwoImporter(Importer):
 
     def regex_contains(self, query, lang, address) -> Any:
         # 23x faster than __contains because of the SQL ~ operator rather than LIKE.
-        #if muni != '':
-        #    address = "%s, %s" % (address, muni.capitalize())
         return query.filter(**{"name_%s__regex" % lang: r'^%s' % address})
 
     def coord_approx(self, pnt, query, rng=200) -> Any:
@@ -303,6 +301,46 @@ class NewTprTwoImporter(Importer):
                 kwargs['address'] = tmp
 
 
+    def cnn_matcher(self, strconv: str, mp_type='fit', mp_size=6) -> None:
+        # Convolutional Neural Network Similarity Metric.
+        def __kernel_map(mp: int) -> None:
+            return [[data[(mp*y)+x] if (mp*y)+x < len(data) else 0 for x in range(mp)] for y in range(mp)]
+
+        data = list(bytes(strconv, "utf-8")) # Convert to bytes.
+
+        # Calculate square value size for the kernel matrix and map the data.
+        if mp_type == 'fit':
+            for mp in range(10):
+                if mp * mp >= len(data):
+                    kernel = __kernel_map(mp=mp)
+                    break
+        else:
+            kernel = __kernel_map(mp=mp_size)
+
+        # Filter matrix.
+        filter_mat = (
+            (1, 0, 1),
+            (0, 1, 0),
+            (1, 0, 1),
+        )
+
+        # Filter column & row fitting. Check how many placements can be made.
+        mat_fit_x = (len(kernel[0]) - len(filter_mat[0])) + 1
+        mat_fit_y = (len(kernel) - len(filter_mat)) + 1
+
+        # Construct the size of the output matrix.
+        output = [[0 for x in range(mat_fit_x)] for y in range(mat_fit_y)]
+
+        for mxf_y in range(mat_fit_y):
+            for mxf_x in range(mat_fit_x):
+                for y in range(len(filter_mat)):
+                    for x in range(len(filter_mat[0])):
+                        calc = kernel[(mxf_y + y)][(mxf_x + x)] * filter_mat[y][x]
+                        if calc >= 1:
+                            output[mxf_y][mxf_x] += calc
+
+        print(output)
+
     def process(self, obj_list: dict) -> None:
         valids = tots = 0
         qset = Place.objects.filter(data_source__id="osoite")
@@ -316,7 +354,6 @@ class NewTprTwoImporter(Importer):
                 if geo_pack:
                     if geo_pack['street_address_pass']:
                         # Data originates from MDS and has human mapped data which is never 100% parseable due to data quality issues.
-                        #db_street_found = self.__multilang_iterate(muni=data['municipality'], addresses=data['street_address'], query=qset)
                         data_sr = data_regx = copy.deepcopy(data)
                         db_street_found = self.__multilang_iterate(self.singular_request, muni=data_sr['municipality'], address=data_sr['street_address'], query=qset, lang=None)
                         if db_street_found:
@@ -324,12 +361,19 @@ class NewTprTwoImporter(Importer):
                             logger.info('Found -> %s', db_street_found)
                             valids += 1
                         else:
-                            # We can do a regex contain search:
-                            # This will make a direct match as well but it will 'contain' whatever is passed. 
-                            # So we're likely to iterate through units with no street numbers.
+                            '''
+                            We can do a regex contain search:
+                            This will make a direct match as well but it will 'contain' whatever is passed. 
+                            So we're likely to iterate through units with no street numbers.
+                            '''
                             regx_filter = self.__multilang_iterate(self.regex_contains, query=qset, lang=None, address=data_regx['street_address'])
                             if regx_filter:
-                                # We need to do a val found lowest to highest (sorted) string parsing. 0 index is temp.
+                                # Use a similarity metric to determine the closest sort. (Decided to make my own).
+                                if len(regx_filter['found']) > 1:
+                                    for xa in regx_filter['found']:
+                                        print(xa.name_fi)
+
+                                
                                 logger.info("%s -> %s" % (data['street_address'], regx_filter['found'][0]))
         logger.info("%s out of %s" % (tots, valids))
 
