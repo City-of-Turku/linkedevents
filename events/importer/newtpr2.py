@@ -301,7 +301,7 @@ class NewTprTwoImporter(Importer):
                 kwargs['address'] = tmp
 
 
-    def cnn_matcher(self, strconv: str, mp_type='fit', mp_size=6) -> None:
+    def cnn_matcher(self, strconv: str, mp_type='fit': str, mp_size=6: int) -> None:
         # Convolutional Neural Network Similarity Metric.
         def __kernel_map(mp: int) -> None:
             return [[data[(mp*y)+x] if (mp*y)+x < len(data) else 0 for x in range(mp)] for y in range(mp)]
