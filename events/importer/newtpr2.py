@@ -5,11 +5,14 @@ import requests
 import asyncio
 import aiohttp
 import logging
+import operator
+import string
 import math
 import time
 import json
 import copy
 import sys
+import re
 
 # requires langdetect package.
 from langdetect import detect, detect_langs
@@ -21,6 +24,7 @@ from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
 from django.conf import settings
+from django.db.models.functions import Length
 
 # GeoDjango:
 from django.contrib.gis.db.models.functions import Distance
@@ -300,50 +304,8 @@ class NewTprTwoImporter(Importer):
                         return {'found': val, 'found_lang': iter_lang}
                 kwargs['address'] = tmp
 
-
-    def cnn_matcher(self, strconv: str, mp_type='fit', mp_size=6, fit_len=None) -> list:
-        # Convolutional Neural Network Similarity Metric.
-        def __kernel_map(mp: int) -> None:
-            return [[data[(mp*y)+x] if (mp*y)+x < len(data) else 0 for x in range(mp)] for y in range(mp)]
-
-        data = list(bytes(strconv, "utf-8")) # Convert to bytes.
-
-        # Calculate square value size for the kernel matrix and map the data.
-        if mp_type == 'fit':
-            for mp in range(10):
-                if not fit_len:
-                    fit_len = len(data)
-                if mp * mp >= fit_len:
-                    kernel = __kernel_map(mp=mp)
-                    break
-        else:
-            kernel = __kernel_map(mp=mp_size)
-
-        # Filter matrix.
-        filter_mat = (
-            (1, 0, 1),
-            (0, 1, 0),
-            (1, 0, 1),
-        )
-
-        # Filter column & row fitting. Check how many placements can be made.
-        mat_fit_x = (len(kernel[0]) - len(filter_mat[0])) + 1
-        mat_fit_y = (len(kernel) - len(filter_mat)) + 1
-
-        # Construct the size of the output matrix.
-        output = [[0 for x in range(mat_fit_x)] for y in range(mat_fit_y)]
-
-        for mxf_y in range(mat_fit_y):
-            for mxf_x in range(mat_fit_x):
-                for y in range(len(filter_mat)):
-                    for x in range(len(filter_mat[0])):
-                        calc = kernel[(mxf_y + y)][(mxf_x + x)] * filter_mat[y][x]
-                        if calc >= 1:
-                            output[mxf_y][mxf_x] += calc
-        return output
-
     def process(self, obj_list: dict) -> None:
-        valids = tots = 0
+        valids = tots = misses = valia = 0
         qset = Place.objects.filter(data_source__id="osoite")
         for idx, units in enumerate(obj_list, start=1):
             logger.info('Page: %s was processed.' % idx)
@@ -372,14 +334,26 @@ class NewTprTwoImporter(Importer):
                                 # Use a similarity metric to determine the closest sort. (Decided to make my own).
                                 filter_results = regx_filter['found']
                                 if len(filter_results) > 1:
-                                    longest_addr = max(len(addr.name_fi) for addr in filter_results)
-                                    for addrs in filter_results:
-                                        outpt = self.cnn_matcher(strconv=addrs.name_fi, mp_type='fit', fit_len=longest_addr)
-                                        print(outpt, longest_addr)
+                                    weight_map = list("%s%s" % (string.ascii_letters, 'åäö'))
+                                    addr_list = {}
+                                    for addr in filter_results:
+                                        addr_name = getattr(addr, 'name_%s' % regx_filter['found_lang'])
+                                        g = addr_name.split(",")[-1].strip() # Regex's municipality.
+                                        if g == data['municipality'].capitalize():
+                                            addr_num = addr_name.partition(',')[0].rsplit(' ', 1)[1] # Get the address number: 30b etc.
+                                            num_only = int(re.findall(r'\d+', addr_num)[0]) # Extract the numbers.
+                                            letters_only = " ".join(re.findall("[a-zA-Z]+", addr_num)) # Extract the letters.
+                                            points = 0
+                                            if letters_only:
+                                                points = sum([weight_map.index(letter) + 1 for letter in letters_only]) # Calculate the weight.
+                                            addr_list.update({addr_name: [num_only, points]})
+                                    sd = sorted(addr_list.items(), key=lambda kv: (kv[1][0], kv[1][1])) # Sort the items.
+                                    # Some units do not have a municipality. We have to find theirs using coordinate approximation at a later stage.
+                                    if sd:
+                                        print(sd[0])
 
-                                
                                 logger.info("%s -> %s" % (data['street_address'], regx_filter['found'][0]))
-        logger.info("%s out of %s" % (tots, valids))
+        logger.info("%s out of %s with misses: %s out of %s" % (tots, valids, misses, valia))
 
     def handle(self) -> None:
         obj_list = async_main()
