@@ -6,6 +6,7 @@ import asyncio
 import aiohttp
 import logging
 import operator
+import difflib
 import string
 import math
 import time
@@ -135,6 +136,8 @@ class NewTprTwoImporter(Importer):
     # Importer class dependant attributes:
     name = "newtprtwo"  # Command calling name.
     supported_languages = ['fi', 'sv', 'en']  # Base file requirement.
+    # We need a valid municipality in order for us to filter out duplicate street addresses. Otherwise the data wouldn't be reliable.
+    supported_municipalities = ('Turku', 'Kaarina', 'Aura', 'Lieto', 'Marttila', 'Masku', 'Mynämäki', 'Naantali', 'Nousiainen', 'Raisio', 'Rusko', 'Sauvo') # Important to note that this is temporary.
 
     def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
         ''' 
@@ -304,9 +307,29 @@ class NewTprTwoImporter(Importer):
                         return {'found': val, 'found_lang': iter_lang}
                 kwargs['address'] = tmp
 
+    def parse_data(self, filter_results, found_lang, muni) -> list:
+        weight_map = list("%s%s" % (string.ascii_lowercase, 'åäö'))
+        addr_list = {}
+        for addr in filter_results:
+            addr_name = getattr(addr, 'name_fi') # Returned streets always have a Finnish counterpart.
+            if addr_name:
+                g = addr_name.split(",")[-1].strip() # Regex's municipality.
+                if g == muni.capitalize():
+                    # Addresses come in the following format ex. Streetname 1, Streetname 11c
+                    addr_num = addr_name.partition(',')[0].rsplit(' ', 1)[1] # Get the address number: 30b etc.
+                    if addr_num and any(map(str.isdigit, addr_num)):
+                        num_only = int(re.findall(r'\d+', addr_num)[0]) # Extract the numbers.
+                        letters_only = ''.join(re.findall("[a-z]+", addr_num.lower())) # Extract the letters.
+                        points = 0
+                        if letters_only:
+                            points = sum([weight_map.index(letter) + 1 for letter in letters_only]) # Calculate the weight.
+                        addr_list.update({addr_name: [num_only, points]})
+        return sorted(addr_list.items(), key=lambda kv: (kv[1][0], kv[1][1])) # Sort the items.
+
     def process(self, obj_list: dict) -> None:
         valids = tots = misses = valia = 0
         qset = Place.objects.filter(data_source__id="osoite")
+        processed_data = {}
         for idx, units in enumerate(obj_list, start=1):
             logger.info('Page: %s was processed.' % idx)
             for unit in units:
@@ -314,6 +337,7 @@ class NewTprTwoImporter(Importer):
                 data = self.get_json_fields(unit=unit) # Get all fields & construct dict.
                 # Validate to make sure we can process this unit:
                 geo_pack = self.validate_fields(fields=data)
+                current_found = None
                 if geo_pack:
                     if geo_pack['street_address_pass']:
                         # Data originates from MDS and has human mapped data which is never 100% parseable due to data quality issues.
@@ -322,6 +346,7 @@ class NewTprTwoImporter(Importer):
                         if db_street_found:
                             # A valid street address has been found and can be added to que.
                             logger.info('Found -> %s', db_street_found)
+                            current_found = True
                             valids += 1
                         else:
                             '''
@@ -331,29 +356,93 @@ class NewTprTwoImporter(Importer):
                             '''
                             regx_filter = self.__multilang_iterate(self.regex_contains, query=qset, lang=None, address=data_regx['street_address'])
                             if regx_filter:
-                                # Use a similarity metric to determine the closest sort. (Decided to make my own).
                                 filter_results = regx_filter['found']
-                                if len(filter_results) > 1:
-                                    weight_map = list("%s%s" % (string.ascii_letters, 'åäö'))
-                                    addr_list = {}
-                                    for addr in filter_results:
-                                        addr_name = getattr(addr, 'name_%s' % regx_filter['found_lang'])
-                                        g = addr_name.split(",")[-1].strip() # Regex's municipality.
-                                        if g == data['municipality'].capitalize():
-                                            addr_num = addr_name.partition(',')[0].rsplit(' ', 1)[1] # Get the address number: 30b etc.
-                                            num_only = int(re.findall(r'\d+', addr_num)[0]) # Extract the numbers.
-                                            letters_only = " ".join(re.findall("[a-zA-Z]+", addr_num)) # Extract the letters.
-                                            points = 0
-                                            if letters_only:
-                                                points = sum([weight_map.index(letter) + 1 for letter in letters_only]) # Calculate the weight.
-                                            addr_list.update({addr_name: [num_only, points]})
-                                    sd = sorted(addr_list.items(), key=lambda kv: (kv[1][0], kv[1][1])) # Sort the items.
-                                    # Some units do not have a municipality. We have to find theirs using coordinate approximation at a later stage.
+                                if len(filter_results) > 0:
+                                    sd = self.parse_data(filter_results=filter_results, found_lang=regx_filter['found_lang'], muni=data['municipality'])
+                                    # Due to data quality problems, some units have wrongly placed their municipalities.
+                                    # Some units also have a different Finnish location compared to Swedish, but we can't support those due to the single coordinate provided.
                                     if sd:
-                                        print(sd[0])
-
-                                logger.info("%s -> %s" % (data['street_address'], regx_filter['found'][0]))
-        logger.info("%s out of %s with misses: %s out of %s" % (tots, valids, misses, valia))
+                                        valids += 1
+                                        current_found = True
+                                        # If we don't find this, it probably means we don't have a supported municipality.
+                            if not current_found:
+                                # Since MDS data is human made, we have to use a similarity metric on the street name.
+                                data_muni = data['municipality'].capitalize()
+                                if data_muni in self.supported_municipalities:
+                                    # We need a valid municipality in order for us to filter out duplicate street addresses. Otherwise the data wouldn't be reliable.
+                                    s = data['street_address'].get('fi', None)
+                                    if s and s != '':
+                                        before_ints = re.findall(r'(.*?)(\d)', s) # Gets before ints.
+                                        new_s = ''
+                                        has_first_digit = None
+                                        if before_ints:
+                                            for x in before_ints:
+                                                if x[1].isdigit() and not has_first_digit:
+                                                    has_first_digit = x[1]
+                                                    new_s += x[0]
+                                                elif x[1].isdigit() and has_first_digit and x[0] == '':
+                                                    has_first_digit += x[1]
+                                                else:
+                                                    break
+                                            new_s = new_s.strip()
+                                        if not has_first_digit:
+                                            has_first_digit = 0
+                                        #print("new_s is: ", new_s, "with numbers:", has_first_digit)
+                                        if new_s != '':
+                                            #print(re.findall(r'(.*?)(\d)', s))
+                                            qset2 = qset.filter(name_fi__istartswith=new_s, address_locality=data_muni)
+                                            if len(qset2) > 0:
+                                                sd = self.parse_data(filter_results=qset2, found_lang='fi', muni=data_muni)
+                                                if sd:
+                                                    closest = 10**5
+                                                    match = None
+                                                    indx = sim = 0
+                                                    for idx, x in enumerate(sd):
+                                                        c = abs(x[1][0] - int(has_first_digit)) # Street number displacement.
+                                                        if c < closest:
+                                                            closest = c
+                                                            match = x
+                                                            indx = idx
+                                                    if match:
+                                                        start_indx = indx
+                                                        if match[1][1] > 0:
+                                                            # Calculate where 0 index for the street is at sd.
+                                                            d = abs(match[1][1] - start_indx) # Street letter displacement.
+                                                            start_indx = d
+                                                        closest_match = None
+                                                        for x in range(start_indx, len(sd)):
+                                                            if sd[x][1][0] == int(has_first_digit):
+                                                                a = "".join(sd[x][0].lower().split())
+                                                                b = "".join(s.lower().split())
+                                                                res = difflib.SequenceMatcher(None, a, b).ratio()
+                                                                if res > sim:
+                                                                    sim = res
+                                                                    closest_match = sd[x][0]
+                                                        valids += 1
+                                                        logger.info("%s -> %s | IDX: %s | sequencematcher found: %s" % (s, match, indx, closest_match))
+                                        else:
+                                            # We have no choise but to save it. It might not even be an address but rather a place.
+                                            print("Most likely a place, not an address (must save)", s)
+                                            valids += 1
+                                else:           
+                                    if geo_pack['location_pass']:
+                                        # Approximate the coordinate.
+                                        approx = self.coord_approx(pnt=data['location'], query=qset, rng=200)
+                                        if approx:
+                                            valids += 1
+                                        else:
+                                            logger.error(data)
+                                            misses += 1
+                    else:
+                        # Means we have the location data and we can approximate the closest address.
+                        approx = self.coord_approx(pnt=data['location'], query=qset, rng=200)
+                        if approx:
+                            valids += 1
+                        else:
+                            misses += 1
+                            logger.error(data)
+                        # Coord approximate.
+        logger.info("%s out of %s with misses: %s with POSSIBLE valids: %s" % (tots, valids, misses, valia))
 
     def handle(self) -> None:
         obj_list = async_main()
