@@ -345,9 +345,9 @@ class NewTprThreeImporter(Importer):
                 has_tpr.address_locality = has_tpr.address_locality_fi = data['municipality']
                 has_tpr.postal_code = data['address_zip']
                 has_tpr.publisher_id = 'tpr:1100'
-                has_tpr.location = data['location']
+                has_tpr.position = data['location']
                 has_tpr.email = data['email']
-                has_tpr.last_modified_time = data['last_modified']
+                #has_tpr.last_modified_time = data['last_modified']
 
             has_tpr = Place.objects.filter(id=data['id']).first()
             if has_tpr:
@@ -432,6 +432,7 @@ class NewTprThreeImporter(Importer):
                             else:
                                 unit_phone = ' '.join(strip_tags(str(unit_phone)).replace('\r\n', ' ').split()) # Clean up.
 
+                        '''
                         # Fill in and parse the last modified time.
                         unit_last_modified = unit.get('last_modified_time') # etc. 2020-10-26T09:05:58.085358+02:00
                         if isinstance(unit_last_modified, str):
@@ -439,6 +440,7 @@ class NewTprThreeImporter(Importer):
                             unit_last_modified = dateutil.parser.parse(unit_last_modified).replace(tzinfo=pytz.utc)
                         else:
                             unit_last_modified = None
+                        '''
                         
                         # Fill in the municipality (address locality).
                         unit_municipality = unit.get('municipality')
@@ -462,7 +464,7 @@ class NewTprThreeImporter(Importer):
                             'location': unit_location,
                             'municipality': unit_municipality,
                             'phone': unit_phone,
-                            'last_modified': unit_last_modified,
+                            # 'last_modified': unit_last_modified,
                             'address_zip': unit_address_zip,
                             'email': unit_email,
                         }
