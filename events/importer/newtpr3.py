@@ -70,7 +70,6 @@ async def fetch(session, url, id) -> dict:
 
 async def main(unit_pages) -> dict:
     async with aiohttp.ClientSession() as session:
-
         tasks = []
         for page_no in range(1, unit_pages+1):
             # Testipalvelukartta needs turku VPN connection.
@@ -103,10 +102,8 @@ def async_main(retry_count=3) -> dict:
 
         if calc[0] != float(0):
             page_count = int(calc[1]+1)
-            print(page_count)
         else:
             page_count = int(calc[1])
-            print(page_count)
     except Exception as e:
          raise Exception(
             "Something went wrong in the 'page count' pre-processing phase of TPRAPI: %s" % e)
@@ -203,7 +200,10 @@ class NewTprThreeImporter(Importer):
         self.handle()
 
     def __multilang_validator(self, field_name: dict) -> bool:
-        # Validator specific method for validating multilang json objects.
+        '''
+        Validator specific method for validating multilang json objects.
+        Also cleans and formats data.
+        '''
         ml_pass = False
         for lang in ('fi', 'sv', 'en'):
             lang_val = field_name.get(lang)
@@ -321,14 +321,63 @@ class NewTprThreeImporter(Importer):
                     unit['location'] = finnish_street_data[1] # Replace with a more 'accurate' position.
                     return unit_fi_processed
 
-    #def save_unit(self) -> None:
-        
+    def save_unit(self, data: dict) -> None:
+        # devnote: we have to scan name multilang needs to get the service names 
+        try:
+            # Private method for multilang attribute mapping.
+            def __multilang_attr_map(obj: Any, data_key: str, data_field: dict):
+                if data_field:
+                    first_existing = None
+                    for lang, val in data_field.items():
+                        if val and not first_existing:
+                            first_existing = True
+                            setattr(obj, data_key, val)
+                        setattr(obj, '%s_%s' % (data_key, lang), val)
+            
+            # Private save function.
+            def _attribute_map(has_tpr: Any) -> None:
+                for data_key in ('name', 'description', 'street_address'):
+                    __multilang_attr_map(obj=has_tpr, data_key=data_key, data_field=data[data_key])
+                has_tpr.telephone = has_tpr.telephone_fi = data['phone']
+                has_tpr.address_locality = has_tpr.address_locality_fi = data['municipality']
+                has_tpr.postal_code = data['address_zip']
+                has_tpr.publisher_id = 'tpr:1100'
+                has_tpr.position = data['location']
+                has_tpr.email = data['email']
+                #has_tpr.last_modified_time = data['last_modified']
+
+            has_tpr = Place.objects.filter(id=data['id']).first()
+            if has_tpr:
+                # Update existing TPR.
+                _attribute_map(has_tpr=has_tpr)
+                has_tpr.save()
+                logger.info("%s Updated." % data['id'])
+            else:
+                # Create a new TPR.
+                place_obj = Place(data_source=getattr(self, 'data_source_tpr'))
+                place_obj.id = data['id']
+                _attribute_map(has_tpr=place_obj)
+                place_obj.origin_id = data['origin_id']
+                place_obj.created_time = BaseModel.now()
+                place_obj.save()
+                logger.info("%s Saved." % data['id'])
+        except Exception as e:
+            logger.error(e)
+
 
     def process(self, obj_list) -> None:
         # Private method for the final processing phase.
         def __unit_multilang_fill(unit_field: dict) -> dict:
             return {lang: unit_field.get(lang) for lang in ('fi', 'sv', 'en')}
 
+        # Private functon to cut short validation.
+        def _validate_to_str(unit: dict, field_to_get: str) -> Any:
+            found = unit.get(field_to_get)
+            if not found and not isinstance(found, str):
+                found = None
+            return found
+
+        processed = []
         existing_addresses, other_addresses = self.get_addresses() # Finnish and Swedish street addresses.
         for idx, units in enumerate(obj_list, start=1):
             logger.info('Page: %s was processed.' % idx)
@@ -380,37 +429,58 @@ class NewTprThreeImporter(Importer):
                                     unit_phone = __unit_multilang_fill(unit_field=unit['phone'])
                             else:
                                 unit_phone = ' '.join(strip_tags(str(unit_phone)).replace('\r\n', ' ').split()) # Clean up.
-                        
+
+                        '''
+                        # Fill in and parse the last modified time.
                         unit_last_modified = unit.get('last_modified_time') # etc. 2020-10-26T09:05:58.085358+02:00
                         if isinstance(unit_last_modified, str):
                             # Convert the string back into a datetime object and replace the timezone information to match BaseModel.now()
                             unit_last_modified = dateutil.parser.parse(unit_last_modified).replace(tzinfo=pytz.utc)
                         else:
                             unit_last_modified = None
-                        
+                        '''
+
+                        # Fill in the municipality (address locality).
                         unit_municipality = unit.get('municipality')
                         if isinstance(unit_municipality, str):
                             unit_municipality = unit_municipality.capitalize()
                         else:
                             unit_municipality = None
 
-                        unit_address_zip = unit.get('address_zip')
-                        if not unit_address_zip and not isinstance(unit_municipality, str):
-                            unit_address_zip = None
+                        # Fill in the zip data (postal).
+                        unit_address_zip = _validate_to_str(unit=unit, field_to_get='address_zip')
+
+                        # Fill in the email data.
+                        unit_email = _validate_to_str(unit=unit, field_to_get='email')
 
                         processed_unit_data = {
                             'id': unit_id,
                             'origin_id': unit['id'],
                             'name': unit_name,
                             'description': unit_description,
-                            'address': unit_address,
+                            'street_address': unit_address,
                             'location': unit_location,
                             'municipality': unit_municipality,
                             'phone': unit_phone,
-                            'last_modified': unit_last_modified,
+                            # 'last_modified': unit_last_modified,
                             'address_zip': unit_address_zip,
+                            'email': unit_email,
                         }
+                        processed.append(processed_unit_data)
+                        #self.save_unit(data=processed_unit_data)
 
+        dupes = {}
+        # Scan for duplicates.
+        for tpr_data in processed:
+            for lang in self.supported_languages:
+                cur_name = tpr_data['name'][lang]
+                if cur_name in dupes.keys():
+                    dupes[cur_name] += 1
+                else:
+                    dupes.update({cur_name: 0})
+        for k, v in dupes.items():
+            if v > 0:
+                print(k)
     def handle(self) -> None:
         obj_list = async_main()
         self.process(obj_list=obj_list)

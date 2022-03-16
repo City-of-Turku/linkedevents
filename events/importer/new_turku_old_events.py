@@ -45,10 +45,33 @@ from typing import TYPE_CHECKING, Any, Tuple, List
 # Per module logger
 logger = logging.getLogger(__name__)
 
-headers = {
+HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'User-Agent': 'Mozilla/5.0',
+}
+
+'''
+Turku Drupal Categories.
+These words are not meant to be changed, as they come from the API.
+'''
+TURKU_DRUPAL_CATEGORIES = {
+    'Exhibits': 'tsl:p50',  # Näyttelyt
+    'Festival and major events': 'tsl:p38',  # Festivaalit
+    'Meetings and congress ': 'tsl:p42',  # Kokoukset, seminaarit ja kongressit
+    'Trade fair and fair': 'tsl:p48',  # Messut
+    'Music': 'tsl:p9',  # Musiikki
+    'Museum': 'tsl:p37',  # Historia
+    'Lectures': 'tsl:p46',  # Luennot
+    'Participation': 'tsl:p55',  # Muu
+    'Multiculturalism': 'tsl:p55',  # Muu (Previously "Muut - p14")
+    'cruises and tours': 'tsl:p52',  # Retket
+    'Trips': 'tsl:p52',  # Retket
+    'Guided tours and sightseeing tours': 'tsl:p51',  # Opastukset
+    'Theatre and other performance art': 'tsl:p11',  # Teatteri, performanssi ja sirkus
+    'Sports': 'tsl:p7',  # Liikunta ja urheilu
+    'Literature': 'tsl:p4',  # Kirjallisuus, litteratur
+    'Virtual events': 'tsl:p55',  # Muu
 }
 
 def proc_time_frmt(stage: str) -> None:
@@ -180,6 +203,15 @@ class NewTprThreeImporter(Importer):
                 dateutil.parser.parse(dt_str),
                 is_dst=None).astimezone(pytz.utc)
 
+        # Main event category mapping logic:
+        def _map_event_categories(category: str) -> str:
+            if category in TURKU_DRUPAL_CATEGORIES.keys():
+                # Get the keyword.
+                tsl_kw = Keyword.objects.get(id=TURKU_DRUPAL_CATEGORIES[category])
+                print(tsl_kw.name_sv)
+
+
+        # Which fields do we want to write into the DB?
         field_map = {
             'title': str, 'start_date': 'timestamp', 'end_date': 'timestamp', 
             'lead_paragraph_markup': str, 'description': str, 
@@ -191,24 +223,36 @@ class NewTprThreeImporter(Importer):
             'twitter_url': str, 'event_organizer': str, 'is_hobby': str,
             }
 
+        processed = {}
+
         for field_map_field, field_map_value in field_map.items():
             for event_field, event_field_value in event_fields.items():
                 if field_map_field in event_field:
                     # Clean all regular text fields.
                     if type(event_field_value) == field_map_value:
-                        event_fields[event_field] = __clean_text(text=event_field_value)
+                        event_fields[event_field] = __clean_text(text=event_field_value) # devnote: replace eventfield part with the update to processed.
                     # Format start and end times.
                     if field_map_value == 'timestamp':
                         field_timestamp = timeToTimestamp(origTime=event_fields[event_field])
                         field_dt = dt_parse(dt_str=field_timestamp)
-                        event_fields[event_field] = field_dt
-                    #if field_map_value == 'many':
-
+                        event_fields[event_field] = field_dt # devnote: replace these with the update to processed.
+                    # Clean, parse and map event_categories.
+                    if event_field == 'event_categories' and event_field_value:
+                        event_category = event_fields[event_field]
+                        event_category = __clean_text(text=event_category)
+                        if event_category:
+                            event_category = event_category.split(',')
+                            for ec in event_category:
+                                category = ec.strip()
+                                if category == 'Theatre and other perfomance art':
+                                    # Fixing an API related spelling mistake.
+                                    category = 'Theatre and other performance art'
+                                _map_event_categories(category=category)
 
     def get_events(self) -> None:
         logger.info("Establishing connection to Turku Drupal API...")
-        url = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
-        response = requests.get(url, headers=headers)
+        URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
+        response = requests.get(URL, headers=HEADERS)
         if response.status_code != 200:
             logger.error("Importing failed. Turku Drupal API responded with status_code: %s" % response.status_code)
             return
