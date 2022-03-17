@@ -17,11 +17,6 @@ import copy
 import sys
 import re
 
-# requires langdetect package.
-from langdetect import detect, detect_langs
-
-#datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
-
 # Django:
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django_orghierarchy.models import Organization, OrganizationClass
@@ -51,8 +46,8 @@ headers = {
     'User-Agent': 'Mozilla/5.0',
 }
 
-async def fetch(session, url, id) -> dict:
-    async with session.get(url) as response:
+async def fetch(session: Any, URL: str, id: int) -> dict:
+    async with session.get(URL) as response:
         data = await response.read()
         json_response = json.loads(data)
         result = json_response.get('results', None)
@@ -67,21 +62,19 @@ async def fetch(session, url, id) -> dict:
             raise Exception(
                 "Palvelukartta unit: '%s' request did not fail, but API parsing was incorrect. API has changed?" % id)
 
-
-async def main(unit_pages) -> dict:
+async def main(unit_pages: int) -> dict:
     async with aiohttp.ClientSession() as session:
         tasks = []
         for page_no in range(1, unit_pages+1):
             # Testipalvelukartta needs turku VPN connection.
             URL = "https://testipalvelukartta.turku.fi/api/v2/unit/?page=%s&page_size=50" % page_no
-            tasks.append(fetch(session, URL, page_no))
+            tasks.append(fetch(session=session, URL=URL, id=page_no))
         try:
             res = await asyncio.gather(*tasks, return_exceptions=False)
             return res
         except Exception as e:
             logger.warn(e)
             await asyncio.sleep(1)
-
 
 def async_main(retry_count=3) -> dict:
     '''
@@ -106,7 +99,7 @@ def async_main(retry_count=3) -> dict:
             page_count = int(calc[1])
     except Exception as e:
          raise Exception(
-            "Something went wrong in the 'page count' pre-processing phase of TPRAPI: %s" % e)
+            "Something went wrong in the 'page count' pre-processing phase of TPR API: %s" % e)
 
     for connection_retries in range(retry_count):
         if sys.version_info >= (3, 8, 0):
@@ -122,7 +115,6 @@ def async_main(retry_count=3) -> dict:
             if a:
                 return a
     logger.warn('Retry limit exceeded! Giving up...')
-
 
 def proc_time_frmt(stage: str) -> None:
     # Formatter for logs.
@@ -270,8 +262,19 @@ class NewTprThreeImporter(Importer):
                 return 1
             if has_street:
                 return 2
+            # Additionally, we can return location as 3 and do coordinate approximations if need be.
 
-    def numsplit(self, str_to_split):
+    # regex_contains is not used by this importer. We can use this to find valid addresses.
+    def regex_contains(self, query, lang, address) -> Any:
+        # 23x faster than __contains because of the SQL ~ operator rather than LIKE.
+        return query.filter(**{"name_%s__regex" % lang: r'^%s' % address})
+
+    # coord_approx isn't used by this importer. We can use it if we decide to fill units with no addresses.
+    def coord_approx(self, pnt, query, rng=200) -> Any:
+        # Approximates the closest address to a point within a specified range.
+        return query.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=rng).order_by("distance").first()
+
+    def numsplit(self, str_to_split: str) -> str:
         # Gets everything before the first number occurance.
         str_processed = ''
         for letter in str_to_split:
@@ -280,7 +283,7 @@ class NewTprThreeImporter(Importer):
             else:
                 str_processed += letter
 
-    def get_addresses(self):
+    def get_addresses(self) -> Tuple[dict, dict]:
         qset = Place.objects.filter(data_source__id="osoite") # Get all street addresses.
         existing_addresses = {}
         other_addresses = {}
@@ -321,11 +324,30 @@ class NewTprThreeImporter(Importer):
                     unit['location'] = finnish_street_data[1] # Replace with a more 'accurate' position.
                     return unit_fi_processed
 
+    def __multilang_attr_map(self, obj: Any, data_key: str, data_field: dict) -> None:
+        if data_field:
+            first_existing = None
+            for lang, val in data_field.items():
+                if val and not first_existing:
+                    first_existing = True
+                    setattr(obj, data_key, val)
+                setattr(obj, '%s_%s' % (data_key, lang), val)
+
+    # Private save function.
+    def _attribute_map(self, has_tpr: Any, data: dict) -> None:
+        for data_key in ('name', 'description', 'street_address'):
+            self.__multilang_attr_map(obj=has_tpr, data_key=data_key, data_field=data[data_key])
+        has_tpr.telephone = has_tpr.telephone_fi = data['phone']
+        has_tpr.address_locality = has_tpr.address_locality_fi = data['municipality']
+        has_tpr.postal_code = data['address_zip']
+        has_tpr.publisher_id = 'tpr:1100'
+        has_tpr.position = data['location']
+        has_tpr.email = data['email']
+
     def save_unit(self, data: dict) -> None:
-        # devnote: we have to scan name multilang needs to get the service names 
         try:
             # Private method for multilang attribute mapping.
-            def __multilang_attr_map(obj: Any, data_key: str, data_field: dict):
+            def __multilang_attr_map(obj: Any, data_key: str, data_field: dict) -> None:
                 if data_field:
                     first_existing = None
                     for lang, val in data_field.items():
@@ -344,7 +366,6 @@ class NewTprThreeImporter(Importer):
                 has_tpr.publisher_id = 'tpr:1100'
                 has_tpr.position = data['location']
                 has_tpr.email = data['email']
-                #has_tpr.last_modified_time = data['last_modified']
 
             has_tpr = Place.objects.filter(id=data['id']).first()
             if has_tpr:
@@ -360,25 +381,39 @@ class NewTprThreeImporter(Importer):
                 place_obj.origin_id = data['origin_id']
                 place_obj.created_time = BaseModel.now()
                 place_obj.save()
-                logger.info("%s Saved." % data['id'])
+                logger.info("%s Created." % data['id'])
         except Exception as e:
             logger.error(e)
 
-
-    def process(self, obj_list) -> None:
+    def process(self, obj_list: dict) -> None:
         # Private method for the final processing phase.
         def __unit_multilang_fill(unit_field: dict) -> dict:
             return {lang: unit_field.get(lang) for lang in ('fi', 'sv', 'en')}
 
-        # Private functon to cut short validation.
+        # Private function to cut short validation.
         def _validate_to_str(unit: dict, field_to_get: str) -> Any:
             found = unit.get(field_to_get)
             if not found and not isinstance(found, str):
                 found = None
             return found
 
-        processed = []
+        tpr_for_saving = {} # id, data: object
+        tpr_names = {} # name, IDs
+
+        # Collect new duplicates (Some might not have been removed due to relations with events).
+        all_tprs = Place.objects.filter(data_source=getattr(self, 'data_source_tpr'))
+        for tpr in all_tprs:
+            tpr_for_saving.update({tpr.id: tpr})
+            for lang in self.supported_languages:
+                lang_obj = getattr(tpr, 'name_%s' % lang)
+                if lang_obj:
+                    if lang_obj in tpr_names:
+                        tpr_names[lang_obj].append(tpr.id)
+                    else:
+                        tpr_names.update({lang_obj: [tpr.id]})
+
         existing_addresses, other_addresses = self.get_addresses() # Finnish and Swedish street addresses.
+
         for idx, units in enumerate(obj_list, start=1):
             logger.info('Page: %s was processed.' % idx)
             for unit in units:
@@ -430,6 +465,7 @@ class NewTprThreeImporter(Importer):
                             else:
                                 unit_phone = ' '.join(strip_tags(str(unit_phone)).replace('\r\n', ' ').split()) # Clean up.
 
+                        # last_modified_time saving is currently not supported. Overridden by Place models save() function.
                         '''
                         # Fill in and parse the last modified time.
                         unit_last_modified = unit.get('last_modified_time') # etc. 2020-10-26T09:05:58.085358+02:00
@@ -453,6 +489,7 @@ class NewTprThreeImporter(Importer):
                         # Fill in the email data.
                         unit_email = _validate_to_str(unit=unit, field_to_get='email')
 
+                        # Map wanted fields for the data for the save phase.
                         processed_unit_data = {
                             'id': unit_id,
                             'origin_id': unit['id'],
@@ -462,26 +499,65 @@ class NewTprThreeImporter(Importer):
                             'location': unit_location,
                             'municipality': unit_municipality,
                             'phone': unit_phone,
-                            # 'last_modified': unit_last_modified,
                             'address_zip': unit_address_zip,
                             'email': unit_email,
                         }
-                        processed.append(processed_unit_data)
-                        #self.save_unit(data=processed_unit_data)
+                        try:
+                            is_new = True
+                            # Check duplicates.
+                            for lang in self.supported_languages:
+                                lang_obj = unit_name[lang]
+                                if lang_obj:
+                                    if lang_obj in tpr_names:
+                                        is_new = False
+                                        if unit_id in tpr_names[lang_obj]:
+                                            # Update the tpr object with the new data.
+                                            self._attribute_map(has_tpr=tpr_for_saving[unit_id], data=processed_unit_data)
+                                            tpr_for_saving[unit_id].save()
+                                            logger.info("Updated existing unit: %s" % unit_id)
+                                            break
+                            if is_new:
+                                place_obj = Place(data_source=getattr(self, 'data_source_tpr'))
+                                place_obj.id = processed_unit_data['id']
+                                self._attribute_map(has_tpr=place_obj, data=processed_unit_data)
+                                place_obj.origin_id = unit['id']
+                                place_obj.created_time = BaseModel.now()
+                                place_obj.save()
+                                logger.info("Created new unit: %s" % unit_id)
+                        except Exception as e:
+                            logger.error(e)
+                            pass
+                        
+                        '''
+                        bulk_update() and bulk_create() alongside Place's MPTT structure
+                        prevents us from using them due to bugs. save() automatically rebuilds
+                        the tree per unit. bulk_create skips this, and would be slower
+                        to rebuild the tree after every iteration vs save().
+                        We could use bulk_update but it would skip updating tree structures.
+                        Rebuild can be done using Place._tree_manager.rebuild().
+                        '''
 
-        dupes = {}
-        # Scan for duplicates.
-        for tpr_data in processed:
+    def remove_db_duplicates(self) -> None:
+        all_tprs = Place.objects.filter(data_source=getattr(self, 'data_source_tpr'))
+        duplicates = []
+        for tpr in all_tprs:
             for lang in self.supported_languages:
-                cur_name = tpr_data['name'][lang]
-                if cur_name in dupes.keys():
-                    dupes[cur_name] += 1
-                else:
-                    dupes.update({cur_name: 0})
-        for k, v in dupes.items():
-            if v > 0:
-                print(k)
+                lang_obj = getattr(tpr, 'name_%s' % lang)
+                if lang_obj:
+                    if lang_obj in duplicates:
+                        try:
+                            logger.info("Removing duplicate: %s from the DB..." % tpr.id)
+                            tpr.delete()
+                            break
+                        except Exception as e:
+                            logger.error(e)
+                            pass
+                    else:
+                        duplicates.append(lang_obj)
+
     def handle(self) -> None:
         obj_list = async_main()
+        self.remove_db_duplicates()
+        proc_time_frmt('Duplicate removal')
         self.process(obj_list=obj_list)
         proc_time_frmt('Importer')
