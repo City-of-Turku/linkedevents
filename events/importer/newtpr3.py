@@ -6,32 +6,27 @@ import dateutil
 import asyncio
 import aiohttp
 import logging
-import operator
-import difflib
-import string
 import math
 import time
 import pytz
 import json
-import copy
 import sys
 import re
 
 # Django:
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django_orghierarchy.models import Organization, OrganizationClass
 from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
 from django.conf import settings
-from django.db.models.functions import Length
 
 # GeoDjango:
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.gdal.error import GDALException
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
-from django.contrib.gis import gdal
+
+# Query speed measurement (used if need be).
 from django.db import connection, reset_queries
 
 # Type checking:
@@ -344,47 +339,6 @@ class NewTprThreeImporter(Importer):
         has_tpr.position = data['location']
         has_tpr.email = data['email']
 
-    def save_unit(self, data: dict) -> None:
-        try:
-            # Private method for multilang attribute mapping.
-            def __multilang_attr_map(obj: Any, data_key: str, data_field: dict) -> None:
-                if data_field:
-                    first_existing = None
-                    for lang, val in data_field.items():
-                        if val and not first_existing:
-                            first_existing = True
-                            setattr(obj, data_key, val)
-                        setattr(obj, '%s_%s' % (data_key, lang), val)
-            
-            # Private save function.
-            def _attribute_map(has_tpr: Any) -> None:
-                for data_key in ('name', 'description', 'street_address'):
-                    __multilang_attr_map(obj=has_tpr, data_key=data_key, data_field=data[data_key])
-                has_tpr.telephone = has_tpr.telephone_fi = data['phone']
-                has_tpr.address_locality = has_tpr.address_locality_fi = data['municipality']
-                has_tpr.postal_code = data['address_zip']
-                has_tpr.publisher_id = 'tpr:1100'
-                has_tpr.position = data['location']
-                has_tpr.email = data['email']
-
-            has_tpr = Place.objects.filter(id=data['id']).first()
-            if has_tpr:
-                # Update existing TPR.
-                _attribute_map(has_tpr=has_tpr)
-                has_tpr.save()
-                logger.info("%s Updated." % data['id'])
-            else:
-                # Create a new TPR.
-                place_obj = Place(data_source=getattr(self, 'data_source_tpr'))
-                place_obj.id = data['id']
-                _attribute_map(has_tpr=place_obj)
-                place_obj.origin_id = data['origin_id']
-                place_obj.created_time = BaseModel.now()
-                place_obj.save()
-                logger.info("%s Created." % data['id'])
-        except Exception as e:
-            logger.error(e)
-
     def process(self, obj_list: dict) -> None:
         # Private method for the final processing phase.
         def __unit_multilang_fill(unit_field: dict) -> dict:
@@ -502,6 +456,8 @@ class NewTprThreeImporter(Importer):
                             'address_zip': unit_address_zip,
                             'email': unit_email,
                         }
+
+                        # Saving phase.
                         try:
                             is_new = True
                             # Check duplicates.
@@ -527,7 +483,7 @@ class NewTprThreeImporter(Importer):
                         except Exception as e:
                             logger.error(e)
                             pass
-                        
+
                         '''
                         bulk_update() and bulk_create() alongside Place's MPTT structure
                         prevents us from using them due to bugs. save() automatically rebuilds
