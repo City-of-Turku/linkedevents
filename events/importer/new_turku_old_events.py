@@ -68,17 +68,20 @@ TURKU_DRUPAL_CATEGORIES = {
     'cruises and tours': 'tsl:p52',  # Retket
     'Trips': 'tsl:p52',  # Retket
     'Guided tours and sightseeing tours': 'tsl:p51',  # Opastukset
-    'Theatre and other performance art': 'tsl:p11',  # Teatteri, performanssi ja sirkus
+    # Teatteri, performanssi ja sirkus
+    'Theatre and other performance art': 'tsl:p11',
     'Sports': 'tsl:p7',  # Liikunta ja urheilu
     'Literature': 'tsl:p4',  # Kirjallisuus, litteratur
     'Virtual events': 'tsl:p55',  # Muu
 }
 
+
 def proc_time_frmt(stage: str) -> None:
     # Formatter for logs.
     ft = math.modf(time.process_time())
     curtime = float(str(ft[0])[:3])+ft[1]
-    logger.info('%s finished after %s seconds from the initial start!' % (stage, curtime))
+    logger.info('%s finished after %s seconds from the initial start!' %
+                (stage, curtime))
 
 
 @register_importer
@@ -101,7 +104,8 @@ class NewTprThreeImporter(Importer):
                     for idx, sub_t_key in enumerate(data[t_key]):
                         key_to_find = "%s_%s" % (t_key, sub_t_key)
                         if current_value == key_to_find:
-                            current_value = getattr(self, data['attr_maps'][t_key][idx])
+                            current_value = getattr(
+                                self, data['attr_maps'][t_key][idx])
                 setattr(q_obj, obj_model[cur_val_idx], current_value)
             q_obj.save()
             setattr(self, next(attrs), q_obj)
@@ -129,17 +133,18 @@ class NewTprThreeImporter(Importer):
             'place': {
                 'virtual': [
                     'virtual:public', 'public', 'Virtuaalitapahtuma', 'Virtuaalitapahtuma', 'Virtuell evenemang', 'Virtual event',
-                    'Virtuaalitapahtumat merkitään tähän paikkatietoon.', BaseModel.now(), 'org_virtual', 'ds_virtual'
+                    'Virtuaalitapahtumat merkitään tähän paikkatietoon.', BaseModel.now(
+                    ), 'org_virtual', 'ds_virtual'
                 ],
             },
             # Licenses
             'license': {
                 'event': [
-                    'event_only', 'Vain tapahtuman markkinointiin', 'Vain tapahtuman markkinointiin', 
+                    'event_only', 'Vain tapahtuman markkinointiin', 'Vain tapahtuman markkinointiin',
                     'Endast för marknadsföring av evenemanget', 'For event marketing only', ''
                 ],
                 'cc': [
-                    'cc_by', 'Nimeä 4.0 Kansainvälinen (CC BY 4.0)', 'Nimeä 4.0 Kansainvälinen (CC BY 4.0)', 
+                    'cc_by', 'Nimeä 4.0 Kansainvälinen (CC BY 4.0)', 'Nimeä 4.0 Kansainvälinen (CC BY 4.0)',
                     'Erkännande 4.0 Internationell (CC BY 4.0)', 'Attribution 4.0 International (CC BY 4.0)',
                     'https://creativecommons.org/licenses/by/4.0/'
                 ],
@@ -186,7 +191,8 @@ class NewTprThreeImporter(Importer):
 
         # Private method for cleaning text.
         def __clean_text(text: str) -> str:
-            parsed_text = ' '.join(strip_tags(text).replace('\r\n', ' ').split())
+            parsed_text = ' '.join(strip_tags(
+                text).replace('\r\n', ' ').split())
             if parsed_text != '':
                 return parsed_text
 
@@ -207,21 +213,21 @@ class NewTprThreeImporter(Importer):
         def _map_event_categories(category: str) -> str:
             if category in TURKU_DRUPAL_CATEGORIES.keys():
                 # Get the keyword.
-                tsl_kw = Keyword.objects.get(id=TURKU_DRUPAL_CATEGORIES[category])
-                print(tsl_kw.name_sv)
-
+                tsl_kw = Keyword.objects.get(
+                    id=TURKU_DRUPAL_CATEGORIES[category])
+                print(tsl_kw)
 
         # Which fields do we want to write into the DB?
         field_map = {
-            'title': str, 'start_date': 'timestamp', 'end_date': 'timestamp', 
-            'lead_paragraph_markup': str, 'description': str, 
+            'title': str, 'start_date': 'timestamp', 'end_date': 'timestamp',
+            'lead_paragraph_markup': str, 'description': str,
             'event_type': str, 'drupal_nid': str, 'drupal_nid_super': str,
             'event_categories': 'many', 'target_audience': 'many', 'keywords': 'many',
             'address': str, 'location': 'geocoordinate', 'place': str, 'free_event': str,
             'event_price': str, 'buy_tickets_url': str, 'event_image_ext_url': str,
             'event_image_license': str, 'website_url': str, 'facebook_url': str,
             'twitter_url': str, 'event_organizer': str, 'is_hobby': str,
-            }
+        }
 
         processed = {}
 
@@ -230,12 +236,16 @@ class NewTprThreeImporter(Importer):
                 if field_map_field in event_field:
                     # Clean all regular text fields.
                     if type(event_field_value) == field_map_value:
-                        event_fields[event_field] = __clean_text(text=event_field_value) # devnote: replace eventfield part with the update to processed.
+                        # devnote: replace eventfield part with the update to processed.
+                        event_fields[event_field] = __clean_text(
+                            text=event_field_value)
                     # Format start and end times.
                     if field_map_value == 'timestamp':
-                        field_timestamp = timeToTimestamp(origTime=event_fields[event_field])
+                        field_timestamp = timeToTimestamp(
+                            origTime=event_fields[event_field])
                         field_dt = dt_parse(dt_str=field_timestamp)
-                        event_fields[event_field] = field_dt # devnote: replace these with the update to processed.
+                        # devnote: replace these with the update to processed.
+                        event_fields[event_field] = field_dt
                     # Clean, parse and map event_categories.
                     if event_field == 'event_categories' and event_field_value:
                         event_category = event_fields[event_field]
@@ -254,7 +264,8 @@ class NewTprThreeImporter(Importer):
         URL = 'https://kalenteri.turku.fi/admin/event-exports/json_beta'
         response = requests.get(URL, headers=HEADERS)
         if response.status_code != 200:
-            logger.error("Importing failed. Turku Drupal API responded with status_code: %s" % response.status_code)
+            logger.error(
+                "Importing failed. Turku Drupal API responded with status_code: %s" % response.status_code)
             return
         json_data = response.json()
 
@@ -262,7 +273,7 @@ class NewTprThreeImporter(Importer):
             'Single event': {},
             'Recurring event (in series)': {},
             'Event series': {}
-            }
+        }
 
         for events in json_data['events']:
             for event, event_fields in events.items():
@@ -271,8 +282,9 @@ class NewTprThreeImporter(Importer):
                 if event_id and event_type in all_events.keys():
                     self.validate_fields(event_fields=event_fields)
                     all_events[event_type].update({event_id: event})
-        
+
         print(all_events)
+
     def handle(self) -> None:
         self.get_events()
         proc_time_frmt('Importer')
