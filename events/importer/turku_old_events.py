@@ -13,6 +13,8 @@ from events.models import Language, EventLink, Offer
 from django_orghierarchy.models import Organization, OrganizationClass
 from pytz import timezone
 from django.conf import settings
+
+from events.utils import get_field_translations
 from .util import clean_text
 from .sync import ModelSyncher
 from .base import Importer, register_importer, recur_dict
@@ -289,6 +291,12 @@ class TurkuOriginalImporter(Importer):
             return default
         return item
 
+    def get_or_empty(self, item, collection) -> list:
+        item = collection.get(item, None)
+        if item:
+            return item.split(',')
+        return []
+
     def _import_event(self, lang, event_el, events, event_type):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(
@@ -454,58 +462,55 @@ class TurkuOriginalImporter(Importer):
         event_keywords = evItem.get('keywords', set())
         event_audience = evItem.get('audience', set())
 
-        if eventTku['event_categories'] is not None:
-            eventTku['event_categories'] = eventTku['event_categories']+','
-            categories = eventTku['event_categories'].split(',')
-            for name in categories:
-                name = name.strip()
-                if name == 'Theatre and other perfomance art':
-                    name = 'Theatre and other performance art'
-                    # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
-                if name == 'Virtual events':
-                    evItem['location']['id'] = VIRTUAL_LOCATION_ID
-                if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                    ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
-                    if isinstance(ysoId, list):
-                        for x in range(len(ysoId)):
-                            event_keywords.add(
-                                Keyword.objects.get(id=ysoId[x])
-                            )
-                    else:
+
+        event_categories = self.get_or_empty('event_categories', eventTku)
+        keywords = self.get_or_empty('keywords', eventTku)
+        target_audience = self.get_or_empty('target_audience', eventTku)
+
+        for name in map(str.strip, event_categories):
+            if name == 'Theatre and other perfomance art':
+                name = 'Theatre and other performance art'
+                # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
+            if name == 'Virtual events':
+                evItem['location']['id'] = VIRTUAL_LOCATION_ID
+
+            ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.get(name, None)
+            if ysoId:
+                if isinstance(ysoId, list):
+                    for x in range(len(ysoId)):
                         event_keywords.add(
-                            Keyword.objects.get(id=ysoId)
+                            Keyword.objects.get(id=ysoId[x])
                         )
-
-        if eventTku.get('keywords', None):
-            eventTku['keywords'] = eventTku['keywords'] + ','
-            keywords = eventTku['keywords'].split(',')
-            for name in keywords:
-                name.strip()
-                if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                    try:
-                        event_keywords.add(
-                            Keyword.objects.get(name=name)
-                        )
-                    except:
-                        if name != "":
-                            notFoundKeys.append({
-                                name: eventTku['drupal_nid']
-                            })
-                        pass
-
-        evItem['keywords'] = event_keywords
-
-        if eventTku['target_audience'] is not None:
-            eventTku['target_audience'] = eventTku['target_audience'] + ','
-            audience = eventTku['target_audience'].split(',')
-            for name in audience:
-                if name in TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.keys():
-                    ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID[name]
-                    event_audience.add(
+                    continue
+                try:
+                    event_keywords.add(
                         Keyword.objects.get(id=ysoId)
                     )
+                except Keyword.DoesNotExist:
+                    continue
 
+        for name in map(str.strip, keywords):
+            if not TURKU_DRUPAL_CATEGORY_EN_YSOID.get(name):
+                try:
+                    event_keywords.add(
+                        Keyword.objects.get(name=name)
+                    )
+                except Keyword.DoesNotExist:
+                    if name:
+                        notFoundKeys.append({
+                            name: eventTku['drupal_nid']
+                        })
+
+        for name in map(str.strip, target_audience):
+            ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.get(name, None)
+            if ysoId:
+                event_audience.add(
+                    Keyword.objects.get(id=ysoId)
+                )
+
+        evItem['keywords'] = event_keywords
         evItem['audience'] = event_audience
+
         evItem['info_url'] = {
             "fi": eventTku['website_url'],
             "sv": eventTku['website_url'],
@@ -698,13 +703,21 @@ class TurkuOriginalImporter(Importer):
                             try:
                                 motherOffer = Offer.objects.get(
                                     event_id=mother.id)
-                                Offer.objects.update_or_create(
+                                offer, _ = Offer.objects.update_or_create(
                                     event_id=child.id,
-                                    price=motherOffer.price,
                                     info_url=motherOffer.info_url,
-                                    description=motherOffer.description,
-                                    is_free=motherOffer.is_free
+                                    is_free=motherOffer.is_free,
                                 )
+                                for lang, value in get_field_translations(motherOffer, 'price'):
+                                    description = getattr(motherOffer, 'description_%s' % lang, '') \
+                                        if lang else getattr(motherOffer, 'description', '')
+                                    field = 'description_%s' % lang if lang else 'description'
+                                    setattr(offer, field, '{value}{nl}{description}'.format(
+                                        value=value or '',
+                                        description=description or '',
+                                        nl='\n' if value else ''
+                                    ))
+                                offer.save()
                             except Exception as ex:
                                 pass
                         except Exception as ex:
