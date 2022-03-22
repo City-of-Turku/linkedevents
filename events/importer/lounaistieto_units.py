@@ -279,12 +279,19 @@ class LounaistietoImporter(Importer):
                                         splt[-1], '').rstrip(',')
 
                 # Validate and convert location data:
-                northing = props.get('latitude')
-                easting = props.get('longitude')
-                if northing and easting:
-                    # Lounaistieto coordinates are already pre-serialized to 3067 SRID. No transformation needed.
-                    pnt = Point(easting, northing, srid=3067)
-                    validated['location'] = pnt
+                geom = lounais_unit.get('geometry')
+                if geom:
+                    coords = geom.get('coordinates')
+                    if isinstance(coords, list):
+                        if len(coords) == 2:
+                            if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
+                                try:
+                                    pnt = Point(
+                                        coords[0], coords[1], srid=3067)
+                                    validated['location'] = pnt
+                                except Exception as e:
+                                    logger.warn(
+                                        "Could not instantiate the location: %s" % e)
 
                 units.update({validated['id']: validated})
         return units
