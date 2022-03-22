@@ -85,11 +85,11 @@ class LounaistietoImporter(Importer):
                 'ptv': ('ptv', 'Palvelutietovaranto (PTV)', True),
                 'osm': ('osm', 'OpenStreetMap (OSM)', True),
             },
-            # Public organization class for all instances.
+            # Public organization class for all places.
             'orgclass': {
                 'paikka': ('org:12', '12', 'Paikkatieto', BaseModel.now(), 'ds_org'),
             },
-            # General ontology organization for keywords.
+            # Organizations for places.
             'org': {
                 'tpr': ('tpr:1100', '1100', 'Toimipisterekisteri', BaseModel.now(), 'org:12', 'ds_tpr'),
                 'ptv': ('ptv:5000', '5000', 'PTV', BaseModel.now(), 'org:12', 'ds_ptv'),
@@ -314,8 +314,6 @@ class LounaistietoImporter(Importer):
             data_source__in=['tpr', 'ptv', 'osm'])
         existing = {}
         for existing_unit in tpr_ptv_osm:
-            # if not existing_unit.publisher_id == 'tpr:1100':
-            #    existing_unit.delete()
             name = existing_unit.name_fi
             if name:
                 if name in existing:
