@@ -41,6 +41,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0',
 }
 
+
 async def fetch(session: Any, URL: str, id: int) -> dict:
     async with session.get(URL) as response:
         data = await response.read()
@@ -57,6 +58,7 @@ async def fetch(session: Any, URL: str, id: int) -> dict:
             raise Exception(
                 "Palvelukartta unit: '%s' request did not fail, but API parsing was incorrect. API has changed?" % id)
 
+
 async def main(unit_pages: int) -> dict:
     async with aiohttp.ClientSession() as session:
         tasks = []
@@ -71,11 +73,12 @@ async def main(unit_pages: int) -> dict:
             logger.warn(e)
             await asyncio.sleep(1)
 
+
 def async_main(retry_count=3) -> dict:
     '''
     Currently works in 3.6 Python
     Works for both 3.6 and 3.7 Python versions.
-    
+
     Fetch page_count by calculating page_size 'count'
     by dividing it with default value 20 (servicemap).
     Testipalvelukartta needs turku VPN connection.
@@ -93,7 +96,7 @@ def async_main(retry_count=3) -> dict:
         else:
             page_count = int(calc[1])
     except Exception as e:
-         raise Exception(
+        raise Exception(
             "Something went wrong in the 'page count' pre-processing phase of TPR API: %s" % e)
 
     for connection_retries in range(retry_count):
@@ -111,17 +114,19 @@ def async_main(retry_count=3) -> dict:
                 return a
     logger.warn('Retry limit exceeded! Giving up...')
 
+
 def proc_time_frmt(stage: str) -> None:
     # Formatter for logs.
     ft = math.modf(time.process_time())
     curtime = float(str(ft[0])[:3])+ft[1]
-    logger.info('%s finished after %s seconds from the initial start!' % (stage, curtime))
+    logger.info('%s finished after %s seconds from the initial start!' %
+                (stage, curtime))
 
 
 @register_importer
-class NewTprThreeImporter(Importer):
+class PalvelukarttaImporter(Importer):
     # Importer class dependant attributes:
-    name = "newtprthree"  # Command calling name.
+    name = "palvelukartta_units"  # Command calling name.
     supported_languages = ('fi', 'sv', 'en')  # Base file requirement.
 
     def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
@@ -138,7 +143,8 @@ class NewTprThreeImporter(Importer):
                     for idx, sub_t_key in enumerate(data[t_key]):
                         key_to_find = "%s_%s" % (t_key, sub_t_key)
                         if current_value == key_to_find:
-                            current_value = getattr(self, data['attr_maps'][t_key][idx])
+                            current_value = getattr(
+                                self, data['attr_maps'][t_key][idx])
                 setattr(q_obj, obj_model[cur_val_idx], current_value)
             q_obj.save()
             setattr(self, next(attrs), q_obj)
@@ -149,20 +155,24 @@ class NewTprThreeImporter(Importer):
             'ds': {
                 'org': ('org', 'Ulkoa tuodut organisaatiotiedot', True),
                 'tpr': ('tpr', 'Ulkoa tuodut paikkatiedot toimipisteille', True),
+                'ptv': ('ptv', 'Palvelutietovaranto (PTV)', True),
+                'osm': ('osm', 'OpenStreetMap (OSM)', True),
             },
             # Public organization class for all instances.
             'orgclass': {
-                'paikka': ['org:12', '12', 'Paikkatieto', BaseModel.now(), 'ds_org'],
+                'paikka': ('org:12', '12', 'Paikkatieto', BaseModel.now(), 'ds_org'),
             },
             # General ontology organization for keywords.
             'org': {
-                'tpr': ['tpr:1100', '1100', 'Toimipisterekisteri', BaseModel.now(), 'org:12', 'ds_tpr'],
+                'tpr': ('tpr:1100', '1100', 'Toimipisterekisteri', BaseModel.now(), 'org:12', 'ds_tpr'),
+                'ptv': ('ptv:5000', '5000', 'PTV', BaseModel.now(), 'org:12', 'ds_ptv'),
+                'osm': ('osm:6000', '6000', 'OSM', BaseModel.now(), 'org:12', 'ds_osm'),
             },
             # Attribute name mapping for all due to class related attributes (ex. data_source and organization are necessary).
             'attr_maps': {
-                'ds': ('data_source', 'data_source_tpr'),
+                'ds': ('data_source', 'data_source_tpr', 'data_source_ptv', 'data_source_osm'),
                 'orgclass': ('organization_class_12', ),
-                'org': ('organization', ),
+                'org': ('organization', 'organization_ptv', 'organization_osm'),
             },
             # Models for easy iteration (Selected attributes):
             'model_maps': {
@@ -195,7 +205,8 @@ class NewTprThreeImporter(Importer):
         for lang in ('fi', 'sv', 'en'):
             lang_val = field_name.get(lang)
             if isinstance(lang_val, str):
-                lang_val = ' '.join(strip_tags(lang_val).replace('\r\n', ' ').split())
+                lang_val = ' '.join(strip_tags(
+                    lang_val).replace('\r\n', ' ').split())
                 if len(lang_val.strip()):
                     field_name[lang] = lang_val
                     if not ml_pass:
@@ -211,24 +222,28 @@ class NewTprThreeImporter(Importer):
                 field_name[lang] = None
 
     def get_json_fields(self, unit: dict) -> int:
-        dtypes = {'id': int, 'name': dict, 'street_address': dict, 'municipality': str, 'location': dict} # Basic 'expected' data types for each field.
-        data = {(val if isinstance(unit.get(val), valtype) else None): unit.get(val) for val, valtype in dtypes.items()} # Creates the template.
+        # Basic 'expected' data types for each field.
+        dtypes = {'id': int, 'name': dict, 'street_address': dict,
+                  'municipality': str, 'location': dict}
+        data = {(val if isinstance(unit.get(val), valtype) else None): unit.get(
+            val) for val, valtype in dtypes.items()}  # Creates the template.
         if data.get('id') and data.get('name') and data.get('street_address') or data.get('location'):
             has_street = has_location = None
 
             # Validate & format Unit ID.
             if not data['id'] > -1:
                 # We assume unit IDs start from 0 and move up.
+                logger.warn("Unsupported ID for TPR unit: %s" % unit)
                 return
 
             # Validate & format name.
             if not self.__multilang_validator(field_name=unit['name']):
                 # We assume name isn't just an empty dict and contains valid data.
+                logger.warn("Unsupported name for TPR unit: %s" % unit)
                 return
             else:
                 # Remove duplicates.
                 self.__multilang_remove_duplicates(field_name=unit['name'])
-
 
             # Validate & parse street address into usable form.
             if data.get('street_address'):
@@ -238,7 +253,7 @@ class NewTprThreeImporter(Importer):
 
             # Validate & re-assign location.
             if data.get('location'):
-                vec2 = [0]*2 # 2D Vector coordinate template.
+                vec2 = [0]*2  # 2D Vector coordinate template.
                 coords = data['location'].get('coordinates', None)
                 if isinstance(coords, type(vec2)):
                     if len(coords) == len(vec2):
@@ -248,7 +263,8 @@ class NewTprThreeImporter(Importer):
                             Transform the coordinates to the default database supported SRID.
                             '''
                             pnt = Point(coords[0], coords[1], srid=4326)
-                            pnt.transform(CoordTransform(SpatialReference(4326), SpatialReference(settings.PROJECTION_SRID)))
+                            pnt.transform(CoordTransform(SpatialReference(
+                                4326), SpatialReference(settings.PROJECTION_SRID)))
                             unit['location'] = pnt
                             has_location = True
 
@@ -279,7 +295,8 @@ class NewTprThreeImporter(Importer):
                 str_processed += letter
 
     def get_addresses(self) -> Tuple[dict, dict]:
-        qset = Place.objects.filter(data_source__id="osoite") # Get all street addresses.
+        # Get all street addresses.
+        qset = Place.objects.filter(data_source__id="osoite")
         existing_addresses = {}
         other_addresses = {}
         for address_obj in qset:
@@ -291,9 +308,12 @@ class NewTprThreeImporter(Importer):
                     temp.update({lang: res})
             if temp['fi'] and temp['sv'] and temp['fi'] != temp['sv']:
                 # Makes finding very easy.
-                existing_addresses.update({temp['fi']: [temp['sv'], address_obj.position, address_obj.address_locality]}) # Easy to find.
+                # Easy to find.
+                existing_addresses.update(
+                    {temp['fi']: [temp['sv'], address_obj.position, address_obj.address_locality]})
             if temp['fi'] != temp['sv']:
-                other_addresses.update({temp['fi']: [address_obj.position, address_obj.address_locality]})
+                other_addresses.update(
+                    {temp['fi']: [address_obj.position, address_obj.address_locality]})
         return existing_addresses, other_addresses
 
     def fix_swedish_address(self, unit: dict, existing_addresses: dict) -> None:
@@ -302,7 +322,8 @@ class NewTprThreeImporter(Importer):
         if unit_fi_street and unit_muni:
             for finnish_street, finnish_street_data in existing_addresses.items():
                 if finnish_street in unit_fi_street and unit_muni.capitalize() == finnish_street_data[2]:
-                    unit_fi_processed = unit_fi_street.replace(finnish_street, finnish_street_data[0])
+                    unit_fi_processed = unit_fi_street.replace(
+                        finnish_street, finnish_street_data[0])
                     # Risky replacements which I don't recommend with larger datasets.
                     replacements = {
                         'rakennus': 'byggnad',
@@ -316,7 +337,8 @@ class NewTprThreeImporter(Importer):
                     }
                     for r, v in replacements.items():
                         unit_fi_processed = unit_fi_processed.replace(r, v)
-                    unit['location'] = finnish_street_data[1] # Replace with a more 'accurate' position.
+                    # Replace with a more 'accurate' position.
+                    unit['location'] = finnish_street_data[1]
                     return unit_fi_processed
 
     def __multilang_attr_map(self, obj: Any, data_key: str, data_field: dict) -> None:
@@ -331,7 +353,8 @@ class NewTprThreeImporter(Importer):
     # Private save function.
     def _attribute_map(self, has_tpr: Any, data: dict) -> None:
         for data_key in ('name', 'description', 'street_address'):
-            self.__multilang_attr_map(obj=has_tpr, data_key=data_key, data_field=data[data_key])
+            self.__multilang_attr_map(
+                obj=has_tpr, data_key=data_key, data_field=data[data_key])
         has_tpr.telephone = has_tpr.telephone_fi = data['phone']
         has_tpr.address_locality = has_tpr.address_locality_fi = data['municipality']
         has_tpr.postal_code = data['address_zip']
@@ -351,29 +374,31 @@ class NewTprThreeImporter(Importer):
                 found = None
             return found
 
-        tpr_for_saving = {} # id, data: object
-        tpr_names = {} # name, IDs
+        tpr_for_saving = {}  # id, data: object
+        tpr_names = {}  # name, IDs
 
         # Collect new duplicates (Some might not have been removed due to relations with events).
-        all_tprs = Place.objects.filter(data_source=getattr(self, 'data_source_tpr'))
-        for tpr in all_tprs:
-            tpr_for_saving.update({tpr.id: tpr})
+        all_objs = Place.objects.filter(data_source__in=['tpr', 'ptv', 'osm'])
+        for obj in all_objs:
+            tpr_for_saving.update({obj.id: obj})
             for lang in self.supported_languages:
-                lang_obj = getattr(tpr, 'name_%s' % lang)
+                lang_obj = getattr(obj, 'name_%s' % lang)
                 if lang_obj:
                     if lang_obj in tpr_names:
-                        tpr_names[lang_obj].append(tpr.id)
+                        tpr_names[lang_obj].append(obj.id)
                     else:
-                        tpr_names.update({lang_obj: [tpr.id]})
+                        tpr_names.update({lang_obj: [obj.id]})
 
-        existing_addresses, other_addresses = self.get_addresses() # Finnish and Swedish street addresses.
+        # Finnish and Swedish street addresses.
+        existing_addresses, other_addresses = self.get_addresses()
 
         for idx, units in enumerate(obj_list, start=1):
             logger.info('Page: %s was processed.' % idx)
             for unit in units:
                 result = self.get_json_fields(unit=unit)
                 if result in (1, 2):
-                    res = self.fix_swedish_address(unit=unit, existing_addresses=existing_addresses)
+                    res = self.fix_swedish_address(
+                        unit=unit, existing_addresses=existing_addresses)
                     if res:
                         unit['street_address']['sv'] = res
                     else:
@@ -390,18 +415,22 @@ class NewTprThreeImporter(Importer):
                     if unit_location:
                         # Final processing before saving.
                         unit_id = "tpr:%s" % unit['id']
-                        unit_name = __unit_multilang_fill(unit_field=unit['name'])
-    
+                        unit_name = __unit_multilang_fill(
+                            unit_field=unit['name'])
+
                         # Fill description:
                         unit_description = None
                         if unit.get('description'):
                             # Parse the description:
                             if self.__multilang_validator(field_name=unit['description']):
-                                self.__multilang_remove_duplicates(field_name=unit['description'])
-                                unit_description = __unit_multilang_fill(unit_field=unit['description'])
+                                self.__multilang_remove_duplicates(
+                                    field_name=unit['description'])
+                                unit_description = __unit_multilang_fill(
+                                    unit_field=unit['description'])
 
                         # Fill address data and re-validate.
-                        unit_address = __unit_multilang_fill(unit_field=unit['street_address'])
+                        unit_address = __unit_multilang_fill(
+                            unit_field=unit['street_address'])
                         if unit_address['en']:
                             unit_address['en'] = None
                             # English street names are not supported in Finland. Small re-verification once we remove this.
@@ -414,10 +443,14 @@ class NewTprThreeImporter(Importer):
                             if isinstance(unit_phone, dict):
                                 # Assume it's multilang.
                                 if self.__multilang_validator(field_name=unit['phone']):
-                                    self.__multilang_remove_duplicates(field_name=unit['phone'])
-                                    unit_phone = __unit_multilang_fill(unit_field=unit['phone'])
+                                    self.__multilang_remove_duplicates(
+                                        field_name=unit['phone'])
+                                    unit_phone = __unit_multilang_fill(
+                                        unit_field=unit['phone'])
                             else:
-                                unit_phone = ' '.join(strip_tags(str(unit_phone)).replace('\r\n', ' ').split()) # Clean up.
+                                # Clean up.
+                                unit_phone = ' '.join(strip_tags(
+                                    str(unit_phone)).replace('\r\n', ' ').split())
 
                         # last_modified_time saving is currently not supported. Overridden by Place models save() function.
                         '''
@@ -438,10 +471,12 @@ class NewTprThreeImporter(Importer):
                             unit_municipality = None
 
                         # Fill in the zip data (postal).
-                        unit_address_zip = _validate_to_str(unit=unit, field_to_get='address_zip')
+                        unit_address_zip = _validate_to_str(
+                            unit=unit, field_to_get='address_zip')
 
                         # Fill in the email data.
-                        unit_email = _validate_to_str(unit=unit, field_to_get='email')
+                        unit_email = _validate_to_str(
+                            unit=unit, field_to_get='email')
 
                         # Map wanted fields for the data for the save phase.
                         processed_unit_data = {
@@ -468,14 +503,18 @@ class NewTprThreeImporter(Importer):
                                         is_new = False
                                         if unit_id in tpr_names[lang_obj]:
                                             # Update the tpr object with the new data.
-                                            self._attribute_map(has_tpr=tpr_for_saving[unit_id], data=processed_unit_data)
+                                            self._attribute_map(
+                                                has_tpr=tpr_for_saving[unit_id], data=processed_unit_data)
                                             tpr_for_saving[unit_id].save()
-                                            logger.info("Updated existing unit: %s" % unit_id)
+                                            logger.info(
+                                                "Updated existing unit: %s" % unit_id)
                                             break
                             if is_new:
-                                place_obj = Place(data_source=getattr(self, 'data_source_tpr'))
+                                place_obj = Place(data_source=getattr(
+                                    self, 'data_source_tpr'))
                                 place_obj.id = processed_unit_data['id']
-                                self._attribute_map(has_tpr=place_obj, data=processed_unit_data)
+                                self._attribute_map(
+                                    has_tpr=place_obj, data=processed_unit_data)
                                 place_obj.origin_id = unit['id']
                                 place_obj.created_time = BaseModel.now()
                                 place_obj.save()
@@ -494,16 +533,17 @@ class NewTprThreeImporter(Importer):
                         '''
 
     def remove_db_duplicates(self) -> None:
-        all_tprs = Place.objects.filter(data_source=getattr(self, 'data_source_tpr'))
+        all_objs = Place.objects.filter(data_source__in=['tpr', 'ptv', 'osm'])
         duplicates = []
-        for tpr in all_tprs:
+        for obj in all_objs:
             for lang in self.supported_languages:
-                lang_obj = getattr(tpr, 'name_%s' % lang)
+                lang_obj = getattr(obj, 'name_%s' % lang)
                 if lang_obj:
                     if lang_obj in duplicates:
                         try:
-                            logger.info("Removing duplicate: %s from the DB..." % tpr.id)
-                            tpr.delete()
+                            logger.info(
+                                "Removing duplicate: %s from the DB..." % obj.id)
+                            obj.delete()
                             break
                         except Exception as e:
                             logger.error(e)
