@@ -1,7 +1,6 @@
 import logging
 import requests
 import requests_cache
-import re
 import dateutil.parser
 import time
 import pytz
@@ -45,7 +44,6 @@ logger.addHandler(
 )
 
 VIRTUAL_LOCATION_ID = "virtual:public"
-KEYW_LIST = []
 
 TURKU_LUOKITUS_KEYWORD_IDS = {
     # Hobby content target:
@@ -68,9 +66,7 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     # Event content based:
     'Kuvataide': 'tsl:p28',  # Kuvataide
     'Tanssi': 'tsl:p29',  # Tanssi
-    'Musiikki': 'tsl:p9',  # Musiikki
     'Teatteri, performanssi ja sirkus': 'tsl:p11',  # Teatteri, performanssi ja sirkus
-    'Kirjallisuus ja sanataide': 'tsl:p4',  # Kirjallisuus ja sanataide
     'Elokuva': 'tsl:p30',  # Elokuva
     'Käsityöt': 'tsl:p31',  # Käsityöt
     'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
@@ -145,6 +141,12 @@ CITY_LIST = [
     'aura', 'marttila', 'kaarina', 'lieto', 'paimio', 'sauvo'
 ]
 TZ = timezone('Europe/Helsinki')
+
+SAFE_TAGS = (
+    'u', 'b', 'h2', 'h3', 'em', 'ul',
+    'li', 'strong', 'br', 'p', 'a'
+)
+
 notFoundKeys = []
 
 
@@ -319,11 +321,6 @@ class TurkuOriginalImporter(Importer):
         evItem['data_source'] = self.data_source
         evItem['publisher'] = self.organization
         evItem['end_time'] = end_time
-
-        ok_tags = (
-            'u', 'b', 'h2', 'h3', 'em', 'ul',
-            'li', 'strong', 'br', 'p', 'a'
-        )
 
         evItem['name'] = {
             "fi": eventTku['title_fi'],
@@ -519,31 +516,22 @@ class TurkuOriginalImporter(Importer):
 
         if event_type in ('m', 's'):
             # Add a default offer
-            free_offer = {
-                'is_free': True,
+            offer = {
+                'is_free': bool(int(eventTku.get('free_event', True))),
                 'price': None,
                 'description': None,
                 'info_url': None,
             }
-            eventOffer_is_free = bool(int(eventTku['free_event']))
             # Fill if events is not free price event
-            if not eventOffer_is_free:
-                free_offer['is_free'] = False
-                if eventTku['event_price']:
-                    ok_tags = (
-                        'u', 'b', 'h2', 'h3', 'em', 'ul',
-                        'li', 'strong', 'br', 'p', 'a'
-                    )
-                    price = str(eventTku['event_price'])
-                    price = bleach.clean(price, tags=ok_tags, strip=True)
-                    free_offer_price = clean_text(price, True)
-                    free_offer['price'] = {'fi': free_offer_price}
-                    free_offer['info_url'] = {'fi': None}
-                if str(eventTku['buy_tickets_url']):
-                    free_offer_buy_tickets = eventTku['buy_tickets_url']
-                    free_offer['info_url'] = {'fi': free_offer_buy_tickets}
-                free_offer['description'] = None
-            evItem['offers'] = [free_offer]
+            if not offer['is_free']:
+                event_price = eventTku.get('event_price', '')
+                buy_tickets_url = eventTku.get('buy_tickets_url', '')
+                if event_price:
+                    price = bleach.clean(event_price, tags=SAFE_TAGS, strip=True)
+                    offer['description'] = {'fi': clean_text(price, True)}
+                if buy_tickets_url:
+                    offer['info_url'] = {'fi': buy_tickets_url}
+            evItem['offers'] = [offer]
 
         if event_type == "m":
             evItem['super_event_type'] = Event.SuperEventType.RECURRING
@@ -583,14 +571,12 @@ class TurkuOriginalImporter(Importer):
 
         jsr = root_doc['events']
 
-        earliest_end_time = None
-
         def to_import(lang, ev, events, ev_type):
-            event = self._import_event(lang, ev, events, ev_type)
+            self._import_event(lang, ev, events, ev_type)
 
         # Import Single Event(s).
         for x in jsr:
-            for k, v in x.items():
+            for _, v in x.items():
                 if v['event_type'] == "Single event":
                     to_import(lang, v, events, 's')
         # Pre-Process.
@@ -620,7 +606,6 @@ class TurkuOriginalImporter(Importer):
                         'twitter_url': x['twitter_url']
                     })
                     to_import(lang, z, events, 'c')
-        now = datetime.now().replace(tzinfo=TZ)
         return root_doc, mothers_with_children, mothers_children
 
     def save_extra(self, drupal_url, mothersList, childList):
@@ -688,9 +673,9 @@ class TurkuOriginalImporter(Importer):
                                         'sub_event_type': sub_event_type,
                                     }
                                 )
-                            except Exception as ex:
+                            except:
                                 pass
-                        except Exception as ex:
+                        except:
                             pass
 
                         try:
@@ -718,56 +703,47 @@ class TurkuOriginalImporter(Importer):
                                         nl='\n' if value else ''
                                     ))
                                 offer.save()
-                            except Exception as ex:
+                            except:
                                 pass
-                        except Exception as ex:
+                        except:
                             pass
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
                 # Get Language object.
-                ft_name = "extlink_"+ft
-                ft_link = ft+"_url"
                 try:
                     myLang = Language.objects.get(id="fi")
-                except:
-                    pass
-                try:
                     eventObj = Event.objects.get(origin_id=originid)
-                    EventLink.objects.update_or_create(
-                        name=ft_name,
-                        event_id=eventObj.id,
-                        language_id=myLang.id,
-                        link=json_event[ft+'_url']
-                    )
-                except:
-                    pass
+                except (Language.DoesNotExist, Event.DoesNotExist):
+                    return
+
+                EventLink.objects.update_or_create(
+                    name=f'extlink_{ft}',
+                    event_id=eventObj.id,
+                    language_id=myLang.id,
+                    link=json_event.get(f'{ft}_url', '')
+                )
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
             if json_event['twitter_url']:
                 fb_tw('twitter')
 
-            # Match Events & Images together in the ManyToMany relationship table.
+            def _fetch_from_image_table(p, p2, raise_exception=True):
+                try:
+                    img = Image.objects.get(image=f'images/{json_event[p2]}.jpg')
+                    event_obj = Event.objects.get(origin_id=json_event[p])
+                except (Image.DoesNotExist, Event.DoesNotExist):
+                    if not raise_exception:
+                        return None
+                    raise
+                event_obj.images.add(img)
+
+            # Match Events & Images together in the ManyToMany relationship table.      
             try:
-                def fetch_from_image_table(p, p2):
-                    try:
-                        eventObj = Event.objects.get(origin_id=json_event[p])
-                        img_format = '%s/%s.%s' % ('images',
-                                                   json_event[p2], 'jpg')
-                        img_obj_returned = Image.objects.get(image=img_format)
-                        eventObj.images.add(img_obj_returned.id)
-                        return img_obj_returned
-                    except:
-                        pass
-                    return None
-                fetched_img = fetch_from_image_table(
-                    'drupal_nid', 'drupal_nid')  # Mothers and Singles
-                if not fetched_img:
-                    # Children inherit their Mothers images.
-                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')
-            except:
-                pass
+                _fetch_from_image_table('drupal_nid', 'drupal_nid')
+            except (Image.DoesNotExist, Event.DoesNotExist):
+                _fetch_from_image_table('drupal_nid', 'drupal_nid_super', raise_exception=False)
 
     def import_events(self):
         events = recur_dict()
