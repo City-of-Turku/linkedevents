@@ -155,7 +155,7 @@ class LounaistietoImporter(Importer):
                     'origin_id': None,
                     'kohteen_nimi': None,
                     'location': None,
-                    'phonenumber': None,
+                    'puhelinnumero': None,
                     'osoite': None,
                     'sahkoposti': None,
                     'verkkosivu': None,
@@ -172,11 +172,11 @@ class LounaistietoImporter(Importer):
                     else:
                         logger.warn(
                             "Unsupported data source for Lounaistieto unit: %s" % props)
-                        break
+                        continue
                 else:
                     logger.warn(
                         "Data source type is not valid for Lounaistieto unit: %s" % props)
-                    break
+                    continue
 
                 # Validate and format id:
                 origin_id = props.get('orig_id')
@@ -188,13 +188,13 @@ class LounaistietoImporter(Importer):
                     else:
                         logger.warn(
                             "Origin ID is an empty string for: %s" % props)
-                        break
+                        continue
                 else:
                     logger.warn("Origin ID type is not valid for: %s" % props)
-                    break
+                    continue
 
                 # Validate name, phone, address, email, website:
-                strip_fields = ('kohteen_nimi', 'phonenumber',
+                strip_fields = ('kohteen_nimi', 'puhelinnumero',
                                 'osoite', 'sahkoposti', 'verkkosivu')
                 for field in strip_fields:
                     cur_field = props.get(field)
@@ -202,9 +202,9 @@ class LounaistietoImporter(Importer):
                         validated_field = strip_tags(str(cur_field)).strip()
                         if validated_field != '':
                             validated[field] = validated_field
-                    if not validated['kohteen_nimi']:
-                        logger.warn("Not a valid name for: %s" % props)
-                        break
+                if not validated['kohteen_nimi']:
+                    logger.warn("Not a valid name for: %s" % props)
+                    continue
 
                 if validated['osoite']:
                     # Gets everything before the first number occurance.
@@ -298,7 +298,7 @@ class LounaistietoImporter(Importer):
             place_obj.street_address = place_obj.street_address_fi = fields['osoite']
             place_obj.street_address_sv = fields.get('osoite_sv')
             place_obj.email = fields['sahkoposti']
-            place_obj.telephone = fields['phonenumber']
+            place_obj.telephone = fields['puhelinnumero']
             place_obj.info_url = fields['verkkosivu']
             place_obj.address_locality = place_obj.address_locality_fi = fields['municipality']
             place_obj.address_locality_sv = fields.get('municipality_sv')
@@ -336,8 +336,6 @@ class LounaistietoImporter(Importer):
         for unique_id, cur_unit_data in data.items():
             cur_name = cur_unit_data['kohteen_nimi']
             if not cur_name in existing and not cur_name in new_units:
-                if cur_name == 'Haarlan koulu':
-                    print("-----------------------------------------------------------")
                 new_units.update({cur_name: cur_unit_data})
                 logger.info("Saving new unit with ID: %s and name: %s" %
                             (unique_id, cur_unit_data['kohteen_nimi']))
