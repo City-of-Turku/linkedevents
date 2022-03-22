@@ -69,8 +69,6 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Teatteri, performanssi ja sirkus': 'tsl:p11',  # Teatteri, performanssi ja sirkus
     'Elokuva': 'tsl:p30',  # Elokuva
     'Käsityöt': 'tsl:p31',  # Käsityöt
-    'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
-    'Liikunta ja urheilu': 'tsl:p7',  # Liikunta ja urheilu
     'Terveys ja hyvinvointi': 'tsl:p32',  # Terveys ja hyvinvointi
     'Luonto ja kulttuuriympäristö': 'tsl:p33',  # Luonto ja kulttuuriympäristö
     'Uskonto ja hengellisyys': 'tsl:p34',  # Uskonto ja hengellisyys
@@ -729,6 +727,7 @@ class TurkuOriginalImporter(Importer):
             if json_event['twitter_url']:
                 fb_tw('twitter')
 
+            # Match Events & Images together in the ManyToMany relationship table.
             def _fetch_from_image_table(p, p2, raise_exception=True):
                 try:
                     img = Image.objects.get(image=f'images/{json_event[p2]}.jpg')
