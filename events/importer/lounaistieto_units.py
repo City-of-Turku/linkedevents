@@ -182,6 +182,15 @@ class LounaistietoImporter(Importer):
                 origin_id = props.get('orig_id')
                 if isinstance(origin_id, str):
                     if origin_id != '':
+                        # Very few OSM IDs are falsely negative.
+                        if validated['ds'] == 'osm':
+                            try:
+                                origin_id = str(abs(int(origin_id)))
+                            except ValueError:
+                                logger.warn(
+                                    "Unexpected OSM ID format. OSM ID can not be converted into an integer: %s" % origin_id)
+                                pass
+
                         validated['id'] = '%s:%s' % (
                             validated['ds'], origin_id)
                         validated['origin_id'] = origin_id
@@ -294,6 +303,8 @@ class LounaistietoImporter(Importer):
                                         "Could not instantiate the location: %s" % e)
 
                 units.update({validated['id']: validated})
+                logger.info("Processed unit ID: %s with name: %s" %
+                            (validated['id'], validated['kohteen_nimi']))
         return units
 
     def finalize(self, data: dict) -> None:
