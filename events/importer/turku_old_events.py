@@ -624,87 +624,75 @@ class TurkuOriginalImporter(Importer):
             except:
                 pass
 
-            if json_event['drupal_nid']:
-                for x in childList:
-                    if json_event['drupal_nid'] == x['drupal_nid_super']:
-                        try:
-                            child = Event.objects.get(
-                                origin_id=x['drupal_nid'])
-                            mother = Event.objects.get(
-                                origin_id=json_event['drupal_nid'])
+            if json_event.get('drupal_nid', None):
+                for json_child in childList:
+                    if json_event['drupal_nid'] != json_child['drupal_nid_super']:
+                        continue
 
-                            sub_event_type = None
-                            #sub_recurring, sub_umbrella
-                            if mother.super_event_type == "recurring":
-                                sub_event_type = "sub_recurring"
+                    try:
+                        child = Event.objects.get(
+                            origin_id=json_child['drupal_nid'])
+                        mother = Event.objects.get(
+                            origin_id=json_event['drupal_nid'])
+                    except Event.DoesNotExist:
+                        continue
 
-                            elif mother.super_event_type == "umbrella":
-                                sub_event_type = "sub_umbrella"
+                    #sub_recurring, sub_umbrella
+                    sub_event_type = f'sub_{mother.super_event_type}' \
+                        if mother.super_event_type in ('recurring', 'umbrella') else None
 
-                            try:
-                                Event.objects.update_or_create(
-                                    id=child.id,
-                                    defaults={
-                                        'date_published': mother.date_published,
-                                        'provider': mother.provider,
-                                        'provider_fi': mother.provider_fi,
-                                        'provider_sv': mother.provider_sv,
-                                        'provider_en': mother.provider_en,
-                                        'description': mother.description,
-                                        'description_fi': mother.description_fi,
-                                        'description_sv': mother.description_sv,
-                                        'description_en': mother.description_en,
-                                        'short_description': mother.short_description,
-                                        'short_description_fi': mother.short_description_fi,
-                                        'short_description_sv': mother.short_description_sv,
-                                        'short_description_en': mother.short_description_en,
-                                        'location_id': mother.location_id,
-                                        'location_extra_info': mother.location_extra_info,
-                                        'location_extra_info_fi': mother.location_extra_info_fi,
-                                        'location_extra_info_sv': mother.location_extra_info_sv,
-                                        'location_extra_info_en': mother.location_extra_info_en,
-                                        'info_url': mother.info_url,
-                                        'info_url_fi': mother.info_url_fi,
-                                        'info_url_sv': mother.info_url_fi,
-                                        'info_url_en': mother.info_url_fi,
-                                        'super_event': mother,
-                                        'sub_event_type': sub_event_type,
-                                    }
-                                )
-                            except:
-                                pass
-                        except:
-                            pass
+                    child, _ = Event.objects.update_or_create(
+                        id=child.id,
+                        defaults={
+                            'date_published': mother.date_published,
+                            'provider': mother.provider,
+                            'provider_fi': mother.provider_fi,
+                            'provider_sv': mother.provider_sv,
+                            'provider_en': mother.provider_en,
+                            'description': mother.description,
+                            'description_fi': mother.description_fi,
+                            'description_sv': mother.description_sv,
+                            'description_en': mother.description_en,
+                            'short_description': mother.short_description,
+                            'short_description_fi': mother.short_description_fi,
+                            'short_description_sv': mother.short_description_sv,
+                            'short_description_en': mother.short_description_en,
+                            'location_id': mother.location_id,
+                            'location_extra_info': mother.location_extra_info,
+                            'location_extra_info_fi': mother.location_extra_info_fi,
+                            'location_extra_info_sv': mother.location_extra_info_sv,
+                            'location_extra_info_en': mother.location_extra_info_en,
+                            'info_url': mother.info_url,
+                            'info_url_fi': mother.info_url_fi,
+                            'info_url_sv': mother.info_url_fi,
+                            'info_url_en': mother.info_url_fi,
+                            'super_event': mother,
+                            'sub_event_type': sub_event_type,
+                        }
+                    )
 
-                        try:
-                            # Re-get object from Event once saved.
-                            child = Event.objects.get(
-                                origin_id=x['drupal_nid'])
-                            mother = Event.objects.get(
-                                origin_id=json_event['drupal_nid'])
-                            # Get object from Offer once we have the Event object.
-                            try:
-                                motherOffer = Offer.objects.get(
-                                    event_id=mother.id)
-                                offer, _ = Offer.objects.update_or_create(
-                                    event_id=child.id,
-                                    info_url=motherOffer.info_url,
-                                    is_free=motherOffer.is_free,
-                                )
-                                for lang, value in get_field_translations(motherOffer, 'price'):
-                                    description = getattr(motherOffer, 'description_%s' % lang, '') \
-                                        if lang else getattr(motherOffer, 'description', '')
-                                    field = 'description_%s' % lang if lang else 'description'
-                                    setattr(offer, field, '{value}{nl}{description}'.format(
-                                        value=value or '',
-                                        description=description or '',
-                                        nl='\n' if value else ''
-                                    ))
-                                offer.save()
-                            except:
-                                pass
-                        except:
-                            pass
+                    # Get object from Offer once we have the Event object.
+                    try:
+                        motherOffer = Offer.objects.get(
+                            event_id=mother.id)
+                    except Offer.DoesNotExist:
+                        continue
+
+                    offer, _ = Offer.objects.update_or_create(
+                        event_id=child.id,
+                        info_url=motherOffer.info_url,
+                        is_free=motherOffer.is_free,
+                    )
+                    for lang, value in get_field_translations(motherOffer, 'price'):
+                        description = getattr(motherOffer, 'description_%s' % lang, '') \
+                            if lang else getattr(motherOffer, 'description', '')
+                        field = 'description_%s' % lang if lang else 'description'
+                        setattr(offer, field, '{value}{nl}{description}'.format(
+                            value=value or '',
+                            description=description or '',
+                            nl='\n' if value else ''
+                        ))
+                    offer.save()
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
