@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING, Any, Tuple, List
 # Per module logger
 logger = logging.getLogger(__name__)
 
-headers = {
+HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'User-Agent': 'Mozilla/5.0',
@@ -86,7 +86,7 @@ def async_main(retry_count=3) -> dict:
     url = "https://testipalvelukartta.turku.fi/api/v2/unit"
 
     try:
-        fetch = requests.get(url, headers=headers)
+        fetch = requests.get(url, headers=HEADERS)
         response = fetch.json()
         count = response["count"]
         calc = math.modf(count/50)
