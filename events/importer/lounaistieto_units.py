@@ -43,11 +43,43 @@ HEADERS = {
 
 
 def proc_time_frmt(stage: str) -> None:
-    # Formatter for logs.
+    """Formatter for logs."""
     ft = math.modf(time.process_time())
     curtime = float(str(ft[0])[:3])+ft[1]
     logger.info('%s finished after %s seconds from the initial start!' %
                 (stage, curtime))
+
+
+# List of supported municipalities.
+MUNICIPALITIES = {
+    'AURA': ('Aura', 'Aura'),
+    'KAARINA': ('Kaarina', 'S:t Karins'),
+    'KOSKI TL': ('Koski Tl', 'Koskis'),
+    'KUSTAVI': ('Kustavi', 'Gustavs'),
+    'KEMIÖNSAARI': ('Kemiönsaari', 'Kimitoön'),
+    'LAITILA': ('Laitila', 'Letala'),
+    'LIETO': ('Lieto', 'Lundo'),
+    'LOIMAA': ('Loimaa', 'Loimaa'),
+    'PARAINEN': ('Parainen', 'Pargas'),
+    'MARTTILA': ('Marttila', 'S:t Mårtens'),
+    'MASKU': ('Masku', 'Masko'),
+    'MYNÄMÄKI': ('Mynämäki', 'Virmo'),
+    'NAANTALI': ('Naantali', 'Nådendal'),
+    'NOUSIAINEN': ('Nousiainen', 'Nousis'),
+    'ORIPÄÄ': ('Oripää', 'Oripää'),
+    'PAIMIO': ('Paimio', 'Pemar'),
+    'PYHÄRANTA': ('Pyhäranta', 'Pyhäranta'),
+    'PÖYTYÄ': ('Pöytyä', 'Pöytis'),
+    'RAISIO': ('Raisio', 'Reso'),
+    'RUSKO': ('Rusko', 'Rusko'),
+    'SALO': ('Salo', 'Salo'),
+    'SAUVO': ('Sauvo', 'Sagu'),
+    'SOMERO': ('Somero', 'Somero'),
+    'TAIVASSALO': ('Taivassalo', 'Tövsala'),
+    'TURKU': ('Turku', 'Åbo'),
+    'UUSIKAUPUNKI': ('Uusikaupunki', 'Nystad'),
+    'VEHMAA': ('Vehmaa', 'Vemo'),
+}
 
 
 @register_importer
@@ -55,13 +87,14 @@ class LounaistietoImporter(Importer):
     # Importer class dependant attributes:
     name = "lounaistieto_units"  # Command calling name.
     supported_languages = ('fi', 'sv', 'en')  # Base file requirement.
+    importer_start_time = BaseModel.now()
 
     def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
-        ''' 
+        """
         Main class data logic. Create DB objects & set class attributes.
         This was created with easy expandability of the setup data dictionary in mind.
         We are using save() throughout this program to avoid race conditions with update_or_create()
-        '''
+        """
         attrs = iter(attr_map)
         for sub_key in data[key].values():
             q_obj = query()
@@ -77,6 +110,7 @@ class LounaistietoImporter(Importer):
             setattr(self, next(attrs), q_obj)
 
     def setup(self) -> None:
+        """Setup phase with mapped needed data."""
         self.data = {
             # Public organization, PTV and OSM data_source.
             'ds': {
@@ -124,6 +158,7 @@ class LounaistietoImporter(Importer):
         self.handle()
 
     def fetch(self) -> dict:
+        """Gets the data synchronously."""
         URL = "https://geoserver.lounaistieto.fi/geoserver/service_points/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=service_points%3Apalvelukohteet&outputFormat=application%2Fjson"
         response = requests.get(URL, headers=HEADERS)
         if response.status_code != 200:
@@ -134,7 +169,7 @@ class LounaistietoImporter(Importer):
         return json_data
 
     def numsplit(self, str_to_split: str) -> str:
-        # Gets everything before the first number occurance.
+        """Gets everything before the first number occurrence."""
         str_processed = ''
         for letter in str_to_split:
             if letter.isdigit():
@@ -143,6 +178,7 @@ class LounaistietoImporter(Importer):
                 str_processed += letter
 
     def validate(self, data: dict) -> dict:
+        """Main data validation and processing phase."""
         # Existing addresses.
         osoite_qset = Place.objects.filter(data_source__id='osoite')
         units = {}
@@ -259,33 +295,24 @@ class LounaistietoImporter(Importer):
                             if postcode.isdigit():
                                 validated['postcode'] = postcode
                                 muni = postal_muni.replace(
-                                    postcode, '').strip().lower().capitalize()
-                                validated['municipality'] = muni
+                                    postcode, '').strip()
                                 formatted_osoite = validated['osoite'].replace(
                                     splt[-1], '').rstrip(',')
                                 validated['osoite'] = formatted_osoite
-                                if validated.get('osoite_sv'):
-                                    # Replace most municipalities with the swedish counterpart.
-                                    muni_replacements = {
-                                        'Turku': 'Åbo',
-                                        'Parainen': 'Pargas',
-                                        'Kemiönsaari': 'Kimitoön',
-                                        'Kaarina': 'S:t Karins',
-                                        'Naantali': 'Nådendal',
-                                        'Pori': 'Björneborg',
-                                        'Rauma': 'Raumo',
-                                        'Uusikaupunki': 'Nystad',
-                                        'Lieto': 'Lundo',
-                                        'Paattinen': 'Patis',
-                                        'Littoinen': 'Littois',
-                                        'Piikkiö': 'Pikis',
-                                        'Nousiainen': 'Nousis',
-                                    }
-                                    if muni in muni_replacements:
+
+                                if muni in MUNICIPALITIES:
+                                    # Format the municipality.
+                                    validated['municipality'] = MUNICIPALITIES[muni][0]
+                                    if validated.get('osoite_sv'):
+                                        # Replace most municipalities with the swedish counterpart.
                                         validated.update(
-                                            {'municipality_sv': muni_replacements[muni]})
-                                    validated['osoite_sv'] = validated['osoite_sv'].replace(
-                                        splt[-1], '').rstrip(',')
+                                            {'municipality_sv': MUNICIPALITIES[muni][1]})
+                                        validated['osoite_sv'] = validated['osoite_sv'].replace(
+                                            splt[-1], '').rstrip(',')
+                                else:
+                                    logger.warn(
+                                        "Unit %s does not have a supported municipality: %s. Skipping..." % (validated['id'], muni))
+                                    continue
 
                 # Validate and convert location data:
                 geom = lounais_unit.get('geometry')
@@ -308,7 +335,9 @@ class LounaistietoImporter(Importer):
         return units
 
     def finalize(self, data: dict) -> None:
+        """Saving phase with duplicate checking."""
         def __map_fields(place_obj: Any, fields: dict) -> Any:
+            """Object field mapping."""
             place_obj.id = fields['id']
             place_obj.name = place_obj.name_fi = fields['kohteen_nimi']
             place_obj.origin_id = fields['origin_id']
@@ -383,11 +412,32 @@ class LounaistietoImporter(Importer):
                     logger.info("Duplicate from the API exists for ID: %s with name: %s" % (
                         unique_id, cur_unit_data['kohteen_nimi']))
 
+    def post_process(self) -> None:
+        """Removes all expired units."""
+        all_data = Place.objects.filter(data_source__in=['ptv', 'osm'])
+        bm_now = BaseModel.now()
+        for obj in all_data:
+            """
+            Tries to remove all units that didn't get modified.
+            We assume this importer doesn't take longer than a day to execute.
+            """
+            if (bm_now - obj.last_modified_time) > (bm_now - self.importer_start_time):
+                logger.info(
+                    "Deleting unit %s because it has expired." % obj.id)
+                try:
+                    obj.delete()
+                except Exception as e:
+                    logger.warn(
+                        "Could not delete the unit: %s due to: %s" % (obj.id, e))
+
     def handle(self) -> None:
+        """The core handler function."""
         data = self.fetch()
         proc_time_frmt('Fetching')
         units = self.validate(data=data)
         proc_time_frmt('Validation & processing')
         self.finalize(data=units)
         proc_time_frmt('Duplicate checking & saving')
+        self.post_process()
+        proc_time_frmt('Expired unit checking')
         proc_time_frmt('Importer')

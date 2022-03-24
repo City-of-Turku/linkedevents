@@ -134,11 +134,11 @@ class PalvelukarttaImporter(Importer):
     importer_start_time = BaseModel.now()
 
     def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
-        ''' 
+        """
         Main class data logic. Create DB objects & set class attributes.
         This was created with easy expandability of the setup data dictionary in mind.
         We are using save() throughout this program to avoid race conditions with update_or_create()
-        '''
+        """
         attrs = iter(attr_map)
         for sub_key in data[key].values():
             q_obj = query()
@@ -154,6 +154,7 @@ class PalvelukarttaImporter(Importer):
             setattr(self, next(attrs), q_obj)
 
     def setup(self) -> None:
+        """Setup phase with mapped needed data."""
         self.data = {
             # Public organization, PTV and OSM data_source.
             'ds': {
@@ -295,7 +296,7 @@ class PalvelukarttaImporter(Importer):
         return query.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=rng).order_by("distance").first()
 
     def numsplit(self, str_to_split: str) -> str:
-        # Gets everything before the first number occurance.
+        """Gets everything before the first number occurrence."""
         str_processed = ''
         for letter in str_to_split:
             if letter.isdigit():
@@ -305,7 +306,6 @@ class PalvelukarttaImporter(Importer):
 
     def get_addresses(self) -> Tuple[dict, dict]:
         """Processing phase for getting addresses."""
-
         # Get all street addresses.
         qset = Place.objects.filter(data_source__id="osoite")
         existing_addresses = {}
@@ -591,6 +591,9 @@ class PalvelukarttaImporter(Importer):
         self.remove_db_duplicates()
         proc_time_frmt('Duplicate removal')
         self.process(obj_list=obj_list)
+        proc_time_frmt('Processing')
         self.remove_db_duplicates()  # Double validation after name changes.
+        proc_time_frmt('Extra duplicate removal validation')
         self.post_process()
+        proc_time_frmt('Expired unit checking')
         proc_time_frmt('Importer')
