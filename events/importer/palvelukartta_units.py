@@ -12,6 +12,7 @@ import pytz
 import json
 import sys
 import re
+from datetime import timedelta
 
 # Django:
 from django_orghierarchy.models import Organization, OrganizationClass
@@ -43,6 +44,7 @@ HEADERS = {
 
 
 async def fetch(session: Any, URL: str, id: int) -> dict:
+    """Gets the data asynchronously."""
     async with session.get(URL) as response:
         data = await response.read()
         json_response = json.loads(data)
@@ -60,6 +62,7 @@ async def fetch(session: Any, URL: str, id: int) -> dict:
 
 
 async def main(unit_pages: int) -> dict:
+    """Processing phase for the async request."""
     async with aiohttp.ClientSession() as session:
         tasks = []
         for page_no in range(1, unit_pages+1):
@@ -75,14 +78,14 @@ async def main(unit_pages: int) -> dict:
 
 
 def async_main(retry_count=3) -> dict:
-    '''
+    """
     Currently works in 3.6 Python
     Works for both 3.6 and 3.7 Python versions.
 
     Fetch page_count by calculating page_size 'count'
     by dividing it with default value 20 (servicemap).
     Testipalvelukartta needs turku VPN connection.
-    '''
+    """
     url = "https://testipalvelukartta.turku.fi/api/v2/unit"
 
     try:
@@ -116,7 +119,7 @@ def async_main(retry_count=3) -> dict:
 
 
 def proc_time_frmt(stage: str) -> None:
-    # Formatter for logs.
+    """Formatter for logs."""
     ft = math.modf(time.process_time())
     curtime = float(str(ft[0])[:3])+ft[1]
     logger.info('%s finished after %s seconds from the initial start!' %
@@ -128,6 +131,7 @@ class PalvelukarttaImporter(Importer):
     # Importer class dependant attributes:
     name = "palvelukartta_units"  # Command calling name.
     supported_languages = ('fi', 'sv', 'en')  # Base file requirement.
+    importer_start_time = BaseModel.now()
 
     def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
         ''' 
@@ -197,10 +201,10 @@ class PalvelukarttaImporter(Importer):
         self.handle()
 
     def __multilang_validator(self, field_name: dict) -> bool:
-        '''
+        """
         Validator specific method for validating multilang json objects.
         Also cleans and formats data.
-        '''
+        """
         ml_pass = False
         for lang in ('fi', 'sv', 'en'):
             lang_val = field_name.get(lang)
@@ -214,6 +218,7 @@ class PalvelukarttaImporter(Importer):
         return ml_pass
 
     def __multilang_remove_duplicates(self, field_name: dict) -> None:
+        """Removes all multilanguage duplicates by reference."""
         existing = []
         for lang, val in field_name.items():
             if not val in existing:
@@ -222,6 +227,7 @@ class PalvelukarttaImporter(Importer):
                 field_name[lang] = None
 
     def get_json_fields(self, unit: dict) -> int:
+        """Processing phase for getting fields."""
         # Basic 'expected' data types for each field.
         dtypes = {'id': int, 'name': dict, 'street_address': dict,
                   'municipality': str, 'location': dict}
@@ -258,10 +264,10 @@ class PalvelukarttaImporter(Importer):
                 if isinstance(coords, type(vec2)):
                     if len(coords) == len(vec2):
                         if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
-                            '''
+                            """
                             TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
                             Transform the coordinates to the default database supported SRID.
-                            '''
+                            """
                             pnt = Point(coords[0], coords[1], srid=4326)
                             pnt.transform(CoordTransform(SpatialReference(
                                 4326), SpatialReference(settings.PROJECTION_SRID)))
@@ -277,12 +283,15 @@ class PalvelukarttaImporter(Importer):
 
     # regex_contains is not used by this importer. We can use this to find valid addresses.
     def regex_contains(self, query, lang, address) -> Any:
-        # 23x faster than __contains because of the SQL ~ operator rather than LIKE.
+        """
+        Find valid addresses. 
+        23x faster than __contains because of the SQL ~ operator rather than LIKE.
+        """
         return query.filter(**{"name_%s__regex" % lang: r'^%s' % address})
 
     # coord_approx isn't used by this importer. We can use it if we decide to fill units with no addresses.
     def coord_approx(self, pnt, query, rng=200) -> Any:
-        # Approximates the closest address to a point within a specified range.
+        """Approximates the closest address to a point within a specified range."""
         return query.annotate(distance=Distance('position', pnt, spheroid=True)).filter(distance__lte=rng).order_by("distance").first()
 
     def numsplit(self, str_to_split: str) -> str:
@@ -295,6 +304,8 @@ class PalvelukarttaImporter(Importer):
                 str_processed += letter
 
     def get_addresses(self) -> Tuple[dict, dict]:
+        """Processing phase for getting addresses."""
+
         # Get all street addresses.
         qset = Place.objects.filter(data_source__id="osoite")
         existing_addresses = {}
@@ -317,6 +328,7 @@ class PalvelukarttaImporter(Importer):
         return existing_addresses, other_addresses
 
     def fix_swedish_address(self, unit: dict, existing_addresses: dict) -> None:
+        """Processes and maps the Swedish address for he Finnish address."""
         unit_fi_street = unit['street_address'].get('fi')
         unit_muni = unit.get('municipality')
         if unit_fi_street and unit_muni:
@@ -342,6 +354,7 @@ class PalvelukarttaImporter(Importer):
                     return unit_fi_processed
 
     def __multilang_attr_map(self, obj: Any, data_key: str, data_field: dict) -> None:
+        """Multilanguage field save phase attribute mapping."""
         if data_field:
             first_existing = None
             for lang, val in data_field.items():
@@ -350,8 +363,8 @@ class PalvelukarttaImporter(Importer):
                     setattr(obj, data_key, val)
                 setattr(obj, '%s_%s' % (data_key, lang), val)
 
-    # Private save function.
     def _attribute_map(self, has_tpr: Any, data: dict) -> None:
+        """Attribute mapping for singular fields."""
         for data_key in ('name', 'description', 'street_address'):
             self.__multilang_attr_map(
                 obj=has_tpr, data_key=data_key, data_field=data[data_key])
@@ -363,12 +376,14 @@ class PalvelukarttaImporter(Importer):
         has_tpr.email = data['email']
 
     def process(self, obj_list: dict) -> None:
-        # Private method for the final processing phase.
+        """Main processing phase."""
+
         def __unit_multilang_fill(unit_field: dict) -> dict:
+            """Private method for the final processing phase."""
             return {lang: unit_field.get(lang) for lang in ('fi', 'sv', 'en')}
 
-        # Private function to cut short validation.
         def _validate_to_str(unit: dict, field_to_get: str) -> Any:
+            """Private function to cut short validation."""
             found = unit.get(field_to_get)
             if not found and not isinstance(found, str):
                 found = None
@@ -453,7 +468,7 @@ class PalvelukarttaImporter(Importer):
                                     str(unit_phone)).replace('\r\n', ' ').split())
 
                         # last_modified_time saving is currently not supported. Overridden by Place models save() function.
-                        '''
+                        """
                         # Fill in and parse the last modified time.
                         unit_last_modified = unit.get('last_modified_time') # etc. 2020-10-26T09:05:58.085358+02:00
                         if isinstance(unit_last_modified, str):
@@ -461,7 +476,7 @@ class PalvelukarttaImporter(Importer):
                             unit_last_modified = dateutil.parser.parse(unit_last_modified).replace(tzinfo=pytz.utc)
                         else:
                             unit_last_modified = None
-                        '''
+                        """
 
                         # Fill in the municipality (address locality).
                         unit_municipality = unit.get('municipality')
@@ -533,6 +548,7 @@ class PalvelukarttaImporter(Importer):
                         '''
 
     def remove_db_duplicates(self) -> None:
+        """Removes duplicates from the database."""
         all_objs = Place.objects.filter(data_source__in=['tpr', 'ptv', 'osm'])
         duplicates = []
         for obj in all_objs:
@@ -551,9 +567,30 @@ class PalvelukarttaImporter(Importer):
                     else:
                         duplicates.append(lang_obj)
 
+    def post_process(self) -> None:
+        """Removes all expired units."""
+        all_tprs = Place.objects.filter(data_source='tpr')
+        bm_now = BaseModel.now()
+        for tpr in all_tprs:
+            '''
+            Tries to remove all units that didn't get modified.
+            We assume this importer doesn't take longer than a day to execute.
+            '''
+            if (bm_now - tpr.last_modified_time) > (bm_now - self.importer_start_time):
+                logger.info(
+                    "Deleting unit %s because it has expired." % tpr.id)
+                try:
+                    tpr.delete()
+                except Exception as e:
+                    logger.warn(
+                        "Could not delete the unit: %s due to: %s" % (tpr.id, e))
+
     def handle(self) -> None:
+        """The core handler function."""
         obj_list = async_main()
         self.remove_db_duplicates()
         proc_time_frmt('Duplicate removal')
         self.process(obj_list=obj_list)
+        self.remove_db_duplicates()  # Double validation after name changes.
+        self.post_process()
         proc_time_frmt('Importer')
