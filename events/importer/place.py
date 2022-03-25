@@ -26,6 +26,7 @@ from django.utils.html import strip_tags
 from django.conf import settings
 from django.db import transaction
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
+from django.contrib.postgres.search import SearchVector
 
 
 # GeoDjango:
@@ -77,7 +78,8 @@ MUNICIPALITIES = {
 }
 # Per module logger
 logger = logging.getLogger(__name__)
-BASE_URL = "http://127.0.0.1:8000/api/v2/address/"
+BASE_URL = "https://testipalvelukartta.turku.fi/api/v2/address/"
+#BASE_URL = "http://127.0.0.1:8000/api/v2/address"
 # The source data is serializer into 4326
 SOURCE_SRS = SpatialReference(4326)
 TARGET_SRS = SpatialReference(settings.PROJECTION_SRID)
@@ -284,10 +286,33 @@ class PlaceImporter(Importer):
                     raise results
       
             end_time = datetime.now()
-            duration = end_time - self.start_time
+            duration = str(end_time - self.start_time)[:7]
             output_rate = str(self.places_imported / duration.total_seconds())[:5]
             logger.info(f"Duration: {duration}, Places imported {self.places_imported} ")
             logger.info(f"Output rate: {output_rate}")
+
+    def get_search_column(self, model, lang):
+        """
+        Reads the columns, config languages and weights from the model
+        to be indexed. Creates and returns a CombinedSearchVector, that
+        can be stored into the search_column.
+        """
+        search_column = None
+        columns = model.get_search_column_indexing(lang)
+        for column in columns:
+            if search_column:
+                search_column += SearchVector(column[0], config=column[1], weight=column[2])
+            else:
+                search_column = SearchVector(column[0], config=column[1], weight=column[2])
+
+        return search_column
+
+    def index_search_columns(self):
+        for lang in self.supported_languages:
+            key = "search_column_%s" % lang
+            logger.info(
+                f"{lang} Place indexed: {Place.objects.update(**{key: self.get_search_column(Place, lang)})}"
+            )
 
     def import_places(self):
         self.start_time = datetime.now()
@@ -296,8 +321,8 @@ class PlaceImporter(Importer):
             self.import_municipality(municipality)            
 
     def handle(self) -> None:
-        self.import_places()
-        # Call your functions here.
+        self.import_places()        
+        self.index_search_columns()        
         logger.info(f"Imported {self.places_imported} Places.")
         proc_time_frmt('Importer')
 
