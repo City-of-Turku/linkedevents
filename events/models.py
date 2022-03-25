@@ -495,8 +495,7 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         """
         if lang == "fi":
             return [  
-                ("name_fi", "finnish", "A"),
-              
+                ("name_fi", "finnish", "A"),              
             ]   
         elif lang == "sv":
             return [
@@ -505,11 +504,9 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         elif lang == "en":
             return [
                 ("name_en", "english", "A"),
-
             ]
         else:
             return []
-
 
     @transaction.atomic
     def save(self, *args, **kwargs):
