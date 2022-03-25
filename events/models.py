@@ -37,6 +37,10 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import (  # add the Postgres recommended GIN index
+    GinIndex,
+)
 from image_cropping import ImageRatioField
 from munigeo.models import AdministrativeDivision
 from notifications.models import render_notification_template, NotificationType, NotificationTemplateException
@@ -463,17 +467,49 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         db_index=True
     )
     n_events_changed = models.BooleanField(default=False, db_index=True)
-
-    class Meta:
+    search_column_fi = SearchVectorField(null=True)
+    search_column_sv = SearchVectorField(null=True)
+    search_column_en = SearchVectorField(null=True)
+    
+    class Meta:            
         verbose_name = _('place')
         verbose_name_plural = _('places')
         unique_together = (('data_source', 'origin_id'),)
+        indexes = (
+            GinIndex(fields=["search_column_fi"]),
+            GinIndex(fields=["search_column_sv"]),
+            GinIndex(fields=["search_column_en"]),
+        )
 
     def __unicode__(self):
         values = filter(lambda x: x, [
             self.street_address, self.postal_code, self.address_locality
         ])
         return u', '.join(values)
+
+    @classmethod
+    def get_search_column_indexing(cls, lang):
+        """
+        Defines the columns to be indexed to the search_column
+        ,config language and weight.
+        """
+        if lang == "fi":
+            return [  
+                ("name_fi", "finnish", "A"),
+              
+            ]   
+        elif lang == "sv":
+            return [
+                ("name_sv", "swedish", "A"),
+            ]
+        elif lang == "en":
+            return [
+                ("name_en", "english", "A"),
+
+            ]
+        else:
+            return []
+
 
     @transaction.atomic
     def save(self, *args, **kwargs):
