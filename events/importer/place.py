@@ -79,7 +79,6 @@ MUNICIPALITIES = {
 # Per module logger
 logger = logging.getLogger(__name__)
 BASE_URL = "https://testipalvelukartta.turku.fi/api/v2/address/"
-#BASE_URL = "http://127.0.0.1:8000/api/v2/address"
 # The source data is serializer into 4326
 SOURCE_SRS = SpatialReference(4326)
 TARGET_SRS = SpatialReference(settings.PROJECTION_SRID)
@@ -308,6 +307,7 @@ class PlaceImporter(Importer):
         return search_column
 
     def index_search_columns(self):
+        logger.info("Indexing search columns...")
         for lang in self.supported_languages:
             key = "search_column_%s" % lang
             logger.info(
