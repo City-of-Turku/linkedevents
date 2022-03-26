@@ -67,7 +67,7 @@ async def main(unit_pages: int) -> dict:
         tasks = []
         for page_no in range(1, unit_pages+1):
             # Testipalvelukartta needs turku VPN connection.
-            URL = "https://testipalvelukartta.turku.fi/api/v2/unit/?page=%s&page_size=50" % page_no
+            URL = "https://testipalvelukartta.turku.fi/api/v2/unit/?page=%s&page_size=100" % page_no
             tasks.append(fetch(session=session, URL=URL, id=page_no))
         try:
             res = await asyncio.gather(*tasks, return_exceptions=False)
@@ -94,7 +94,7 @@ def async_main(retry_count=3) -> dict:
         fetch = requests.get(url, headers=HEADERS)
         response = fetch.json()
         count = response["count"]
-        calc = math.modf(count/50)
+        calc = math.modf(count/100)
 
         if calc[0] != float(0):
             page_count = int(calc[1]+1)
@@ -283,18 +283,42 @@ class TestImporter(Importer):
                 return 2
 
     def process(self):
-        for _ in range(1, 800):
-            c = Place.objects.filter(data_source_id='osoite').filter(
-                **{"name_fi__regex": r'^%s' % 'Yli'})[:1]
-            if not c:
-                continue
-            else:
-                for o in c:
-                    pass
+        logger.info("start")
+        for idx, units in enumerate(self.obj_list, start=1):
+            print(idx)
+            for unit in units:
+                result = self.get_json_fields(unit=unit)
+                if result in (1, 2):
+                    unit_street_fi = unit['street_address'].get('fi')
+                    if unit_street_fi:
+                        ref = re.findall(r'[0-9]+', unit_street_fi)
+                        if ref:
+                            n = unit_street_fi.split(ref[0])[0]
+                            # Patch regex errors.
+                            for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
+                                n = n.replace(ch, '')
+                            n = n.strip()
+                            c = Place.objects.filter(data_source_id='osoite').filter(
+                                **{"name_fi__regex": r'^%s' % n})[:1]
+                            if not c:
+                                continue
+                            else:
+                                for o in c:
+                                    pass
+                        '''
+                        c = Place.objects.filter(data_source_id='osoite').filter(
+                            **{"name_fi__regex": r'^%s' % 'Yli'})[:1]
+                        if not c:
+                            continue
+                        else:
+                            for o in c:
+                                pass
+                        logger.info("end")
+                        '''
         logger.info("end")
 
     def handle(self) -> None:
         """The core handler function."""
-        #self.obj_list = async_main()
+        self.obj_list = async_main()
         self.process()
         proc_time_frmt('Importer')
