@@ -307,7 +307,10 @@ class PalvelukarttaImporter(Importer):
     def get_addresses(self) -> Tuple[dict, dict]:
         """Processing phase for getting addresses."""
         # Get all street addresses.
-        qset = Place.objects.filter(data_source__id="osoite")
+        print("get")
+        qset = Place.objects.filter(
+            data_source__id="osoite")
+        print("finished get")
         existing_addresses = {}
         other_addresses = {}
         for address_obj in qset:
