@@ -41,6 +41,49 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0',
 }
 
+# List of replacements for streets.
+REPLACEMENTS = {
+    'rakennus': 'byggnad',
+    ' rak ': ' byg ',
+    ' rak.': ' byg.',
+    'porras': 'trappa',
+    'kerros': 'våning',
+    'rappu': 'trappa',
+    'krs': 'vån',
+    'sairaala': 'sjukhus',
+}
+
+# List of supported municipalities.
+MUNICIPALITIES = {
+    'AURA': ('Aura', 'Aura'),
+    'KAARINA': ('Kaarina', 'S:t Karins'),
+    'KOSKI TL': ('Koski Tl', 'Koskis'),
+    'KUSTAVI': ('Kustavi', 'Gustavs'),
+    'KEMIÖNSAARI': ('Kemiönsaari', 'Kimitoön'),
+    'LAITILA': ('Laitila', 'Letala'),
+    'LIETO': ('Lieto', 'Lundo'),
+    'LOIMAA': ('Loimaa', 'Loimaa'),
+    'PARAINEN': ('Parainen', 'Pargas'),
+    'MARTTILA': ('Marttila', 'S:t Mårtens'),
+    'MASKU': ('Masku', 'Masko'),
+    'MYNÄMÄKI': ('Mynämäki', 'Virmo'),
+    'NAANTALI': ('Naantali', 'Nådendal'),
+    'NOUSIAINEN': ('Nousiainen', 'Nousis'),
+    'ORIPÄÄ': ('Oripää', 'Oripää'),
+    'PAIMIO': ('Paimio', 'Pemar'),
+    'PYHÄRANTA': ('Pyhäranta', 'Pyhäranta'),
+    'PÖYTYÄ': ('Pöytyä', 'Pöytis'),
+    'RAISIO': ('Raisio', 'Reso'),
+    'RUSKO': ('Rusko', 'Rusko'),
+    'SALO': ('Salo', 'Salo'),
+    'SAUVO': ('Sauvo', 'Sagu'),
+    'SOMERO': ('Somero', 'Somero'),
+    'TAIVASSALO': ('Taivassalo', 'Tövsala'),
+    'TURKU': ('Turku', 'Åbo'),
+    'UUSIKAUPUNKI': ('Uusikaupunki', 'Nystad'),
+    'VEHMAA': ('Vehmaa', 'Vemo'),
+}
+
 
 async def fetch(session: Any, URL: str, id: int) -> dict:
     """Gets the data asynchronously."""
@@ -293,16 +336,6 @@ class TestImporter(Importer):
 
         logger.info("start")
         # Risky place replacements.
-        replacements = {
-            'rakennus': 'byggnad',
-            ' rak ': ' byg ',
-            ' rak.': ' byg.',
-            'porras': 'trappa',
-            'kerros': 'våning',
-            'rappu': 'trappa',
-            'krs': 'vån',
-            'sairaala': 'sjukhus',
-        }
         for idx, units in enumerate(self.obj_list, start=1):
             print(idx)
             for unit in units:
@@ -311,16 +344,19 @@ class TestImporter(Importer):
                     finnish_street = __format_street(
                         unit['street_address'].get('fi'))
                     swedish_street = None
+                    muni = unit.get('municipality')
                     if finnish_street:
                         # Patch regex errors.
                         for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
                             finnish_street = finnish_street.replace(ch, '')
                         finnish_street = finnish_street.strip()
-                        c = Place.objects.filter(data_source_id='osoite').filter(
+                        if isinstance(muni, str):
+                            muni = muni.upper()
+                            if muni in MUNICIPALITIES:
+                                muni = MUNICIPALITIES[muni][0]
+                        c = Place.objects.filter(data_source_id='osoite', address_locality_fi=muni).filter(
                             **{"name_fi__regex": r'^%s' % finnish_street})[:1]
-                        if not c:
-                            continue
-                        else:
+                        if c:
                             for o in c:
                                 swedish_street = __format_street(
                                     street=o.name_sv)
@@ -328,7 +364,7 @@ class TestImporter(Importer):
                                     swedish_street = swedish_street.strip()
                                     swedish_street = unit['street_address']['fi'].replace(
                                         finnish_street, swedish_street)
-                                    for r, v in replacements.items():
+                                    for r, v in REPLACEMENTS.items():
                                         swedish_street = swedish_street.replace(
                                             r, v)
                         finnish_street = unit['street_address']['fi']
