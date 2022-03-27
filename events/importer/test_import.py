@@ -283,38 +283,56 @@ class TestImporter(Importer):
                 return 2
 
     def process(self):
+        def __format_street(street: str) -> str:
+            """Gets everything before the number in a street."""
+            if street:
+                oref = re.findall(r'[0-9]+', street)
+                if oref:
+                    s = street.split(oref[0])[0]
+                    return s
+
         logger.info("start")
+        # Risky place replacements.
+        replacements = {
+            'rakennus': 'byggnad',
+            ' rak ': ' byg ',
+            ' rak.': ' byg.',
+            'porras': 'trappa',
+            'kerros': 'våning',
+            'rappu': 'trappa',
+            'krs': 'vån',
+            'sairaala': 'sjukhus',
+        }
         for idx, units in enumerate(self.obj_list, start=1):
             print(idx)
             for unit in units:
                 result = self.get_json_fields(unit=unit)
                 if result in (1, 2):
-                    unit_street_fi = unit['street_address'].get('fi')
-                    if unit_street_fi:
-                        ref = re.findall(r'[0-9]+', unit_street_fi)
-                        if ref:
-                            n = unit_street_fi.split(ref[0])[0]
-                            # Patch regex errors.
-                            for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
-                                n = n.replace(ch, '')
-                            n = n.strip()
-                            c = Place.objects.filter(data_source_id='osoite').filter(
-                                **{"name_fi__regex": r'^%s' % n})[:1]
-                            if not c:
-                                continue
-                            else:
-                                for o in c:
-                                    pass
-                        '''
+                    finnish_street = __format_street(
+                        unit['street_address'].get('fi'))
+                    swedish_street = None
+                    if finnish_street:
+                        # Patch regex errors.
+                        for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
+                            finnish_street = finnish_street.replace(ch, '')
+                        finnish_street = finnish_street.strip()
                         c = Place.objects.filter(data_source_id='osoite').filter(
-                            **{"name_fi__regex": r'^%s' % 'Yli'})[:1]
+                            **{"name_fi__regex": r'^%s' % finnish_street})[:1]
                         if not c:
                             continue
                         else:
                             for o in c:
-                                pass
-                        logger.info("end")
-                        '''
+                                swedish_street = __format_street(
+                                    street=o.name_sv)
+                                if swedish_street:
+                                    swedish_street = swedish_street.strip()
+                                    swedish_street = unit['street_address']['fi'].replace(
+                                        finnish_street, swedish_street)
+                                    for r, v in replacements.items():
+                                        swedish_street = swedish_street.replace(
+                                            r, v)
+                        finnish_street = unit['street_address']['fi']
+                    print(finnish_street, swedish_street)
         logger.info("end")
 
     def handle(self) -> None:
