@@ -253,6 +253,8 @@ class TestImporter(Importer):
         ml_pass = False
         for lang in ('fi', 'sv', 'en'):
             lang_val = field_name.get(lang)
+            if lang == 'fi' and not isinstance(lang_val, str):
+                return
             if isinstance(lang_val, str):
                 lang_val = ' '.join(strip_tags(
                     lang_val).replace('\r\n', ' ').split())
@@ -279,7 +281,7 @@ class TestImporter(Importer):
         data = {(val if isinstance(unit.get(val), valtype) else None): unit.get(
             val) for val, valtype in dtypes.items()}  # Creates the template.
         if data.get('id') and data.get('name') and data.get('street_address') or data.get('location'):
-            has_street = has_location = None
+            #has_street = has_location = None
 
             # Validate & format Unit ID.
             if not data['id'] > -1:
@@ -296,11 +298,12 @@ class TestImporter(Importer):
                 # Remove duplicates.
                 self.__multilang_remove_duplicates(field_name=unit['name'])
 
-            # Validate & parse street address into usable form.
+                # Validate & parse street address into usable form.
             if data.get('street_address'):
                 if self.__multilang_validator(field_name=unit['street_address']):
                     # We assume street_name isn't just an empty dict and contains valid data.
-                    has_street = True
+                    #has_street = True
+                    pass
 
             # Validate & re-assign location.
             if data.get('location'):
@@ -317,13 +320,80 @@ class TestImporter(Importer):
                             pnt.transform(CoordTransform(SpatialReference(
                                 4326), SpatialReference(settings.PROJECTION_SRID)))
                             unit['location'] = pnt
-                            has_location = True
-
+                            #has_location = True
+            return True
+            '''
             # Return the scenario.
             if has_street and has_location:
                 return 1
             if has_street:
                 return 2
+            '''
+
+    def __request_name_lang(self, new_fields: dict, lang: str):
+        """Gets rid of duplicates."""
+        if isinstance(new_fields['name'].get(lang), str):
+            lang_obj = Place.objects.filter(data_source__in=['tpr', 'ptv', 'osm']).filter(
+                **{"name_%s__regex" % lang: r'^%s' % new_fields['name'][lang]}).first()
+            if lang_obj:
+                setattr(lang_obj, 'name_%s' % lang, None)
+                lang_obj.save()
+
+    def __map_obj(self, obj: Any, new_fields: dict) -> Any:
+        """Method for mapping new object fields."""
+        obj.name = obj.name_fi = new_fields['name']['fi']
+        self.__request_name_lang(new_fields=new_fields, lang='sv')
+        obj.name_sv = new_fields['name'].get('sv')
+        self.__request_name_lang(new_fields=new_fields, lang='en')
+        obj.name_en = new_fields['name'].get('en')
+
+        if new_fields.get('description'):
+            if self.__multilang_validator(field_name=new_fields['description']):
+                obj.description = obj.description_fi = new_fields['description']['fi']
+                obj.description_sv = new_fields['description'].get('sv')
+                obj.description_en = new_fields['description'].get('en')
+
+        if new_fields.get('street_address'):
+            obj.street_address = obj.street_address_fi = new_fields['street_address'].get(
+                'fi')
+            obj.street_address_sv = new_fields['street_address'].get('sv')
+            obj.street_address_en = new_fields['street_address'].get('en')
+
+        obj.telephone = obj.telephone_fi = new_fields.get('phone')
+
+        if isinstance(new_fields.get('municipality'), dict):
+            obj.address_locality = obj.address_locality_fi = new_fields['municipality'].get(
+                'fi')
+            obj.address_locality_sv = new_fields['municipality'].get('sv')
+
+        obj.postal_code = new_fields.get('address_zip')
+        obj.publisher_id = 'tpr:1100'
+        obj.position = new_fields.get('location')
+        obj.email = new_fields.get('email')
+
+    def save(self, data: dict) -> None:
+        fi = Place.objects.filter(data_source__in=['tpr', 'ptv', 'osm']).filter(
+            **{"name_fi__regex": r'^%s' % data['name']['fi']}).first()
+        if fi:
+            try:
+                self.__map_obj(obj=fi, new_fields=data)
+                fi.save()
+                logger.info("Updated existing.")
+            except Exception as e:
+                logger.error("Error while updating existing unit: %s" % e)
+                pass
+        else:
+            print("New!", data['name']['fi'])
+            try:
+                place_obj = Place(data_source=getattr(self, 'data_source_tpr'))
+                self.__map_obj(obj=place_obj, new_fields=data)
+                place_obj.id = 'tpr:%s' % data['id']
+                place_obj.origin_id = data['id']
+                place_obj.save()
+                logger.info("Created new unit.")
+            except Exception as e:
+                logger.error("Error while creating new unit: %s" % e)
+                pass
 
     def process(self):
         def __format_street(street: str) -> str:
@@ -339,27 +409,28 @@ class TestImporter(Importer):
         for idx, units in enumerate(self.obj_list, start=1):
             print(idx)
             for unit in units:
-                result = self.get_json_fields(unit=unit)
-                if result in (1, 2):
-                    finnish_street = __format_street(
-                        unit['street_address'].get('fi'))
-                    swedish_street = None
-                    muni = unit.get('municipality')
-                    if finnish_street:
-                        # Patch regex errors.
-                        for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
-                            finnish_street = finnish_street.replace(ch, '')
-                        finnish_street = finnish_street.strip()
-                        if isinstance(muni, str):
-                            muni = muni.upper()
-                            if muni in MUNICIPALITIES:
-                                muni = MUNICIPALITIES[muni][0]
-                        c = Place.objects.filter(data_source_id='osoite', address_locality_fi=muni).filter(
-                            **{"name_fi__regex": r'^%s' % finnish_street})[:1]
-                        if c:
-                            for o in c:
+                if self.get_json_fields(unit=unit):
+                    if unit.get('street_address'):
+                        finnish_street = __format_street(
+                            unit['street_address'].get('fi'))
+                        if finnish_street:
+                            # Patch regex errors.
+                            for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
+                                finnish_street = finnish_street.replace(ch, '')
+                            finnish_street = finnish_street.strip()
+                            muni = unit.get('municipality')
+                            if isinstance(muni, str):
+                                muni = muni.upper()
+                                if muni in MUNICIPALITIES:
+                                    unit['municipality'] = {}
+                                    unit['municipality'].update(
+                                        {'fi': MUNICIPALITIES[muni][0], 'sv': MUNICIPALITIES[muni][1]})
+                                    muni = MUNICIPALITIES[muni][0]
+                            c = Place.objects.filter(data_source_id='osoite', address_locality_fi=muni).filter(
+                                **{"name_fi__regex": r'^%s' % finnish_street}).first()
+                            if c:
                                 swedish_street = __format_street(
-                                    street=o.name_sv)
+                                    street=c.name_sv)
                                 if swedish_street:
                                     swedish_street = swedish_street.strip()
                                     swedish_street = unit['street_address']['fi'].replace(
@@ -367,8 +438,10 @@ class TestImporter(Importer):
                                     for r, v in REPLACEMENTS.items():
                                         swedish_street = swedish_street.replace(
                                             r, v)
-                        finnish_street = unit['street_address']['fi']
-                    print(finnish_street, swedish_street)
+                                unit['street_address'].update(
+                                    {'sv': swedish_street})
+                    self.save(data=unit)
+
         logger.info("end")
 
     def handle(self) -> None:
