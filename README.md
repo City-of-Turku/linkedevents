@@ -53,16 +53,14 @@ If you wish to use locations, addresses and events data from the Helsinki capita
 and keywords to be present. However, UI code should be easily adaptable to your own city if you have an OAuth2 authentication server present
 
 
-Manual installation of Linked Events on physical or virtual machine:
+## Manual installation of Linked Events on physical or virtual machine:
 
-	Install required software and dependencies:
-		
-install following following packages with your distros package manager need to run Linked Events on your server
+Install following packages with your distros package manager
 ```bash
 sudo apt install postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
 ```
 
-Preparing your PostgreSQL:
+# Preparing your PostgreSQL:
 	
 Generate required locales
 ```bash
@@ -82,11 +80,10 @@ Create extensions for the database
 sudo -u postgres psql linkedevents -c "CREATE EXTENSION postgis;"
 sudo -u postgres psql linkedevents -c "CREATE EXTENSION hstore;"
 ```
-If you wish to install Linkedevents without any Helsinki specific data (an empty database), and instead customize everything for your own city, you have a working install right now.
 
-The last steps are needed if you wish to use location, address or event data from the Helsinki metropolitan region, or if you wish to run the Helsinki UI (https://linkedevents.hel.fi) from https://github.com/City-of-Helsinki/linkedevents-ui. Currently, the UI is specific to Helsinki and requires the general Finnish ontology as well as additional Helsinki specific audiences and keywords to be present, though its code should be easily adaptable to your own city if you have an OAuth2 authentication server present.
 
-The commands below are documented in more detail in [linked-events-importers.md](./linked-events-importers.md#linked-events-importers-and-commands).
+
+
 
 ```bash
 cd $INSTALL_BASE/linkedevents
