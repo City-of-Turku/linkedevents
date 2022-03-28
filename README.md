@@ -113,27 +113,30 @@ Additional changes to language fields according to settings.LANGUAGES
 python manage.py sync_translation_fields
 ```
 After this you have a very basic installation of Linked Events ready,
-but it's recommended to run at least some of the supporter importers if you
+but it's recommended to run at least some of the supported importers if you
 want to have all of the features working.
 
 ### Use importers to add installation specific data:
 
 ```bash
-#YSO(General Finnish Ontology)-importer that adds all the concepts to the database for further use as keywords for different things
+#YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies to the database for further use.
+#A large part of the Linked Events and it's features are built on top of YSO so this importer should be used in all installations.
 python manage.py event_import ontology
 
-#TSL-sanalista (Turun sanalista)
+#TSL-wordlist(Turun sanalista)-importer adds an additional City-of-Turku specific wordlist that is used by some of the keyword set importers
+#Use this if you don't plan on using your own keyword sets based on YSO or your own wordlists.
 python manage.py event_import tsl --all
 
-#Add keyword set to display in the UI event audience selection 
-python manage.py add_tku_audience
+  #Add a new keyword set to display in the UI event audience selection
+  #!Based on TSL-wordlist so import that first!
+  python manage.py add_tku_audience
 
-#Add keyword set to display in the UI main category selections
-python manage.py add_tku_topics_by_content
+  #Add keyword set to display in the UI main category selections
+  python manage.py add_tku_topics_by_content
 
-python manage.py add_tku_topics_by_type
-		
-python manage.py add_tku_hobbytopics
+  python manage.py add_tku_topics_by_type
+      
+  python manage.py add_tku_hobbytopics
 
 #Import places from Turku Servicemap API
 python manage.py event_import tpr --places
