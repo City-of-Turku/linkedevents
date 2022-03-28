@@ -119,8 +119,8 @@ want to have all of the features working.
 ### Use importers to add installation specific data:
 
 ```bash
-#YSO(General Finnish Ontology)-importer that adds all the concepts and their 
-#alt labels and hierarchies to the database for further use.
+#YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies 
+#to the database for further use.
 #A large part of the Linked Events and it's features are built on top of YSO 
 #so this importer should be used in all installations.
 python manage.py event_import ontology
