@@ -60,7 +60,7 @@ Install following packages with your distros package manager
 sudo apt install postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
 ```
 
-# Preparing your PostgreSQL:
+### Preparing your PostgreSQL:
 	
 Generate required locales
 ```bash
