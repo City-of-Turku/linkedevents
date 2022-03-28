@@ -119,27 +119,26 @@ want to have all of the features working.
 ### Use importers to add installation specific data:
 
 ```bash
-#YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies 
-#to the database for further use.
-#A large part of the Linked Events and it's features are built on top of YSO 
-#so this importer should be used in all installations.
+#YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies.
+#A large part of Linked Events features are built on top of YSO, this importer should be used in all installations.
 python manage.py event_import ontology
 
-#TSL-wordlist(Turun sanalista)-importer adds an additional City-of-Turku 
-#specific wordlist that is used by some of the keyword set importers.
-#Use this if you don't plan on using your own keyword sets based on YSO or 
-#your own wordlists.
+#TSL-wordlist(Turun sanalista)-importer adds a City-of-Turku specific wordlist that is used by some of the keyword set importers.
+#Use this if you don't plan on using your own keyword sets based on YSO or your own wordlists.
 python manage.py event_import tsl --all
 
   #Add a new keyword set to display in the UI event audience selection
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_audience
 
-  #Add keyword set to display in the UI main category selections
+  #Add a new keyword set to display in the UI main category selections
+  #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_topics_by_content
 
+  #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_topics_by_type
-      
+  
+  #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_hobbytopics
 
 #Import places from Turku Servicemap API
