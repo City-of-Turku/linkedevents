@@ -80,8 +80,28 @@ Create extensions for the database
 sudo -u postgres psql linkedevents -c "CREATE EXTENSION postgis;"
 sudo -u postgres psql linkedevents -c "CREATE EXTENSION hstore;"
 ```
+### Preparing your local repository:
 
-
+Clone your repository
+```bash
+git clone https://github.com/City-of-Turku/linkedevents.git
+```
+Create a virtual environment for your python
+```bash
+virtualenv -p python3 venv
+```
+Activate your virtual environment
+```bash
+source venv/bin/activate
+```
+Install requirements.txt
+```bash
+pip install -r requirements.txt
+```
+Install requirements-dev.txt
+```bash
+pip install -r requirements-dev.txt
+```
 
 
 
