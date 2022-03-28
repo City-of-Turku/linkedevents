@@ -57,7 +57,7 @@ and keywords to be present. However, UI code should be easily adaptable to your 
 
 Install following packages with your distros package manager
 ```bash
-sudo apt install postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
+postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
 ```
 
 ### Preparing your PostgreSQL:
