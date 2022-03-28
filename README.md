@@ -119,12 +119,16 @@ want to have all of the features working.
 ### Use importers to add installation specific data:
 
 ```bash
-#YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies to the database for further use.
-#A large part of the Linked Events and it's features are built on top of YSO so this importer should be used in all installations.
+#YSO(General Finnish Ontology)-importer that adds all the concepts and their 
+#alt labels and hierarchies to the database for further use.
+#A large part of the Linked Events and it's features are built on top of YSO 
+#so this importer should be used in all installations.
 python manage.py event_import ontology
 
-#TSL-wordlist(Turun sanalista)-importer adds an additional City-of-Turku specific wordlist that is used by some of the keyword set importers
-#Use this if you don't plan on using your own keyword sets based on YSO or your own wordlists.
+#TSL-wordlist(Turun sanalista)-importer adds an additional City-of-Turku 
+#specific wordlist that is used by some of the keyword set importers.
+#Use this if you don't plan on using your own keyword sets based on YSO or 
+#your own wordlists.
 python manage.py event_import tsl --all
 
   #Add a new keyword set to display in the UI event audience selection
