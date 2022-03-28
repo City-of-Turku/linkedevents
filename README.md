@@ -102,8 +102,16 @@ Install requirements-dev.txt
 ```bash
 pip install -r requirements-dev.txt
 ```
-
-
+### Fill your database with included migrations:
+	
+Run basic migrations
+```bash
+python manage.py migrate
+```
+Additional changes to language fields according to settings.LANGUAGES
+```bash
+python manage.py sync_translation_fields
+```
 
 ```bash
 cd $INSTALL_BASE/linkedevents
