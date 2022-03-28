@@ -1,17 +1,10 @@
 # Linked Events
 
-[![Build status](https://travis-ci.org/City-of-Helsinki/linkedevents.svg)](https://travis-ci.org/City-of-Helsinki/linkedevents)
-[![codecov](https://codecov.io/gh/City-of-Helsinki/linkedevents/branch/master/graph/badge.svg)](https://codecov.io/gh/City-of-Helsinki/linkedevents)
-[![Requirements](https://requires.io/github/City-of-Helsinki/linkedevents/requirements.svg?branch=master)](https://requires.io/github/City-of-Helsinki/linkedevents/requirements/?branch=master)
-[![Gitter](https://img.shields.io/gitter/room/City-of-Helsinki/heldev.svg?maxAge=2592000)](https://gitter.im/City-of-Helsinki/heldev)
-
 ![High-level diagram of Linked Events](./assets/Linked_Events.jpg?raw=true)
-
 
 #### TL;DR => Linked Events is a REST API which allows you to set up an _**event**_* publication hub.
 
 \*_**event**_  here means a happening where people get together and do something.
-
 
 Linked Events is event information:
 
@@ -30,28 +23,6 @@ Therefore, instructions written in this README.md should be written accordingly.
 ## Contributing
 
 The best way to contribute is to open a new PR for discussion. We strive to be able to support various cities with various use cases, so suggestions and new features (as long as they fit in with existing functionality) are welcome.
-
-## How to setup your local development environment
-If all you want is a barebone application to work with for your own city:
-
-* Start django application and database server:
-  ```
-  docker-compose up
-  ```
-
-* Access application on [localhost:8000](http://localhost:8000)
-
-* You are done 🔥
-
-If you wish to use locations, addresses and events data from the Helsinki capital region:
-
-* Read [linked-events-importers.md](./linked-events-importers.md#linked-events-importers-and-commands) and decide the importers or commands you would like to use.
-
-* You can then serve the [UI for Linked Events API](https://github.com/City-of-Helsinki/linkedevents-ui) for example by setting authentication keys to `local_settings.py`
-
-* UI app is specific to Helsinki at the moment and requires general Finnish ontology as well as additional Helsinki specific audiences
-and keywords to be present. However, UI code should be easily adaptable to your own city if you have an OAuth2 authentication server present
-
 
 ## Manual installation of Linked Events on physical or virtual machine:
 
@@ -127,24 +98,28 @@ python manage.py event_import ontology
 #Use this if you don't plan on using your own keyword sets based on YSO or your own wordlists.
 python manage.py event_import tsl --all
 
-  #Add a new keyword set to display in the UI event audience selection
+  #Add a new keyword set to display in the UI general audience selection
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_audience
 
-  #Add a new keyword set to display in the UI main category selections
+  #Add a new keyword set to display in the UI event category selections
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_topics_by_content
 
+  #Add a new keyword set to display in the UI event category selections
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_topics_by_type
   
+  #Add a new keyword set to display in the UI hobby category selections
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_hobbytopics
 
 #Import places from Turku Servicemap API
+#It's recommended to use at least one of the place importers when developing Linked Events.
 python manage.py event_import tpr --places
 
 #Import Turku-region street addresses from api.turku.fi
+#It's recommended to use at least one of the place importers when developing Linked Events.
 python manage.py event_import osoite --places
 
 #Import City of Turku hierarchical organization for UI user rights management
@@ -157,8 +132,8 @@ python manage.py event_import payment_method_defaults
 #! Before importing, create media\images folder in the main project folder
 python manage.py event_import turku_image_bank
 		
-		#Import event data from the old Turku events calendar.
-(v)		python manage.py event_import turku_old_events --events
+#Import event data from the old Turku events calendar.
+python manage.py event_import turku_old_events --events
 ```
 
 The last command installs the `helevents/templates/rest_framework/api.html` template,
