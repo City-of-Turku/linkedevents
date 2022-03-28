@@ -136,13 +136,6 @@ python manage.py event_import turku_image_bank
 python manage.py event_import turku_old_events --events
 ```
 
-The last command installs the `helevents/templates/rest_framework/api.html` template,
-which contains Helsinki event data summary and license. You may customize the template
-for your favorite city by creating `your_favorite_city/templates/rest_framework/api.html`.
-For further erudition, take a look at the DRF documentation on [customizing the browsable API](http://www.django-rest-framework.org/topics/browsable-api/#customizing)
-
-After this, everything but search endpoint (/search) is working. See [search](#search)
-
 Production notes
 ----------------
 
