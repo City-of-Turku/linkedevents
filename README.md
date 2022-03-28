@@ -112,31 +112,47 @@ Additional changes to language fields according to settings.LANGUAGES
 ```bash
 python manage.py sync_translation_fields
 ```
+After this you have a very basic installation of Linked Events ready,
+but it's recommended to run at least some of the supporter importers if you
+want to have all of the features working.
+
+### Use importers to add installation specific data:
 
 ```bash
-cd $INSTALL_BASE/linkedevents
-# Import general Finnish ontology (used by Helsinki UI and Helsinki events)
-python manage.py event_import yso --all
-# Add keyword set to display in the UI event audience selection
-python manage.py add_helsinki_audience
-# Add keyword set to display in the UI main category selection
-python manage.py add_helsinki_topics
-# Import places from Helsinki metropolitan region service registry (used by events from following sources)
-python manage.py event_import tprek --places
-# Import places from Helsinki metropolitan region address registry (used as fallback locations)
+#YSO(General Finnish Ontology)-importer that adds all the concepts to the database for further use as keywords for different things
+python manage.py event_import ontology
+
+#TSL-sanalista (Turun sanalista)
+python manage.py event_import tsl --all
+
+#Add keyword set to display in the UI event audience selection 
+python manage.py add_tku_audience
+
+#Add keyword set to display in the UI main category selections
+python manage.py add_tku_topics_by_content
+
+python manage.py add_tku_topics_by_type
+		
+python manage.py add_tku_hobbytopics
+
+#Import places from Turku Servicemap API
+python manage.py event_import tpr --places
+
+#Import Turku-region street addresses from api.turku.fi
 python manage.py event_import osoite --places
-# Import events from Helsinki metropolitan region libraries
-python manage.py event_import helmet --events
-# Import events from Espoo
-python manage.py event_import espoo --events
-# Import City of Helsinki hierarchical organization for UI user rights management
-python manage.py import_organizations https://api.hel.fi/paatos/v1/organization/ -s helsinki:ahjo
-# Import municipalities in Finland
-python manage.py geo_import finland --municipalities
-# Import districts in Helsinki
-python manage.py geo_import helsinki --divisions
-# install API frontend templates:
-python manage.py install_templates helevents
+
+#Import City of Turku hierarchical organization for UI user rights management
+python manage.py event_import turku_organization
+
+#Import default payment methods
+python manage.py event_import payment_method_defaults
+				
+#Import Turku spesific images for Linked Events image bank.
+#! Before importing, create media\images folder in the main project folder
+python manage.py event_import turku_image_bank
+		
+		#Import event data from the old Turku events calendar.
+(v)		python manage.py event_import turku_old_events --events
 ```
 
 The last command installs the `helevents/templates/rest_framework/api.html` template,
