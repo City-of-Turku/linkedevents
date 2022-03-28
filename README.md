@@ -53,44 +53,35 @@ If you wish to use locations, addresses and events data from the Helsinki capita
 and keywords to be present. However, UI code should be easily adaptable to your own city if you have an OAuth2 authentication server present
 
 
-Development installation on physical or virtual machine
-----------------------------
-These instructions assume an $INSTALL_BASE, like so:
+Manual installation of Linked Events on physical or virtual machine:
+
+	Install required software and dependencies:
+		
+		  #install following following packages with your distros package manager need to run Linked Events on your server
 ```bash
-INSTALL_BASE=$HOME/linkedevents
-```
-If you've already cloned this repository, just move repository root into $INSTALL_BASE/linkedevents. Otherwise just clone the repository, like so:
-```bash
-git clone https://github.com/City-of-Helsinki/linkedevents.git $INSTALL_BASE/linkedevents
-```
-Prepare Python 3.x virtualenv using your favorite tools and activate it. Plain virtualenv is like so:
-```bash
-virtualenv -p python3 $INSTALL_BASE/venv
-source $INSTALL_BASE/venv/bin/activate
-```
-Install required Python packages into the virtualenv
-```bash
-cd $INSTALL_BASE/linkedevents
-pip install -r requirements.txt
-```
-Create the database, like so: (we have only tested on PostgreSQL)
-```bash
-cd $INSTALL_BASE/linkedevents
-sudo -u postgres createuser -R -S linkedevents
-# Following is for US locale, we are not certain whether Linkedevents
-# behaves differently depending on DB collation & ctype
-#sudo -u postgres createdb -Olinkedevents linkedevents
-# This is is for Finnish locale
-sudo -u postgres createdb -Olinkedevents -Ttemplate0 -lfi_FI.UTF-8 linkedevents
-# Create extensions in the database
-sudo -u postgres psql linkedevents -c "CREATE EXTENSION postgis;"
-sudo -u postgres psql linkedevents -c "CREATE EXTENSION hstore;"
-# This fills the database with a basic skeleton
-python manage.py migrate
-# This adds language fields based on settings.LANGUAGES (which may be missing in external dependencies)
-python manage.py sync_translation_fields
+(S)		sudo apt install postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
 ```
 
+	Preparing your PostgreSQL:
+	
+		#Generate required locales
+```bash
+(S)		sudo locale-gen fi_FI.UTF-8
+(S)		sudo systemctl restart postgresql
+```		
+		#Create a new role in postgresql
+```bash
+(S)		sudo -u postgres createuser -R -S linkedevents
+```
+		#Create a new database in postgresql
+```bash
+(S)		sudo -u postgres createdb -O linkedevents -T template0 -l fi_FI.UTF-8 linkedevents
+```
+		#Create extensions for the database
+```bash
+(S)		sudo -u postgres psql linkedevents -c "CREATE EXTENSION postgis;"
+(S)		sudo -u postgres psql linkedevents -c "CREATE EXTENSION hstore;"
+```
 If you wish to install Linkedevents without any Helsinki specific data (an empty database), and instead customize everything for your own city, you have a working install right now.
 
 The last steps are needed if you wish to use location, address or event data from the Helsinki metropolitan region, or if you wish to run the Helsinki UI (https://linkedevents.hel.fi) from https://github.com/City-of-Helsinki/linkedevents-ui. Currently, the UI is specific to Helsinki and requires the general Finnish ontology as well as additional Helsinki specific audiences and keywords to be present, though its code should be easily adaptable to your own city if you have an OAuth2 authentication server present.
