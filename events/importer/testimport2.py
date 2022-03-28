@@ -19,6 +19,8 @@ from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email, URLValidator
 
 # GeoDjango:
 from django.contrib.gis.db.models.functions import Distance
@@ -245,7 +247,17 @@ class TestImporter(Importer):
         proc_time_frmt('Setup')
         self.handle()
 
+    def __format_street(self, street_name: str) -> str:
+        """Method for getting the street name only."""
+        street_num = re.findall(r'[0-9]+', street_name)
+        if street_num:
+            street_name = street_name.split(street_num[0])[0].strip()
+        else:
+            street_name = street_name.split(',')[0].strip()
+        return street_name
+
     def build_data(self, unit: dict) -> dict:
+        """Builds and processes the data."""
         data = {
             'ID': None,
             'ORIGIN_ID': None,
@@ -254,6 +266,7 @@ class TestImporter(Importer):
             'DESCRIPTION': {'fi': None, 'sv': None, 'en': None},
             'STREET_ADDRESS': {'fi': None, 'sv': None, 'en': None},
             'ADDRESS_LOCALITY': {'fi': None, 'sv': None, 'en': None},
+            'INFO_URL': {'fi': None, 'sv': None, 'en': None},
             'POSITION': None,
             'EMAIL': None,
             'TELEPHONE': None,
@@ -267,6 +280,7 @@ class TestImporter(Importer):
                 data['ORIGIN_ID'] = unit['id']
 
         if not isinstance(data['ID'], str):
+            logger.error('Invalid unit ID. Skipping...')
             return None
 
         # Get name:
@@ -280,9 +294,11 @@ class TestImporter(Importer):
                         data['NAME'][lang] = name
 
         if not any(data['NAME'].values()):
+            logger.error(
+                'No valid names for unit: %s found. Skipping...' % data['ID'])
             return None
 
-        # Get descrioption:
+        # Get description:
         if isinstance(unit.get('description'), dict):
             descriptions = []
             for lang in ('fi', 'sv', 'en'):
@@ -294,7 +310,89 @@ class TestImporter(Importer):
                             description).replace('\r\n', ' ').split()).strip()
                         data['DESCRIPTION'][lang] = description
 
-        # Get street address:
+        # Get municipality:
+        if isinstance(unit.get('municipality'), str):
+            muni = unit['municipality'].upper()
+            if muni in MUNICIPALITIES:
+                for idx, lang in enumerate(('fi', 'sv')):
+                    data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
+
+        # Get street:
+        if isinstance(unit.get('street_address'), dict):
+            if isinstance(unit['street_address'].get('fi'), str):
+                street = self.__format_street(
+                    street_name=unit['street_address']['fi'])
+                # Safeguard from regex manipulation:
+                for ch in ['\\', '`', '*', '_', '{', '}', '[', ']', '(', ')', '>', '#', '+', '-', '.', '!', '$', '\'']:
+                    street = street.replace(ch, '')
+                data['STREET_ADDRESS']['fi'] = unit['street_address']['fi']
+                addr = Place.objects.filter(data_source_id='osoite', address_locality_fi=data['ADDRESS_LOCALITY']['fi']).filter(
+                    **{"name__regex": r'^%s' % street})[:1]
+                if addr:
+                    for addr_obj in addr:
+                        if isinstance(addr_obj.name_sv, str):
+                            street_sv = self.__format_street(
+                                street_name=addr_obj.name_sv)
+                            data['STREET_ADDRESS']['sv'] = unit['street_address']['fi'].replace(
+                                street, street_sv)
+                            for r, v in REPLACEMENTS.items():
+                                data['STREET_ADDRESS']['sv'] = data['STREET_ADDRESS']['sv'].replace(
+                                    r, v)
+
+        # Get location:
+        if isinstance(unit.get('location'), dict):
+            vec2 = [0]*2
+            coords = unit['location'].get('coordinates')
+            if isinstance(coords, type(vec2)):
+                if len(coords) == len(vec2):
+                    if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
+                        """
+                        TPR (Palvelukartta units) coordinates are pre-serialized to (4326 - WGS 84).
+                        Transform the coordinates to the default database supported SRID.
+                        """
+                        pnt = Point(coords[0], coords[1], srid=4326)
+                        pnt.transform(CoordTransform(SpatialReference(
+                            4326), SpatialReference(settings.PROJECTION_SRID)))
+                        data['POSITION'] = pnt
+
+        # Get email:
+        if isinstance(unit.get('email'), str):
+            try:
+                validate_email(unit['email'])
+            except ValidationError as e:
+                logger.warn("Improper email: %s with details: %s" %
+                            (unit['email'], e))
+                pass
+            else:
+                data['EMAIL'] = unit['email']
+
+        # Get telephone:
+        if isinstance(unit.get('phone'), str):
+            if unit['phone'].strip() != '':
+                data['TELEPHONE'] = unit['phone']
+
+        # Get postal code:
+        if isinstance(unit.get('address_zip'), str):
+            if unit['address_zip'].strip() != '':
+                data['ADDRESS_ZIP'] = unit['address_zip']
+
+        # Get urls.
+        if isinstance(unit.get('www'), dict):
+            urls = []
+            for lang in ('fi', 'sv', 'en'):
+                if isinstance(unit['www'].get(lang), str):
+                    try:
+                        URLValidator(unit['www'][lang])
+                    except ValidationError as e:
+                        logger.warn("Improper URL: %s with details: %s" %
+                                    (unit['www'][lang], e))
+                        pass
+                    else:
+                        if unit['www'][lang] not in urls:
+                            urls.append(unit['www'][lang])
+                            data['INFO_URL'][lang] = unit['www'][lang]
+
+        print(data)
 
     def process(self):
         for _, units in enumerate(self.obj_list, start=1):
