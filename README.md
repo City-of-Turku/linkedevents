@@ -57,30 +57,30 @@ Manual installation of Linked Events on physical or virtual machine:
 
 	Install required software and dependencies:
 		
-		  #install following following packages with your distros package manager need to run Linked Events on your server
+install following following packages with your distros package manager need to run Linked Events on your server
 ```bash
-(S)		sudo apt install postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
+sudo apt install postgresql postgis nginx virtualenv python3-dev python3-pip build-essential libpq-dev
 ```
 
-	Preparing your PostgreSQL:
+Preparing your PostgreSQL:
 	
-		#Generate required locales
+Generate required locales
 ```bash
-(S)		sudo locale-gen fi_FI.UTF-8
-(S)		sudo systemctl restart postgresql
+sudo locale-gen fi_FI.UTF-8
+sudo systemctl restart postgresql
 ```		
-		#Create a new role in postgresql
+Create a new role in postgresql
 ```bash
-(S)		sudo -u postgres createuser -R -S linkedevents
+sudo -u postgres createuser -R -S linkedevents
 ```
-		#Create a new database in postgresql
+Create a new database in postgresql
 ```bash
-(S)		sudo -u postgres createdb -O linkedevents -T template0 -l fi_FI.UTF-8 linkedevents
+sudo -u postgres createdb -O linkedevents -T template0 -l fi_FI.UTF-8 linkedevents
 ```
-		#Create extensions for the database
+Create extensions for the database
 ```bash
-(S)		sudo -u postgres psql linkedevents -c "CREATE EXTENSION postgis;"
-(S)		sudo -u postgres psql linkedevents -c "CREATE EXTENSION hstore;"
+sudo -u postgres psql linkedevents -c "CREATE EXTENSION postgis;"
+sudo -u postgres psql linkedevents -c "CREATE EXTENSION hstore;"
 ```
 If you wish to install Linkedevents without any Helsinki specific data (an empty database), and instead customize everything for your own city, you have a working install right now.
 
