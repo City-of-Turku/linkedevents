@@ -313,6 +313,9 @@ class LounaistestImporter(Importer):
                         if muni in MUNICIPALITIES:
                             for idx, lang in enumerate(('fi', 'sv')):
                                 data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
+                        else:
+                            # We don't import units that are outside our region.
+                            return None
                         post_code = munisplt[0]
                         if post_code != '':
                             data['POST_CODE'] = post_code
@@ -334,6 +337,12 @@ class LounaistestImporter(Importer):
                     except Exception as e:
                         logger.error("Error while finding the address: %s" % e)
                         pass
+                    #
+                    if data['ADDRESS_LOCALITY']['fi'] and data['ADDRESS_LOCALITY']['sv']:
+                        for lang in ('fi', 'sv'):
+                            if isinstance(data['STREET_ADDRESS'][lang], str):
+                                data['STREET_ADDRESS'][lang] = data['STREET_ADDRESS'][lang].replace(
+                                    data['ADDRESS_LOCALITY']['fi'].upper(), data['ADDRESS_LOCALITY'][lang])
 
         # Get email:
         if isinstance(unit.get('sahkoposti'), str):
