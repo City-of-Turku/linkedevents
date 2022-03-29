@@ -382,6 +382,12 @@ class LounaistestImporter(Importer):
         obj.address_locality = obj.address_locality_fi = data['ADDRESS_LOCALITY']['fi']
         obj.address_locality_sv = data['ADDRESS_LOCALITY']['sv']
         obj.postal_code = data['POST_CODE']
+        if obj.publisher_id == 'tpr:1100':
+            # We need to change the publisher_id so that palvelukartta importer knows that this is still valid.
+            if data['DATA_SOURCE'] == 'osm':
+                obj.publisher_id = 'osm:6000'
+            else:
+                obj.publisher_id = 'ptv:5000'
 
     def save_units(self, unit: dict) -> None:
         addr = Place.objects.filter(
@@ -435,17 +441,24 @@ class LounaistestImporter(Importer):
 
     def remove_old_units(self) -> None:
         """Removes all PTV and OSM units that did not get updated."""
-        ptv_osm = Place.objects.filter(
-            data_source__in=['ptv', 'osm']).iterator(chunk_size=10)
-        if ptv_osm:
+        tpr_ptv_osm = Place.objects.filter(
+            data_source__in=['tpr', 'ptv', 'osm']).iterator(chunk_size=10)
+        if tpr_ptv_osm:
             bm_now = BaseModel.now()
-            for existing_obj in ptv_osm:
+            for existing_obj in tpr_ptv_osm:
                 if (bm_now - existing_obj.last_modified_time) > (bm_now - self.importer_start_time):
                     # This means we know that the object did not get updated during runtime.
                     try:
-                        logger.info("Removing old unit: %s with name: %s" % (
-                            existing_obj.id, existing_obj.name))
-                        existing_obj.delete()
+                        if existing_obj.data_source_id == 'tpr':
+                            if existing_obj.publisher_id in ('ptv:5000', 'osm:6000'):
+                                # This signals us that even palvelukarttas importer did not update the unit.
+                                logger.info(
+                                    "Removing a discarded (palvelukartta and lounaistieto discarded) unit: %s with name: %s" % (existing_obj.id, existing_obj.name))
+                                existing_obj.delete()
+                        else:
+                            logger.info("Removing old unit: %s with name: %s" % (
+                                existing_obj.id, existing_obj.name))
+                            existing_obj.delete()
                     except Exception as e:
                         logger.error("Could not remove old unit: %s due to: %s" % (
                             existing_obj.id, e))
