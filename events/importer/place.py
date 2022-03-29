@@ -80,7 +80,8 @@ MUNICIPALITIES = {
 logger = logging.getLogger(__name__)
 BASE_URL = "https://testipalvelukartta.turku.fi/api/v2/address/"
 # The source data is serializer into 4326
-SOURCE_SRS = SpatialReference(4326)
+SOURCE_DATA_SRID = 4326
+SOURCE_SRS = SpatialReference(SOURCE_DATA_SRID)
 TARGET_SRS = SpatialReference(settings.PROJECTION_SRID)
 # 1000 is the max page size in munigeo
 PAGE_SIZE = 1000
@@ -175,6 +176,30 @@ class PlaceImporter(Importer):
         proc_time_frmt('Setup')
         self.handle()
 
+    def get_search_column(self, lang):
+        """
+        Reads the columns, config languages and weights from the model
+        to be indexed. Creates and returns a CombinedSearchVector, that
+        can be stored into the search_column.
+        """
+        search_column = None
+        columns = Place.get_search_column_indexing(lang)
+        for column in columns:
+            if search_column:
+                search_column += SearchVector(column[0], config=column[1], weight=column[2])
+            else:
+                search_column = SearchVector(column[0], config=column[1], weight=column[2])
+
+        return search_column
+
+    def index_search_columns(self):
+        for lang in self.supported_languages:
+            key = "search_column_%s" % lang
+            logger.info(
+                f"{lang} Places indexed: {Place.objects.update(**{key: self.get_search_column(lang)})}"
+            )
+
+
     def get_count(self, url):
         url += "&page_size=1"
         response = self.http.get(url)        
@@ -212,7 +237,7 @@ class PlaceImporter(Importer):
         except KeyError:
             return None
 
-        position = Point(lat, lon, srid=4326)
+        position = Point(lat, lon, srid=SOURCE_DATA_SRID)
         position.transform(self.coord_transform)
         return position
 
@@ -285,44 +310,21 @@ class PlaceImporter(Importer):
                     raise results
       
             end_time = datetime.now()
-            duration = str(end_time - self.start_time)[:7]
-            output_rate = str(self.places_imported / duration.total_seconds())[:5]
-            logger.info(f"Duration: {duration}, Places imported {self.places_imported} ")
-            logger.info(f"Output rate: {output_rate}")
-
-    def get_search_column(self, model, lang):
-        """
-        Reads the columns, config languages and weights from the model
-        to be indexed. Creates and returns a CombinedSearchVector, that
-        can be stored into the search_column.
-        """
-        search_column = None
-        columns = model.get_search_column_indexing(lang)
-        for column in columns:
-            if search_column:
-                search_column += SearchVector(column[0], config=column[1], weight=column[2])
-            else:
-                search_column = SearchVector(column[0], config=column[1], weight=column[2])
-
-        return search_column
-
-    def index_search_columns(self):
-        logger.info("Indexing search columns...")
-        for lang in self.supported_languages:
-            key = "search_column_%s" % lang
-            logger.info(
-                f"{lang} Place indexed: {Place.objects.update(**{key: self.get_search_column(Place, lang)})}"
-            )
-
+            duration = end_time - self.start_time
+            output_rate = self.places_imported / duration.total_seconds()
+            logger.info(f"Duration: {str(duration)[:7]}, Places imported {self.places_imported} ")
+            logger.info(f"Output rate: {str(output_rate)[:7]}")
+ 
     def import_places(self):
         self.start_time = datetime.now()
         for municipality in MUNICIPALITIES.values():
             Place.objects.filter(id__endswith=municipality[0]).delete()
             self.import_municipality(municipality)            
+        logger.info("Indexing search columns...")
+        self.index_search_columns()        
 
     def handle(self) -> None:
         self.import_places()        
-        self.index_search_columns()        
         logger.info(f"Imported {self.places_imported} Places.")
         proc_time_frmt('Importer')
 
