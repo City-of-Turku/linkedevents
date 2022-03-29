@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from functools import partial
 
 # django and drf
-from django.db import connection, reset_queries
+from django.db import connection
 from django.db.transaction import atomic
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.utils import translation
@@ -1117,11 +1117,9 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 locale = params.get('locale')
             else:
                 locale = 'fi'
-            search_limit = self.request.query_params.get('limit', self.search_query_limit)
-           
             if 'limit' in params:
                 try:
-                    search_limit = int(params.get('limit'))
+                    search_query_limit = int(params.get('limit'))
                 except ValueError:
                     raise ParseError("'limit' must be of type int.")
             # Use PostgreSQL Full Text Search on indexed columns populated
@@ -1130,20 +1128,14 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 SELECT id, ts_rank_cd(search_column_{locale}, search_query)
                 As RANK from events_place, to_tsquery('finnish','{search_query_str}') search_query
                 WHERE search_query @@ search_column_{locale}
-                ORDER BY rank DESC LIMIT {search_limit};
+                ORDER BY rank DESC LIMIT {search_query_limit};
             """
             cursor = connection.cursor()
             cursor.execute(sql)
             all_results = cursor.fetchall()           
             # append all Place ids into a list for filtering
             ids = [row[0] for row in all_results]
-            queryset = Place.objects.filter(id__in=ids)
-        print(connection.queries)
-        queries_time = sum([float(s["time"]) for s in connection.queries])
-        print(
-            f"Search queries total execution time: {queries_time} Num queries: {len(connection.queries)}"
-        )
-        reset_queries() 
+            queryset = Place.objects.filter(id__in=ids)        
        
         return queryset
 
