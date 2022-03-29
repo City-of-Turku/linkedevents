@@ -1075,6 +1075,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
     # we want to display tprek before osoite etc.
     ordering = ('-n_events', '-data_source', 'name')
     search_query_limit = 100
+    search_configs = {'fi': 'finnish','sv': 'swedish', 'en': 'english'}
 
     def get_queryset(self):
         """
@@ -1126,7 +1127,8 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
             # with lexems. 
             sql = f"""
                 SELECT id, ts_rank_cd(search_column_{locale}, search_query)
-                As RANK from events_place, to_tsquery('finnish','{search_query_str}') search_query
+                As RANK from events_place, 
+                to_tsquery('{self.search_configs[locale]}','{search_query_str}') search_query
                 WHERE search_query @@ search_column_{locale}
                 ORDER BY rank DESC LIMIT {search_query_limit};
             """
