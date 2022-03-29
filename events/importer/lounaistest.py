@@ -37,6 +37,7 @@ from typing import TYPE_CHECKING, Any, Tuple, List
 # Per module logger
 logger = logging.getLogger(__name__)
 
+# Request headers.
 HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -102,6 +103,7 @@ SERVICE_TYPES = {
     'taxi',
 }
 
+# Place regex calls need to cleaned.
 SAFE_REGEX = ['\\', '`', '*', '_', '{', '}', '[', ']',
               '(', ')', '>', '#', '+', '.', '!', '$', '\'']
 
@@ -210,6 +212,7 @@ class LounaistestImporter(Importer):
         return street_name
 
     def build_data(self, unit: dict, geom: dict) -> dict:
+        """Processes, validates and builds the data. Skips invalid units."""
         data = {
             'ID': None,
             'ORIGIN_ID': None,
@@ -373,6 +376,7 @@ class LounaistestImporter(Importer):
         return data
 
     def map_new_fields(self, obj: Any, data: dict) -> None:
+        """Gives the object attributes new values."""
         obj.position = data['POSITION']
         obj.street_address = obj.street_address_fi = data['STREET_ADDRESS']['fi']
         obj.street_address_sv = data['STREET_ADDRESS']['sv']
@@ -390,6 +394,7 @@ class LounaistestImporter(Importer):
                 obj.publisher_id = 'ptv:5000'
 
     def save_units(self, unit: dict) -> None:
+        """Saving phase"""
         addr = Place.objects.filter(
             data_source__in=['tpr', 'ptv', 'osm']).filter(name=unit['NAME'])[:1]
         if addr:
@@ -431,6 +436,7 @@ class LounaistestImporter(Importer):
                 pass
 
     def process(self, data: dict) -> None:
+        """Processing phase, loops through units."""
         if isinstance(data.get('features'), list):
             for lounais_unit in data['features']:
                 if isinstance(lounais_unit.get('properties'), dict):
