@@ -98,23 +98,23 @@ python manage.py event_import ontology
 #Use this if you don't plan on using your own keyword sets based on YSO or your own wordlists.
 python manage.py event_import tsl --all
 
-  #Add a new keyword set to display in the UI general audience selection
+  #Add a new keyword set to display in the UI general audience selection.
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_audience
 
-  #Add a new keyword set to display in the UI event category selections
+  #Add a new keyword set to display in the UI event category selections.
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_topics_by_content
 
-  #Add a new keyword set to display in the UI event category selections
+  #Add a new keyword set to display in the UI event category selections.
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_topics_by_type
   
-  #Add a new keyword set to display in the UI hobby category selections
+  #Add a new keyword set to display in the UI hobby category selections.
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_hobbytopics
 
-#Import places from Turku Servicemap API
+#Import places from Turku Servicemap API.
 #It's recommended to use at least one of the place importers when developing Linked Events.
 python manage.py event_import tpr --places
 
@@ -125,10 +125,10 @@ python manage.py event_import osoite --places
 #Import City of Turku hierarchical organization for UI user rights management
 python manage.py event_import turku_organization
 
-#Import default payment methods
+#Add default payment methods to display in the UI.
 python manage.py event_import payment_method_defaults
 				
-#Import Turku spesific images for Linked Events image bank.
+#Import Turku specific images for Linked Events image bank.
 #! Before importing, create media\images folder in the main project folder
 python manage.py event_import turku_image_bank
 		
