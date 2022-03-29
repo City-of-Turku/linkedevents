@@ -1074,6 +1074,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                        'street_address', 'postal_code')
     # we want to display tprek before osoite etc.
     ordering = ('-n_events', '-data_source', 'name')
+    # Default maximum value of results to be returned.
     search_query_limit = 100
     search_configs = {'fi': 'finnish','sv': 'swedish', 'en': 'english'}
 
