@@ -348,13 +348,13 @@ class LounaistestImporter(Importer):
                                 data['STREET_ADDRESS'][lang] = data['STREET_ADDRESS'][lang].replace(
                                     data['ADDRESS_LOCALITY']['fi'].upper(), data['ADDRESS_LOCALITY'][lang])
 
-        if not any(data['STREET_ADDRESS'].values()) and data['POSITION']:
-            '''
-            For now we'll have to empty all positions (if found and streets are missing)
-            because we don't have support for mapping coordinates towards regional polygons.
-            This will have to be done at a later phase but mainly the data quality is to blame.
-            '''
-            data['POSITION'] = None
+        # if not any(data['STREET_ADDRESS'].values()) and data['POSITION']:
+        #    '''
+        #    For now we'll have to empty all positions (if found and streets are missing)
+        #    because we don't have support for mapping coordinates towards regional polygons.
+        #    This will have to be done at a later phase but mainly the data quality is to blame.
+        #    '''
+        #    data['POSITION'] = None
 
         # Get email:
         if isinstance(unit.get('sahkoposti'), str):
@@ -395,35 +395,35 @@ class LounaistestImporter(Importer):
         obj.address_locality = obj.address_locality_fi = data['ADDRESS_LOCALITY']['fi']
         obj.address_locality_sv = data['ADDRESS_LOCALITY']['sv']
         obj.postal_code = data['POST_CODE']
-        if obj.publisher_id == 'tpr:1100':
-            # We need to change the publisher_id so that palvelukartta importer knows that this is still valid.
-            if data['DATA_SOURCE'] == 'osm':
-                obj.publisher_id = 'osm:6000'
-            else:
-                obj.publisher_id = 'ptv:5000'
+        if data['DATA_SOURCE'] == 'osm':
+            obj.publisher_id = 'osm:6000'
+        else:
+            obj.publisher_id = 'ptv:5000'
 
     def save_units(self, unit: dict) -> None:
         """Saving phase"""
         addr = Place.objects.filter(
             data_source__in=['tpr', 'ptv', 'osm']).filter(name=unit['NAME'])[:1]
         if addr:
+            # If the name exists. We check if the ID is the current unit ID.
             for addr_obj in addr:
-                bm_now = BaseModel.now()
-                if (bm_now - addr_obj.last_modified_time) > (bm_now - self.importer_start_time):
-                    """
-                    If the current object with the specified name did not get modified during import runtime,
-                    we can save 'new' data on top of it. This system is not perfect due to data quality issues.
-                    We also try to prevent duplicates without huge memory sizes.
-                    """
-                    try:
-                        self.map_new_fields(obj=addr_obj, data=unit)
-                        addr_obj.save()
-                        logger.info(
-                            "Saved existing unit: %s with updated data." % unit['ID'])
-                    except Exception as e:
-                        logger.error(
-                            "Could not save unit: %s due to: %s" % (unit['ID'], e))
-                        pass
+                # Only update the exact ID match unit.
+                if unit['ID'] == addr_obj.id:
+                    bm_now = BaseModel.now()
+                    if (bm_now - addr_obj.last_modified_time) > (bm_now - self.importer_start_time):
+                        """
+                        If the current object with the specified name did not get modified during import runtime,
+                        we can save 'new' data on top of it. Just an extra caution in case 2+ ID duplicates exist.
+                        """
+                        try:
+                            self.map_new_fields(obj=addr_obj, data=unit)
+                            addr_obj.save()
+                            logger.info(
+                                "Saved existing unit: %s with updated data." % unit['ID'])
+                        except Exception as e:
+                            logger.error(
+                                "Could not save unit: %s due to: %s" % (unit['ID'], e))
+                            pass
         else:
             try:
                 new_obj = Place(data_source=getattr(
@@ -431,10 +431,6 @@ class LounaistestImporter(Importer):
                 new_obj.id = unit['ID']
                 new_obj.origin_id = unit['ORIGIN_ID']
                 new_obj.name = new_obj.name_fi = unit['NAME']
-                if unit['DATA_SOURCE'] == 'osm':
-                    new_obj.publisher_id = 'osm:6000'
-                else:
-                    new_obj.publisher_id = 'ptv:5000'
                 self.map_new_fields(obj=new_obj, data=unit)
                 new_obj.save()
                 logger.info("Created new unit: %s with name: %s" %
@@ -456,24 +452,17 @@ class LounaistestImporter(Importer):
 
     def remove_old_units(self) -> None:
         """Removes all PTV and OSM units that did not get updated."""
-        tpr_ptv_osm = Place.objects.filter(
-            data_source__in=['tpr', 'ptv', 'osm']).iterator(chunk_size=10)
-        if tpr_ptv_osm:
+        ptv_osm = Place.objects.filter(
+            data_source__in=['ptv', 'osm']).iterator(chunk_size=10)
+        if ptv_osm:
             bm_now = BaseModel.now()
-            for existing_obj in tpr_ptv_osm:
+            for existing_obj in ptv_osm:
                 if (bm_now - existing_obj.last_modified_time) > (bm_now - self.importer_start_time):
                     # This means we know that the object did not get updated during runtime.
                     try:
-                        if existing_obj.data_source_id == 'tpr':
-                            if existing_obj.publisher_id in ('ptv:5000', 'osm:6000'):
-                                # This signals us that even palvelukarttas importer did not update the unit.
-                                logger.info(
-                                    "Removing a discarded (palvelukartta and lounaistieto discarded) unit: %s with name: %s" % (existing_obj.id, existing_obj.name))
-                                existing_obj.delete()
-                        else:
-                            logger.info("Removing old unit: %s with name: %s" % (
-                                existing_obj.id, existing_obj.name))
-                            existing_obj.delete()
+                        logger.info("Removing old unit: %s with name: %s" % (
+                            existing_obj.id, existing_obj.name))
+                        existing_obj.delete()
                     except Exception as e:
                         logger.error("Could not remove old unit: %s due to: %s" % (
                             existing_obj.id, e))
