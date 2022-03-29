@@ -198,41 +198,6 @@ To remove a dependency, remove it from `requirements.in`,
 run `pip-compile` and then `pip-sync`. If everything works
 as expected, commit the changes.
 
-Search
-------
-Linkedevents uses Elasticsearch for generating results on the /search-endpoint. If you wish to use that functionality, proceed like so:
-
-1. Install elasticsearch
-
-    We've only tested using the rather ancient 1.7 version. Version 5.x will certainly not work as the `django-haystack`-library does not support it. If you are using Ubuntu 16.04, 1.7 will be available in the official repository.
-
-2. (For Finnish support) Install elasticsearch-analyzer-voikko, libvoikko and needed dictionaries
-
-    `/usr/share/elasticsearch/bin/plugin -i fi.evident.elasticsearch/elasticsearch-analysis-voikko/0.4.0`
-    This specific command is for Debian derivatives. The path to `plugin` command might be different on yours. Note that version 0.4.0 is the one compatible with Elasticsearch 1.7
-
-    Installing libvoikko:
-    `apt-get install libvoikko1`
-
-    Installing the dictionaries (v5 dictionaries are needed for libvoikko version included in Ubuntu 16.04):
-
-    ```
-    wget -P $INSTALL_BASE http://www.puimula.org/htp/testing/voikko-snapshot-v5/dict-morpho.zip
-    unzip $INSTALL_BASE/dict-morpho.zip -d /etc/voikko
-    ```
-
-3. Configure the thing
-
-    Set the `ELASTICSEARCH_URL` environment variable (or variable in `config_dev.toml`, if you are running in development mode) to your elasticsearch instance. The default value is `http://localhost:9200/`.
-
-    Haystack configuration for all Linkedevents languages happens automatically if `ELASTICSEARCH_URL` is set, but you may customize it manually using `local_settings.py` if you know Haystack and wish to do so.
-
-4. Rebuild the search indexes
-
-   `python manage.py rebuild_index`
-
-   You should now have a working /search endpoint, give or take a few.
-
 Event extensions
 ----------------
 
