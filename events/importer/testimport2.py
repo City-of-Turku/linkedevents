@@ -108,11 +108,12 @@ async def fetch(session: Any, URL: str, id: int) -> dict:
 
 async def main(unit_pages: int) -> dict:
     """Processing phase for the async request."""
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+    async with aiohttp.ClientSession() as session:
         tasks = []
         for page_no in range(1, unit_pages+1):
             # Testipalvelukartta needs turku VPN connection.
-            URL = "https://testipalvelukartta.turku.fi/api/v2/unit/?page=%s&page_size=100" % page_no
+            # https://testipalvelukartta-api.turku.fi/api/v2/
+            URL = "https://testipalvelukartta-api.turku.fi/api/v2/unit/?page=%s&page_size=100" % page_no
             tasks.append(fetch(session=session, URL=URL, id=page_no))
         try:
             res = await asyncio.gather(*tasks, return_exceptions=False)
@@ -133,10 +134,10 @@ def async_main(retry_count=3) -> dict:
     by dividing it with default value 20 (servicemap).
     Testipalvelukartta needs turku VPN connection.
     """
-    url = "https://testipalvelukartta.turku.fi/api/v2/unit"
+    url = "https://testipalvelukartta-api.turku.fi/api/v2/"
 
     try:
-        fetch = requests.get(url, headers=HEADERS)
+        fetch = requests.get(url, headers=HEADERS, verify=False)
         response = fetch.json()
         count = response["count"]
         calc = math.modf(count/100)
@@ -392,7 +393,7 @@ class TestImporter(Importer):
                             urls.append(unit['www'][lang])
                             data['INFO_URL'][lang] = unit['www'][lang]
 
-        print(data)
+        return data
 
     def process(self):
         for _, units in enumerate(self.obj_list, start=1):
