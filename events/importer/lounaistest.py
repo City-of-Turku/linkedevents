@@ -440,6 +440,7 @@ class LounaistestImporter(Importer):
                     except Exception as e:
                         logger.error("Could not remove old unit: %s due to: %s" % (
                             existing_obj.id, e))
+                        pass
 
     def handle(self) -> None:
         """The core handler function."""
