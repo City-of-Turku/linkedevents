@@ -328,7 +328,8 @@ class OsoiteImporter(Importer):
         for municipality in MUNICIPALITIES.values():
             # Check if municipality exist in the source data.
             if self.get_is_municipality_in_source_data(municipality[0]):
-                Place.objects.filter(id__endswith=municipality[0]).delete()
+                # Delete only if data_source_id is "osoite", leave "ptv" and "osm" places.
+                Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
                 self.import_municipality(municipality)   
             else:
                 logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
