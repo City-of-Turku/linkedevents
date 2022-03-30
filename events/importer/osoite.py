@@ -103,7 +103,7 @@ class OsoiteImporter(Importer):
     coord_transform = CoordTransform(SOURCE_SRS, TARGET_SRS)
     retry_strategy = Retry(
         total=10,
-        status_forcelist=[400, 408, 429, 500, 502, 503, 504],
+        status_forcelist=[408, 429, 500, 502, 503, 504],
         method_whitelist=[
             "GET",
         ],
@@ -199,6 +199,15 @@ class OsoiteImporter(Importer):
                 f"{lang} Places indexed: {Place.objects.update(**{key: self.get_search_column(lang)})}"
             )
 
+    def get_is_municipality_in_source_data(self, municipality_id):
+        request_url = f"{BASE_URL}?municipality={municipality_id}&page_size=1"
+        response = requests.get(request_url)
+        # requesting with a non existing municipality returns 400 Bad Request.
+        if response.status_code == 400:
+            return False
+        else: 
+            # Network and server errors are handled in the retry strategy.           
+            return True
 
     def get_count(self, url):
         url += "&page_size=1"
@@ -317,8 +326,12 @@ class OsoiteImporter(Importer):
     def import_places(self):
         self.start_time = datetime.now()
         for municipality in MUNICIPALITIES.values():
-            Place.objects.filter(id__endswith=municipality[0]).delete()
-            self.import_municipality(municipality)            
+            # Check if municipality exist in the source data.
+            if self.get_is_municipality_in_source_data(municipality[0]):
+                Place.objects.filter(id__endswith=municipality[0]).delete()
+                self.import_municipality(municipality)   
+            else:
+                logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
         logger.info("Indexing search columns...")
         self.index_search_columns()        
 
