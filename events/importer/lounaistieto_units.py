@@ -348,14 +348,6 @@ class LounaistietoUnitsImporter(Importer):
                                 data['STREET_ADDRESS'][lang] = data['STREET_ADDRESS'][lang].replace(
                                     data['ADDRESS_LOCALITY']['fi'].upper(), data['ADDRESS_LOCALITY'][lang])
 
-        # if not any(data['STREET_ADDRESS'].values()) and data['POSITION']:
-        #    '''
-        #    For now we'll have to empty all positions (if found and streets are missing)
-        #    because we don't have support for mapping coordinates towards regional polygons.
-        #    This will have to be done at a later phase but mainly the data quality is to blame.
-        #    '''
-        #    data['POSITION'] = None
-
         # Get email:
         if isinstance(unit.get('sahkoposti'), str):
             email = unit['sahkoposti'].strip()
