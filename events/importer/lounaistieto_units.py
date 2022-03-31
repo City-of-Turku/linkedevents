@@ -198,7 +198,7 @@ class LounaistietoUnitsImporter(Importer):
         if response.status_code != 200:
             logger.error(
                 "Importing failed. Lounaistieto API responded with status_code: %s" % response.status_code)
-            return
+            return None
         json_data = response.json()
         return json_data
 
