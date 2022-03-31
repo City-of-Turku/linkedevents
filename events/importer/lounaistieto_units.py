@@ -312,16 +312,17 @@ class LounaistietoUnitsImporter(Importer):
                     splt = unit['osoite'].split(',')
                     if len(splt) > 1:
                         munisplt = splt[-1].strip().split(' ', 1)
-                        muni = munisplt[1]
-                        if muni in MUNICIPALITIES:
-                            for idx, lang in enumerate(('fi', 'sv')):
-                                data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
-                        else:
-                            # We don't import units that are outside our region.
-                            return None
-                        post_code = munisplt[0]
-                        if post_code != '':
-                            data['POST_CODE'] = post_code
+                        if len(munisplt) == 2:
+                            muni = munisplt[1]
+                            if muni in MUNICIPALITIES:
+                                for idx, lang in enumerate(('fi', 'sv')):
+                                    data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
+                            else:
+                                # We don't import units that are outside our region.
+                                return None
+                            post_code = munisplt[0]
+                            if post_code != '':
+                                data['POST_CODE'] = post_code
                     data['STREET_ADDRESS']['fi'] = unit['osoite']
                     # Find the street from the street registry.
                     try:
