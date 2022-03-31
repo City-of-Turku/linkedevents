@@ -1121,7 +1121,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 locale = 'fi'
             if 'limit' in params:
                 try:
-                    search_query_limit = int(params.get('limit'))
+                    self.search_query_limit = int(params.get('limit'))
                 except ValueError:
                     raise ParseError("'limit' must be of type int.")
             # Use PostgreSQL Full Text Search on indexed columns populated
@@ -1131,7 +1131,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 As RANK from events_place, 
                 to_tsquery('{self.search_configs[locale]}','{search_query_str}') search_query
                 WHERE search_query @@ search_column_{locale}
-                ORDER BY rank DESC LIMIT {search_query_limit};
+                ORDER BY rank DESC LIMIT {self.search_query_limit};
             """
             cursor = connection.cursor()
             cursor.execute(sql)
