@@ -19,6 +19,8 @@ from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email, URLValidator
 
 # GeoDjango:
 from django.contrib.gis.db.models.functions import Distance
@@ -35,20 +37,12 @@ from typing import TYPE_CHECKING, Any, Tuple, List
 # Per module logger
 logger = logging.getLogger(__name__)
 
+# Request headers.
 HEADERS = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'User-Agent': 'Mozilla/5.0',
 }
-
-
-def proc_time_frmt(stage: str) -> None:
-    """Formatter for logs."""
-    ft = math.modf(time.process_time())
-    curtime = float(str(ft[0])[:3])+ft[1]
-    logger.info('%s finished after %s seconds from the initial start!' %
-                (stage, curtime))
-
 
 # List of supported municipalities.
 MUNICIPALITIES = {
@@ -81,9 +75,49 @@ MUNICIPALITIES = {
     'VEHMAA': ('Vehmaa', 'Vemo'),
 }
 
+# Replacement words for the street.
+REPLACEMENTS = {
+    'rakennus': 'byggnad',
+    ' rak ': ' byg ',
+    ' rak.': ' byg.',
+    'porras': 'trappa',
+    'kerros': 'våning',
+    'rappu': 'trappa',
+    'krs': 'vån',
+    'sairaala': 'sjukhus',
+    ' talo ': ' hus ',
+}
+
+# List of unsupported service types:
+SERVICE_TYPES = {
+    'Kotisairaanhoidon palveluyksiköt',
+    'Päihdehuollon yksiköt',
+    'Kotipalvelun yksiköt',
+    'Pankkiautomaatit',
+    'Yksityiset hammaslääkäripalvelut',
+    'Sähköauton latauspisteet',
+    'Yksityiset lääkäripalvelut',
+    'Katsastusasema',
+    'parking',
+    'charity',
+    'taxi',
+}
+
+# Place regex calls need to cleaned.
+SAFE_REGEX = ['\\', '`', '*', '_', '{', '}', '[', ']',
+              '(', ')', '>', '#', '+', '.', '!', '$', '\'']
+
+
+def proc_time_frmt(stage: str) -> None:
+    """Formatter for logs."""
+    ft = math.modf(time.process_time())
+    curtime = float(str(ft[0])[:3])+ft[1]
+    logger.info('%s finished after %s seconds from the initial start!' %
+                (stage, curtime))
+
 
 @register_importer
-class LounaistietoImporter(Importer):
+class LounaistietoUnitsImporter(Importer):
     # Importer class dependant attributes:
     name = "lounaistieto_units"  # Command calling name.
     supported_languages = ('fi', 'sv', 'en')  # Base file requirement.
@@ -168,276 +202,278 @@ class LounaistietoImporter(Importer):
         json_data = response.json()
         return json_data
 
-    def numsplit(self, str_to_split: str) -> str:
-        """Gets everything before the first number occurrence."""
-        str_processed = ''
-        for letter in str_to_split:
-            if letter.isdigit():
-                return str_processed.strip()
+    def __format_street(self, street_name: str) -> str:
+        """Method for getting the street name only."""
+        street_num = re.findall(r'[0-9]+', street_name)
+        if street_num:
+            street_name = street_name.split(street_num[0])[0].strip()
+        else:
+            street_name = street_name.split(',')[0].strip()
+        return street_name
+
+    def build_data(self, unit: dict, geom: dict) -> dict:
+        """Processes, validates and builds the data. Skips invalid units."""
+        data = {
+            'ID': None,
+            'ORIGIN_ID': None,
+            'DATA_SOURCE': None,
+            'NAME': None,
+            'POSITION': None,
+            'TELEPHONE': None,
+            'STREET_ADDRESS': {'fi': None, 'sv': None, 'en': None},
+            'EMAIL': None,
+            'WWW': None,
+            'ADDRESS_LOCALITY': {'fi': None, 'sv': None, 'en': None},
+            'POST_CODE': None,
+        }
+
+        # Check service type:
+        if isinstance(unit.get('palvelukohdetyyppi'), str):
+            if unit['palvelukohdetyyppi'] in SERVICE_TYPES:
+                logger.warn("Skipping unit due to unsupported service type...")
+                return None
+
+        # Get data source:
+        if isinstance(unit.get('datalahde'), str):
+            if unit['datalahde'] == 'OpenStreetMap':
+                data['DATA_SOURCE'] = 'osm'
+            elif unit['datalahde'] == 'PTV':
+                data['DATA_SOURCE'] = 'ptv'
             else:
-                str_processed += letter
+                logger.warn(
+                    "Unsupported data source for Lounaistieto unit %s" % unit)
 
-    def validate(self, data: dict) -> dict:
-        """Main data validation and processing phase."""
-        # Existing addresses.
-        osoite_qset = Place.objects.filter(data_source__id='osoite')
-        units = {}
-        for lounais_unit in data.get('features'):
-            props = lounais_unit.get('properties')
-            if props:
-                validated = {
-                    'ds': None,
-                    'id': None,
-                    'origin_id': None,
-                    'kohteen_nimi': None,
-                    'location': None,
-                    'puhelinnumero': None,
-                    'osoite': None,
-                    'sahkoposti': None,
-                    'verkkosivu': None,
-                    'municipality': None,
-                    'postcode': None,
-                }
-                # Validate and specify data source:
-                ds = props.get('datalahde')
-                if isinstance(ds, str):
-                    if ds == 'OpenStreetMap':
-                        validated['ds'] = 'osm'
-                    elif ds == 'PTV':
-                        validated['ds'] = 'ptv'
-                    else:
-                        logger.warn(
-                            "Unsupported data source for Lounaistieto unit: %s" % props)
-                        continue
-                else:
-                    logger.warn(
-                        "Data source type is not valid for Lounaistieto unit: %s" % props)
-                    continue
+        if not data['DATA_SOURCE']:
+            return None
 
-                # Validate and format id:
-                origin_id = props.get('orig_id')
-                if isinstance(origin_id, str):
-                    if origin_id != '':
-                        # Very few OSM IDs are falsely negative.
-                        if validated['ds'] == 'osm':
-                            try:
-                                origin_id = str(abs(int(origin_id)))
-                            except ValueError:
-                                logger.warn(
-                                    "Unexpected OSM ID format. OSM ID can not be converted into an integer: %s" % origin_id)
-                                pass
-
-                        validated['id'] = '%s:%s' % (
-                            validated['ds'], origin_id)
-                        validated['origin_id'] = origin_id
-                    else:
-                        logger.warn(
-                            "Origin ID is an empty string for: %s" % props)
-                        continue
-                else:
-                    logger.warn("Origin ID type is not valid for: %s" % props)
-                    continue
-
-                # Validate name, phone, address, email, website:
-                strip_fields = ('kohteen_nimi', 'puhelinnumero',
-                                'osoite', 'sahkoposti', 'verkkosivu')
-                for field in strip_fields:
-                    cur_field = props.get(field)
-                    if cur_field:
-                        validated_field = strip_tags(str(cur_field)).strip()
-                        if validated_field != '':
-                            validated[field] = validated_field
-                if not validated['kohteen_nimi']:
-                    logger.warn("Not a valid name for: %s" % props)
-                    continue
-
-                if validated['osoite']:
-                    # Gets everything before the first number occurance.
-                    cur_address = self.numsplit(
-                        str_to_split=validated['osoite'])
-                    if cur_address:
-                        for osoite in osoite_qset:
-                            if osoite.name_fi and osoite.name_sv:
-                                osoite_fi = self.numsplit(
-                                    str_to_split=osoite.name_fi)
-                                osoite_sv = self.numsplit(
-                                    str_to_split=osoite.name_sv)
-                                if osoite_fi and osoite_sv:
-                                    if osoite_fi.lower() == cur_address.lower():
-                                        cur_address_sv = validated['osoite'].replace(
-                                            cur_address, osoite_sv)
-                                        # Risky replacements which I don't recommend with larger datasets.
-                                        replacements = {
-                                            'rakennus': 'byggnad',
-                                            ' rak ': ' byg ',
-                                            ' rak.': ' byg.',
-                                            'porras': 'trappa',
-                                            'kerros': 'våning',
-                                            'rappu': 'trappa',
-                                            'krs': 'vån',
-                                            'sairaala': 'sjukhus',
-                                            ' talo ': ' hus ',
-                                        }
-                                        for rep_fi, rep_sv in replacements.items():
-                                            cur_address_sv = cur_address_sv.replace(
-                                                rep_fi, rep_sv)
-                                        validated.update(
-                                            {'osoite_sv': cur_address_sv})
-                                        break
-
-                    # Extract, validate and fill finished street data, municipality and postcode
-                    splt = validated['osoite'].split(',')
-                    if len(splt) > 1:
-                        postal_muni = splt[-1].strip()
-                        postal_muni_splt = postal_muni.split()
-                        if len(postal_muni_splt) > 1:
-                            postcode = postal_muni_splt[0]
-                            if postcode.isdigit():
-                                validated['postcode'] = postcode
-                                muni = postal_muni.replace(
-                                    postcode, '').strip()
-                                formatted_osoite = validated['osoite'].replace(
-                                    splt[-1], '').rstrip(',')
-                                validated['osoite'] = formatted_osoite
-
-                                if muni in MUNICIPALITIES:
-                                    # Format the municipality.
-                                    validated['municipality'] = MUNICIPALITIES[muni][0]
-                                    if validated.get('osoite_sv'):
-                                        # Replace most municipalities with the swedish counterpart.
-                                        validated.update(
-                                            {'municipality_sv': MUNICIPALITIES[muni][1]})
-                                        validated['osoite_sv'] = validated['osoite_sv'].replace(
-                                            splt[-1], '').rstrip(',')
-                                else:
-                                    logger.warn(
-                                        "Unit %s does not have a supported municipality: %s. Skipping..." % (validated['id'], muni))
-                                    continue
-
-                # Validate and convert location data:
-                geom = lounais_unit.get('geometry')
-                if geom:
-                    coords = geom.get('coordinates')
-                    if isinstance(coords, list):
-                        if len(coords) == 2:
-                            if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
-                                try:
-                                    pnt = Point(
-                                        coords[0], coords[1], srid=3067)
-                                    validated['location'] = pnt
-                                except Exception as e:
-                                    logger.warn(
-                                        "Could not instantiate the location: %s" % e)
-
-                units.update({validated['id']: validated})
-                logger.info("Processed unit ID: %s with name: %s" %
-                            (validated['id'], validated['kohteen_nimi']))
-        return units
-
-    def finalize(self, data: dict) -> None:
-        """Saving phase with duplicate checking."""
-        def __map_fields(place_obj: Any, fields: dict) -> Any:
-            """Object field mapping."""
-            place_obj.id = fields['id']
-            place_obj.name = place_obj.name_fi = fields['kohteen_nimi']
-            place_obj.origin_id = fields['origin_id']
-            place_obj.position = fields['location']
-            place_obj.street_address = place_obj.street_address_fi = fields['osoite']
-            place_obj.street_address_sv = fields.get('osoite_sv')
-            place_obj.email = fields['sahkoposti']
-            place_obj.telephone = fields['puhelinnumero']
-            place_obj.info_url = fields['verkkosivu']
-            place_obj.address_locality = place_obj.address_locality_fi = fields['municipality']
-            place_obj.address_locality_sv = fields.get('municipality_sv')
-            place_obj.postal_code = fields['postcode']
-            if fields['ds'] == 'osm':
-                place_obj.publisher_id = 'osm:6000'
-            else:
-                place_obj.publisher_id = 'ptv:5000'
-            return place_obj
-
-        # Fix existing DB duplicates.
-        tpr_ptv_osm = Place.objects.filter(
-            data_source__in=['tpr', 'ptv', 'osm'])
-        existing = {}
-        for existing_unit in tpr_ptv_osm:
-            name = existing_unit.name_fi
-            if name:
-                if name in existing:
+        # Get origin ID:
+        if isinstance(unit.get('orig_id'), str):
+            uid = unit['orig_id'].strip()
+            # Some OSM IDs are incorrectly set to negative.
+            if uid != '':
+                if data['DATA_SOURCE'] == 'osm':
                     try:
-                        logger.info("Deleting duplicate. %s" %
-                                    existing_unit.id)
-                        existing_unit.delete()
-                    except Exception as e:
+                        data['ORIGIN_ID'] = str(abs(int(uid)))
+                    except ValueError:
                         logger.warn(
-                            "Can't delete duplicate (most likely due to existing relations). %s" % e)
-                        existing[name].append(existing_unit)
+                            "Unexpected OSM ID format. OSM ID can not be converted into an integer: %s" % unit['orig_id'])
                         pass
                 else:
-                    existing.update({name: [existing_unit]})
+                    data['ORIGIN_ID'] = uid
 
-        # Gather all current duplicates.
-        new_units = {}
-        for unique_id, cur_unit_data in data.items():
-            cur_name = cur_unit_data['kohteen_nimi']
-            if not cur_name in existing and not cur_name in new_units:
-                new_units.update({cur_name: cur_unit_data})
-                logger.info("Saving new unit with ID: %s and name: %s" %
-                            (unique_id, cur_unit_data['kohteen_nimi']))
-                # Create the new unit:
+        if not data['ORIGIN_ID']:
+            return None
+        else:
+            if len(data['ORIGIN_ID']) > 100:
+                return None
+            # Create ID.
+            data['ID'] = '%s:%s' % (data['DATA_SOURCE'], data['ORIGIN_ID'])
+
+        # Get name:
+        if isinstance(unit.get('kohteen_nimi'), str):
+            name = unit['kohteen_nimi'].strip()
+            if name != '':
+                if len(name) <= 255:
+                    data['NAME'] = name
+
+        if not data['NAME']:
+            return None
+
+        # Get position:
+        if isinstance(geom, dict):
+            coords = geom.get('coordinates')
+            if isinstance(coords, list):
+                if len(coords) == 2:
+                    if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
+                        try:
+                            pnt = Point(
+                                coords[0], coords[1], srid=3067)
+                            data['POSITION'] = pnt
+                        except Exception as e:
+                            logger.warn(
+                                "Could not instantiate the location: %s" % e)
+
+        # Get telephone:
+        if isinstance(unit.get('puhelinnumero'), str):
+            phone = unit['puhelinnumero'].strip()
+            if phone != '':
+                if len(phone) <= 128:
+                    data['TELEPHONE'] = phone
+
+        # Get osoite:
+        if isinstance(unit.get('osoite'), str):
+            street = self.__format_street(street_name=unit['osoite'])
+            if street:
+                if street.strip() != '':
+                    # Safeguard from regex manipulation:
+                    for ch in SAFE_REGEX:
+                        street = street.replace(ch, '')
+                    # Get the municipality:
+                    splt = unit['osoite'].split(',')
+                    if len(splt) > 1:
+                        munisplt = splt[-1].strip().split(' ', 1)
+                        muni = munisplt[1]
+                        if muni in MUNICIPALITIES:
+                            for idx, lang in enumerate(('fi', 'sv')):
+                                data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
+                        else:
+                            # We don't import units that are outside our region.
+                            return None
+                        post_code = munisplt[0]
+                        if post_code != '':
+                            data['POST_CODE'] = post_code
+                    data['STREET_ADDRESS']['fi'] = unit['osoite']
+                    # Find the street from the street registry.
+                    try:
+                        addr = Place.objects.filter(data_source_id='osoite', address_locality_fi=data['ADDRESS_LOCALITY']['fi']).filter(
+                            **{"name__regex": r'^%s' % street})[:1]
+                        if addr:
+                            for addr_obj in addr:
+                                if isinstance(addr_obj.name_sv, str):
+                                    street_sv = self.__format_street(
+                                        street_name=addr_obj.name_sv)
+                                    data['STREET_ADDRESS']['sv'] = unit['osoite'].replace(
+                                        street, street_sv)
+                                    for r, v in REPLACEMENTS.items():
+                                        data['STREET_ADDRESS']['sv'] = data['STREET_ADDRESS']['sv'].replace(
+                                            r, v)
+
+                    except Exception as e:
+                        logger.error("Error while finding the address: %s" % e)
+                        pass
+
+                    if data['ADDRESS_LOCALITY']['fi'] and data['ADDRESS_LOCALITY']['sv']:
+                        for lang in ('fi', 'sv'):
+                            if isinstance(data['STREET_ADDRESS'][lang], str):
+                                data['STREET_ADDRESS'][lang] = data['STREET_ADDRESS'][lang].replace(
+                                    data['ADDRESS_LOCALITY']['fi'].upper(), data['ADDRESS_LOCALITY'][lang])
+
+        # if not any(data['STREET_ADDRESS'].values()) and data['POSITION']:
+        #    '''
+        #    For now we'll have to empty all positions (if found and streets are missing)
+        #    because we don't have support for mapping coordinates towards regional polygons.
+        #    This will have to be done at a later phase but mainly the data quality is to blame.
+        #    '''
+        #    data['POSITION'] = None
+
+        # Get email:
+        if isinstance(unit.get('sahkoposti'), str):
+            email = unit['sahkoposti'].strip()
+            if 3 <= len(email) <= 254:
                 try:
-                    place_obj = Place(data_source=getattr(
-                        self, 'data_source_%s' % cur_unit_data['ds']))
-                    place_obj = __map_fields(
-                        place_obj=place_obj, fields=cur_unit_data)
-                    place_obj.save()
-                except Exception as e:
-                    logger.warn("Could not save the new unit? %s" % e)
-            else:
-                if cur_name in existing:
-                    for obj in existing[cur_name]:
-                        if obj.id == unique_id:
-                            # Updating existing unit with possibly new data:
-                            logger.info("Updating existing ID: %s with name: %s" % (
-                                unique_id, cur_unit_data['kohteen_nimi']))
-                            try:
-                                obj = __map_fields(
-                                    place_obj=obj, fields=cur_unit_data)
-                                obj.save()
-                            except Exception as e:
-                                logger.warn(
-                                    "Could not update the unit? %s" % e)
-                            break
+                    validate_email(email)
+                except ValidationError as e:
+                    logger.warn("Improper email: %s with details: %s" %
+                                (email, e))
+                    pass
                 else:
-                    logger.info("Duplicate from the API exists for ID: %s with name: %s" % (
-                        unique_id, cur_unit_data['kohteen_nimi']))
+                    data['EMAIL'] = email
 
-    def post_process(self) -> None:
-        """Removes all expired units."""
-        all_data = Place.objects.filter(data_source__in=['ptv', 'osm'])
-        bm_now = BaseModel.now()
-        for obj in all_data:
-            """
-            Tries to remove all units that didn't get modified.
-            We assume this importer doesn't take longer than a day to execute.
-            """
-            if (bm_now - obj.last_modified_time) > (bm_now - self.importer_start_time):
-                logger.info(
-                    "Deleting unit %s because it has expired." % obj.id)
+        # Get website:
+        if isinstance(unit.get('verkkosivu'), str):
+            website = unit['verkkosivu'].strip()
+            if 3 <= len(website) <= 1000:
                 try:
-                    obj.delete()
-                except Exception as e:
-                    logger.warn(
-                        "Could not delete the unit: %s due to: %s" % (obj.id, e))
+                    URLValidator(website)
+                except ValidationError as e:
+                    logger.warn("Improper URL: %s with details: %s" %
+                                (website, e))
+                    pass
+                else:
+                    data['WWW'] = website
+
+        return data
+
+    def map_new_fields(self, obj: Any, data: dict) -> None:
+        """Gives the object attributes new values."""
+        obj.position = data['POSITION']
+        obj.street_address = obj.street_address_fi = data['STREET_ADDRESS']['fi']
+        obj.street_address_sv = data['STREET_ADDRESS']['sv']
+        obj.email = data['EMAIL']
+        obj.telephone = data['TELEPHONE']
+        obj.info_url = obj.info_url_fi = data['WWW']
+        obj.address_locality = obj.address_locality_fi = data['ADDRESS_LOCALITY']['fi']
+        obj.address_locality_sv = data['ADDRESS_LOCALITY']['sv']
+        obj.postal_code = data['POST_CODE']
+        if data['DATA_SOURCE'] == 'osm':
+            obj.publisher_id = 'osm:6000'
+        else:
+            obj.publisher_id = 'ptv:5000'
+
+    def save_units(self, unit: dict) -> None:
+        """Saving phase"""
+        addr = Place.objects.filter(
+            data_source__in=['tpr', 'ptv', 'osm']).filter(name=unit['NAME'])[:1]
+        if addr:
+            # If the name exists. We check if the ID is the current unit ID.
+            for addr_obj in addr:
+                # Only update the exact ID match unit.
+                if unit['ID'] == addr_obj.id:
+                    bm_now = BaseModel.now()
+                    if (bm_now - addr_obj.last_modified_time) > (bm_now - self.importer_start_time):
+                        """
+                        If the current object with the specified name did not get modified during import runtime,
+                        we can save 'new' data on top of it. Just an extra caution in case 2+ ID duplicates exist.
+                        """
+                        try:
+                            self.map_new_fields(obj=addr_obj, data=unit)
+                            addr_obj.save()
+                            logger.info(
+                                "Saved existing unit: %s with updated data." % unit['ID'])
+                        except Exception as e:
+                            logger.error(
+                                "Could not save unit: %s due to: %s" % (unit['ID'], e))
+                            pass
+        else:
+            try:
+                new_obj = Place(data_source=getattr(
+                    self, 'data_source_%s' % unit['DATA_SOURCE']))
+                new_obj.id = unit['ID']
+                new_obj.origin_id = unit['ORIGIN_ID']
+                new_obj.name = new_obj.name_fi = unit['NAME']
+                self.map_new_fields(obj=new_obj, data=unit)
+                new_obj.save()
+                logger.info("Created new unit: %s with name: %s" %
+                            (unit['ID'], unit['NAME']))
+            except Exception as e:
+                logger.error("Could not create unit: %s due to: %s" %
+                             (unit['ID'], e))
+                pass
+
+    def process(self, data: dict) -> None:
+        """Processing phase, loops through units."""
+        if isinstance(data.get('features'), list):
+            for lounais_unit in data['features']:
+                if isinstance(lounais_unit.get('properties'), dict):
+                    data = self.build_data(
+                        unit=lounais_unit['properties'], geom=lounais_unit.get('geometry'))
+                    if data:
+                        self.save_units(unit=data)
+
+    def remove_old_units(self) -> None:
+        """Removes all PTV and OSM units that did not get updated."""
+        ptv_osm = Place.objects.filter(
+            data_source__in=['ptv', 'osm']).iterator(chunk_size=10)
+        if ptv_osm:
+            bm_now = BaseModel.now()
+            for existing_obj in ptv_osm:
+                if (bm_now - existing_obj.last_modified_time) > (bm_now - self.importer_start_time):
+                    # This means we know that the object did not get updated during runtime.
+                    try:
+                        logger.info("Removing old unit: %s with name: %s" % (
+                            existing_obj.id, existing_obj.name))
+                        existing_obj.delete()
+                    except Exception as e:
+                        logger.error("Could not remove old unit: %s due to: %s" % (
+                            existing_obj.id, e))
+                        pass
 
     def handle(self) -> None:
         """The core handler function."""
         data = self.fetch()
         proc_time_frmt('Fetching')
-        units = self.validate(data=data)
-        proc_time_frmt('Validation & processing')
-        self.finalize(data=units)
-        proc_time_frmt('Duplicate checking & saving')
-        self.post_process()
-        proc_time_frmt('Expired unit checking')
+        self.process(data=data)
+        proc_time_frmt('Processing and saving')
+        self.remove_old_units()
+        proc_time_frmt('Removing old units')
         proc_time_frmt('Importer')
