@@ -308,12 +308,17 @@ class LounaistietoUnitsImporter(Importer):
                     # Safeguard from regex manipulation:
                     for ch in SAFE_REGEX:
                         street = street.replace(ch, '')
+
                     # Get the municipality:
                     splt = unit['osoite'].split(',')
                     if len(splt) > 1:
+                        if len(splt) == 3:
+                            # For parsing OSM streets:
+                            splt[1] = splt[1] + splt[2]
+                            splt = splt[:-1]
                         munisplt = splt[-1].strip().split(' ', 1)
                         if len(munisplt) == 2:
-                            muni = munisplt[1]
+                            muni = munisplt[1].upper()
                             if muni in MUNICIPALITIES:
                                 for idx, lang in enumerate(('fi', 'sv')):
                                     data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
