@@ -257,7 +257,6 @@ class LounaistietoUnitsImporter(Importer):
                     except ValueError:
                         logger.warn(
                             "Unexpected OSM ID format. OSM ID can not be converted into an integer: %s" % unit['orig_id'])
-                        pass
                 else:
                     data['ORIGIN_ID'] = uid
 
@@ -346,7 +345,6 @@ class LounaistietoUnitsImporter(Importer):
 
                     except Exception as e:
                         logger.error("Error while finding the address: %s" % e)
-                        pass
 
                     if data['ADDRESS_LOCALITY']['fi'] and data['ADDRESS_LOCALITY']['sv']:
                         for lang in ('fi', 'sv'):
@@ -363,7 +361,6 @@ class LounaistietoUnitsImporter(Importer):
                 except ValidationError as e:
                     logger.warn("Improper email: %s with details: %s" %
                                 (email, e))
-                    pass
                 else:
                     data['EMAIL'] = email
 
@@ -376,7 +373,6 @@ class LounaistietoUnitsImporter(Importer):
                 except ValidationError as e:
                     logger.warn("Improper URL: %s with details: %s" %
                                 (website, e))
-                    pass
                 else:
                     data['WWW'] = website
 
@@ -421,7 +417,6 @@ class LounaistietoUnitsImporter(Importer):
                         except Exception as e:
                             logger.error(
                                 "Could not save unit: %s due to: %s" % (unit['ID'], e))
-                            pass
         else:
             try:
                 new_obj = Place(data_source=getattr(
@@ -436,7 +431,6 @@ class LounaistietoUnitsImporter(Importer):
             except Exception as e:
                 logger.error("Could not create unit: %s due to: %s" %
                              (unit['ID'], e))
-                pass
 
     def process(self, data: dict) -> None:
         """Processing phase, loops through units."""
@@ -464,7 +458,6 @@ class LounaistietoUnitsImporter(Importer):
                     except Exception as e:
                         logger.error("Could not remove old unit: %s due to: %s" % (
                             existing_obj.id, e))
-                        pass
 
     def handle(self) -> None:
         """The core handler function."""
