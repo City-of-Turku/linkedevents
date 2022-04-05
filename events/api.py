@@ -2166,35 +2166,23 @@ def _filter_event_queryset(queryset, params, srs=None):
     # Filter by audience min age
     val = params.get('audience_min_age', None) or params.get('audience_min_age_lt', None)
     if val:
-        try:
-            min_age = int(val)
-        except ValueError:
-            raise ParseError(_('Audience minimum age must be a digit.'))
+        min_age = parse_digit(val, 'audience_min_age')
         queryset = queryset.filter(audience_min_age__lte=min_age)
 
     val = params.get('audience_min_age_gt', None)
     if val:
-        try:
-            min_age = int(val)
-        except ValueError:
-            raise ParseError(_('Audience minimum age must be a digit.'))
+        min_age = parse_digit(val, 'audience_min_age_gt')
         queryset = queryset.filter(audience_min_age__gte=min_age)
 
     # Filter by audience max age
     val = params.get('audience_max_age', None) or params.get('audience_max_age_gt', None)
     if val:
-        try:
-            max_age = int(val)
-        except ValueError:
-            raise ParseError(_('Audience maximum age must be a digit.'))
+        max_age = parse_digit(val, 'audience_max_age')
         queryset = queryset.filter(audience_max_age__gte=max_age)
 
     val = params.get('audience_max_age_lt', None)
     if val:
-        try:
-            max_age = int(val)
-        except ValueError:
-            raise ParseError(_('Audience maximum age must be a digit.'))
+        max_age = parse_digit(val, 'audience_min_age_lt')
         queryset = queryset.filter(audience_max_age__lte=max_age)
 
     # Filter deleted events
@@ -2213,6 +2201,25 @@ def _filter_event_queryset(queryset, params, srs=None):
             queryset = queryset.filter(offers__is_free=True)
         elif val.lower() == 'false':
             queryset = queryset.exclude(offers__is_free=True)
+
+    val = params.get('suitable_for', None)
+    ''' Excludes all the events that have max age limit below or min age limit above the age or age range specified.
+    Suitable events with just one age boundary specified are returned, events with no age limits specified are
+    excluded. '''
+
+    if val:
+        vals = val.split(',')
+        if len(vals) > 2:
+            raise ParseError(f'suitable_for takes at maximum two values, you provided {len(vals)}')
+        int_vals = [parse_digit(i, 'suitable_for') for i in vals]
+        if len(int_vals) == 2:
+            lower_boundary = min(int_vals)
+            upper_boundary = max(int_vals)
+        else:
+            lower_boundary = upper_boundary = int_vals[0]
+        queryset = queryset.exclude(Q(audience_min_age__gt=lower_boundary) |
+                                    Q(audience_max_age__lt=upper_boundary) |
+                                    Q(Q(audience_min_age=None) & Q(audience_max_age=None)))
 
     return queryset
 
