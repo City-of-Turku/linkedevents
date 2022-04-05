@@ -9,7 +9,9 @@ import difflib
 import time
 import urllib.parse
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import time as datetime_time
+from datetime import timedelta
 from functools import partial
 
 # django and drf
@@ -2144,6 +2146,34 @@ def _filter_event_queryset(queryset, params, srs=None):
         for lang in val:
             q = q | Q(in_language__id=lang)
         queryset = queryset.filter(q)
+
+    val = params.get('starts_after', None)
+    param = 'starts_after'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(start_time__time__gte=datetime_time(hour, minute))
+
+    val = params.get('starts_before', None)
+    param = 'starts_before'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(start_time__time__lte=datetime_time(hour, minute))
+
+    val = params.get('ends_after', None)
+    param = 'ends_after'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(end_time__time__gte=datetime_time(hour, minute))
+
+    val = params.get('ends_before', None)
+    param = 'ends_before'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(end_time__time__lte=datetime_time(hour, minute))
 
     # Filter by translation only
     val = params.get('translation', None)
