@@ -2127,7 +2127,7 @@ def _filter_event_queryset(queryset, params, srs=None):
         queryset = queryset.filter(q)
 
     # Filter by audience min age
-    val = params.get('audience_min_age', None)
+    val = params.get('audience_min_age', None) or params.get('audience_min_age_lt', None)
     if val:
         try:
             min_age = int(val)
@@ -2135,14 +2135,30 @@ def _filter_event_queryset(queryset, params, srs=None):
             raise ParseError(_('Audience minimum age must be a digit.'))
         queryset = queryset.filter(audience_min_age__lte=min_age)
 
+    val = params.get('audience_min_age_gt', None)
+    if val:
+        try:
+            min_age = int(val)
+        except ValueError:
+            raise ParseError(_('Audience minimum age must be a digit.'))
+        queryset = queryset.filter(audience_min_age__gte=min_age)
+
     # Filter by audience max age
-    val = params.get('audience_max_age', None)
+    val = params.get('audience_max_age', None) or params.get('audience_max_age_gt', None)
     if val:
         try:
             max_age = int(val)
         except ValueError:
             raise ParseError(_('Audience maximum age must be a digit.'))
         queryset = queryset.filter(audience_max_age__gte=max_age)
+
+    val = params.get('audience_max_age_lt', None)
+    if val:
+        try:
+            max_age = int(val)
+        except ValueError:
+            raise ParseError(_('Audience maximum age must be a digit.'))
+        queryset = queryset.filter(audience_max_age__lte=max_age)
 
     # Filter deleted events
     val = params.get('show_deleted', None)
