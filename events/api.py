@@ -211,6 +211,43 @@ def clean_text_fields(data, allowed_html_fields=[]):
     return data
 
 
+def parse_hours(val, param):
+
+    if len(val) > 2:
+        raise ParseError(f'Only hours and minutes can be given in {param}. For example: 16:00.')
+    try:
+        hour = int(val[0])
+    except ValueError:
+        raise ParseError(f'Hours should be passed as numbers in {param}. For example: 16:00.')
+    if not (0 <= hour <= 23):
+        raise ParseError(f'Hours should be between 0 and 23 in {param}, for example: 16:00. You have passed {hour}.')
+    if len(val) == 2 and val[1]:
+        try:
+            minute = int(val[1])
+        except ValueError:
+            raise ParseError(f'Minutes should be passed as numbers in {param}. For example: 16:20.')
+        if not (0 <= minute <= 59):
+            raise ParseError(f'Minutes should be between 0 and 59 in {param} as in 16:20. You passed {minute}.')
+        return hour, minute
+    return hour, 0
+
+
+def parse_bool(val, param):
+    if val.lower() == 'true':
+        return True
+    elif val.lower() == 'false':
+        return False
+    else:
+        raise ParseError(f'{param} can take the values True or False. You passed {val}.')
+
+
+def parse_digit(val, param):
+    try:
+        return int(val)
+    except ValueError:
+        raise ParseError(f'{param} must be an integer, you passed "{val}"')
+
+
 class JSONLDRelatedField(relations.HyperlinkedRelatedField):
     """
     Support of showing and saving of expanded JSON nesting or just a resource
