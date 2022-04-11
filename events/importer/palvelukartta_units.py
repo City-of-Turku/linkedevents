@@ -457,6 +457,42 @@ class PalvelukarttaUnitsImporter(Importer):
 
         return data
 
+    def __multilang_map(self, obj: Any, field_name: str, field_val: str) -> None:
+        setattr(obj, field_name, field_val['fi'])
+        for lang in ('fi', 'sv', 'en'):
+            setattr(obj, "%s_%s" % (field_name, lang), field_val[lang])
+
+    def map_new_fields(self, obj: Any, data: dict) -> None:
+        """Gives the object attributes new values."""
+        obj.description = self.__multilang_map(
+            obj=obj, field_name='description', field_val=data['DESCRIPTION'])
+        obj.publisher_id = 'tpr:1100'
+
+    def save_units(self, unit: dict) -> None:
+        """Main saving logic."""
+        unit_found = Place.objects.filter(
+            data_source__in=['tpr', 'ptv', 'osm']).filter(name=unit['NAME']['fi'])[:1]
+        if unit_found:
+            for unit_obj in unit_found:
+                # Only update the exact ID match unit.
+                if unit['ID'] == unit_obj.id:
+                    bm_now = BaseModel.now()
+                    if (bm_now - unit_obj.last_modified_time) > (bm_now - self.importer_start_time):
+                        """
+                        If the current object with the specified name did not get modified during import runtime,
+                        we can save 'new' data on top of it. Just an extra caution in case 2+ ID duplicates exist.
+                        """
+                        try:
+                            self.map_new_fields(obj=unit_obj, data=unit)
+                            unit_obj.save()
+                            logger.info(
+                                "Saved existing unit: %s with updated data." % unit['ID'])
+                        except Exception as e:
+                            logger.error(
+                                "Could not save unit: %s due to: %s" % (unit['ID'], e))
+        else:
+            print("New.", unit['NAME'])
+
     def process(self, data: dict) -> None:
         """Processing phase."""
         for idx, units in enumerate(data, start=1):
@@ -464,7 +500,7 @@ class PalvelukarttaUnitsImporter(Importer):
             for unit in units:
                 data = self.build_data(unit=unit)
                 if data:
-                    print(data)
+                    self.save_units(unit=data)
 
     def handle(self) -> None:
         """The core handler function."""
