@@ -21,12 +21,15 @@ from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email, URLValidator
 
 # GeoDjango:
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.gdal.error import GDALException
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
+
 
 # Query speed measurement (used if need be).
 from django.db import connection, reset_queries
@@ -296,7 +299,7 @@ class PalvelukarttaUnitsImporter(Importer):
             street_name = street_name.split(',')[0].strip()
         return street_name
 
-    def build_data(self, unit: dict) -> None:
+    def build_data(self, unit: dict) -> dict:
         """Validates and builds the data."""
         data = {
             'ID': None,
@@ -379,6 +382,9 @@ class PalvelukarttaUnitsImporter(Importer):
                 data['STREET_ADDRESS']['fi'] = unit['street_address']['fi']
                 street = self.__format_street(
                     street_name=unit['street_address']['fi'])
+                # Prevent regex exploitation:
+                for ch in SAFE_REGEX:
+                    street = street.replace(ch, '')
                 try:
                     addr = Place.objects.filter(data_source_id='osoite', address_locality_fi=data['ADDRESS_LOCALITY']['fi']).filter(
                         **{"name__regex": r'^%s' % street})[:1]
@@ -399,12 +405,66 @@ class PalvelukarttaUnitsImporter(Importer):
                     logger.error("Problem filtering place for unit: %s due to: %s" % (
                         data['ORIGIN_ID'], e))
 
+        # Validate website:
+        if isinstance(unit.get('www'), dict):
+            self.__multilang_duplicate_cleanup(
+                field=unit['www'], min_len=3, max_len=1000)
+            for lang in ('fi', 'sv', 'en'):
+                if isinstance(unit['www'].get(lang), str):
+                    try:
+                        URLValidator(unit['www'][lang])
+                    except ValidationError as e:
+                        logger.warn("Improper URL: %s with details: %s" %
+                                    (unit['www'][lang], e))
+                    else:
+                        data['WWW'][lang] = unit['www'][lang]
+
+        # Validate email:
+        if isinstance(unit.get('email'), str):
+            email = self.__secure_text(txt=unit['email'])
+            if 3 <= len(email) <= 254:
+                try:
+                    validate_email(email)
+                except ValidationError as e:
+                    logger.warn("Improper email: %s with details: %s" %
+                                (email, e))
+                else:
+                    data['EMAIL'] = email
+
+        # Validate telephone:
+        if isinstance(unit.get('connections'), list):
+            if len(unit['connections']) >= 1:
+                phones = []
+                for connection in unit['connections']:
+                    if isinstance(connection.get('phone'), str):
+                        if connection['phone'] not in phones:
+                            phone = self.__secure_text(txt=connection['phone'])
+                            if len(phone) <= 128:
+                                phones.append(phone)
+                                if len('; '.join(phones)) > 128:
+                                    logger.warn(
+                                        "Too many phone numbers... stopping here.")
+                                    phones.remove(phone)
+                                    break
+                if phones:
+                    data['TELEPHONE'] = '; '.join(phones)
+
+        # Validate address_zip (postcode):
+        if isinstance(unit.get('address_zip'), str):
+            post_code = self.__secure_text(txt=unit['address_zip'])
+            if len(post_code) == 5:
+                data['POST_CODE'] = post_code
+
+        return data
+
     def process(self, data: dict) -> None:
         """Processing phase."""
         for idx, units in enumerate(data, start=1):
             logger.info("%s unit pages processed." % idx)
             for unit in units:
-                self.build_data(unit=unit)
+                data = self.build_data(unit=unit)
+                if data:
+                    print(data)
 
     def handle(self) -> None:
         """The core handler function."""
