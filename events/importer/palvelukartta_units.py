@@ -14,6 +14,7 @@ import sys
 import re
 import string
 from datetime import timedelta
+from requests.auth import HTTPBasicAuth
 
 # Django:
 from django_orghierarchy.models import Organization, OrganizationClass
@@ -39,6 +40,7 @@ from typing import TYPE_CHECKING, Any, Tuple, List
 
 # Per module logger
 logger = logging.getLogger(__name__)
+
 
 HEADERS = {
     'Content-Type': 'application/json',
@@ -102,7 +104,7 @@ SAFE_STRINGS = ['\\', '`', '*', '_',
 
 async def fetch(session: Any, URL: str, id: int) -> dict:
     """Gets the data asynchronously."""
-    async with session.get(URL) as response:
+    async with session.get(URL, auth=aiohttp.BasicAuth(settings.SMBACKEND_USER, settings.SMBACKEND_PASS)) as response:
         data = await response.read()
         json_response = json.loads(data)
         result = json_response.get('results', None)
@@ -146,7 +148,8 @@ def async_main(retry_count=3) -> dict:
     url = "https://testipalvelukartta-api.turku.fi/api/v2/unit"
 
     try:
-        fetch = requests.get(url, headers=HEADERS)
+        fetch = requests.get(url, headers=HEADERS, auth=(
+            settings.SMBACKEND_USER, settings.SMBACKEND_PASS))
         response = fetch.json()
         count = response["count"]
         print(count)
@@ -458,14 +461,20 @@ class PalvelukarttaUnitsImporter(Importer):
         return data
 
     def __multilang_map(self, obj: Any, field_name: str, field_val: str) -> None:
+        """Method used in saving for mapping multilang values."""
         setattr(obj, field_name, field_val['fi'])
         for lang in ('fi', 'sv', 'en'):
             setattr(obj, "%s_%s" % (field_name, lang), field_val[lang])
 
     def map_new_fields(self, obj: Any, data: dict) -> None:
         """Gives the object attributes new values."""
-        obj.description = self.__multilang_map(
-            obj=obj, field_name='description', field_val=data['DESCRIPTION'])
+        for field in ('description', 'street_address', 'www', 'address_locality'):
+            self.__multilang_map(
+                obj=obj, field_name=field, field_val=data[field.upper()])
+        obj.email = data['EMAIL']
+        obj.telephone = data['TELEPHONE']
+        obj.postal_code = data['POST_CODE']
+        obj.position = data['POSITION']
         obj.publisher_id = 'tpr:1100'
 
     def save_units(self, unit: dict) -> None:
@@ -491,7 +500,19 @@ class PalvelukarttaUnitsImporter(Importer):
                             logger.error(
                                 "Could not save unit: %s due to: %s" % (unit['ID'], e))
         else:
-            print("New.", unit['NAME'])
+            try:
+                new_obj = Place(data_source=getattr(self, 'data_source_tpr'))
+                new_obj.id = unit['ID']
+                new_obj.origin_id = unit['ORIGIN_ID']
+                self.__multilang_map(
+                    obj=new_obj, field_name='name', field_val=unit['NAME'])
+                self.map_new_fields(obj=new_obj, data=unit)
+                new_obj.save()
+                logger.info("Created new unit: %s with name: %s" %
+                            (unit['ID'], unit['NAME']))
+            except Exception as e:
+                logger.error("Could not create unit: %s due to: %s" %
+                             (unit['ID'], e))
 
     def process(self, data: dict) -> None:
         """Processing phase."""
@@ -502,7 +523,29 @@ class PalvelukarttaUnitsImporter(Importer):
                 if data:
                     self.save_units(unit=data)
 
+    def remove_old_units(self) -> None:
+        """Removes all TPR units that did not get updated."""
+        tprs = Place.objects.filter(
+            data_source__in=['tpr']).iterator(chunk_size=10)
+        if tprs:
+            bm_now = BaseModel.now()
+            for existing_obj in tprs:
+                if (bm_now - existing_obj.last_modified_time) > (bm_now - self.importer_start_time):
+                    # This means we know that the object did not get updated during runtime.
+                    try:
+                        logger.info("Removing old unit: %s with name: %s" % (
+                            existing_obj.id, existing_obj.name))
+                        existing_obj.delete()
+                    except Exception as e:
+                        logger.error("Could not remove old unit: %s due to: %s" % (
+                            existing_obj.id, e))
+
     def handle(self) -> None:
         """The core handler function."""
         obj_list = async_main()
+        proc_time_frmt('Fetching')
         self.process(data=obj_list)
+        proc_time_frmt('Processing and saving')
+        self.remove_old_units()
+        proc_time_frmt('Removing old units')
+        proc_time_frmt('Importer')

@@ -21,7 +21,8 @@ def get_git_revision_hash() -> str:
     """
     try:
         # We are not interested in gits complaints
-        git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'], stderr=subprocess.DEVNULL, encoding='utf8')
+        git_hash = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'], stderr=subprocess.DEVNULL, encoding='utf8')
     # ie. "git" was not found
     # should we return a more generic meta hash here?
     # like "undefined"?
@@ -63,16 +64,20 @@ env = environ.Env(
     MAIL_MAILGUN_API=(str, ''),
     LIPPUPISTE_EVENT_API_URL=(str, None),
 
-    OIDC_AUDIENCE=(str,''),
+    OIDC_AUDIENCE=(str, ''),
     OIDC_SECRET=(str, ''),
-    OIDC_API_SCOPE_PREFIX=(str,''),
+    OIDC_API_SCOPE_PREFIX=(str, ''),
     OIDC_API_AUTHORIZATION_FIELD=(str, ''),
     OIDC_REQUIRE_API_SCOPE_FOR_AUTHENTICATION=(bool, False),
     OIDC_ISSUER=(str, ''),
     OIDC_LEEWAY=(int, 0),
     HELUSERS_PROVIDER=(str, 'helusers.providers.helsinki'),
-    HELUSERS_SOCIALACCOUNT_ADAPTER=(str, 'helusers.adapter.SocialAccountAdapter'),
-    HELUSERS_AUTHENTICATION_BACKEND=(str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
+    HELUSERS_SOCIALACCOUNT_ADAPTER=(
+        str, 'helusers.adapter.SocialAccountAdapter'),
+    HELUSERS_AUTHENTICATION_BACKEND=(
+        str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
+    SMBACKEND_USER=(str, None),
+    SMBACKEND_PASS=(str, None),
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -323,7 +328,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CSRF_COOKIE_NAME = '%s-csrftoken' % env('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env('COOKIE_PREFIX')
 
-from django_jinja.builtins import DEFAULT_EXTENSIONS # noqa
+from django_jinja.builtins import DEFAULT_EXTENSIONS  # noqa
 
 TEMPLATES = [
     {
@@ -382,45 +387,45 @@ LIPPUPISTE_EVENT_API_URL = env('LIPPUPISTE_EVENT_API_URL')
 def haystack_connection_for_lang(language_code):
     if language_code == "fi":
         return {'default-fi': {
-                    'ENGINE': 'multilingual_haystack.backends.LanguageSearchEngine',
-                    'BASE_ENGINE': 'events.custom_elasticsearch_search_backend.CustomEsSearchEngine',
-                    'URL': env('ELASTICSEARCH_URL'),
-                    'INDEX_NAME': 'linkedevents-fi',
-                    'MAPPINGS': CUSTOM_MAPPINGS,
-                    'SETTINGS': {
-                        "analysis": {
-                            "analyzer": {
-                                "default": {
-                                    "tokenizer": "finnish",
-                                    "filter": ["lowercase", "voikko_filter"]
-                                }
-                            },
-                            "filter": {
-                                "voikko_filter": {
-                                    "type": "voikko",
-                                }
-                            }
+            'ENGINE': 'multilingual_haystack.backends.LanguageSearchEngine',
+            'BASE_ENGINE': 'events.custom_elasticsearch_search_backend.CustomEsSearchEngine',
+            'URL': env('ELASTICSEARCH_URL'),
+            'INDEX_NAME': 'linkedevents-fi',
+            'MAPPINGS': CUSTOM_MAPPINGS,
+            'SETTINGS': {
+                "analysis": {
+                    "analyzer": {
+                        "default": {
+                            "tokenizer": "finnish",
+                            "filter": ["lowercase", "voikko_filter"]
+                        }
+                    },
+                    "filter": {
+                        "voikko_filter": {
+                            "type": "voikko",
                         }
                     }
-                },
                 }
+            }
+        },
+        }
     else:
         return {f'default-{language_code}': {
-                    'ENGINE': 'multilingual_haystack.backends.LanguageSearchEngine',
-                    'BASE_ENGINE': 'events.custom_elasticsearch_search_backend.CustomEsSearchEngine',
-                    'URL': env('ELASTICSEARCH_URL'),
-                    'INDEX_NAME': f'linkedevents-{language_code}',
-                    'MAPPINGS': CUSTOM_MAPPINGS,
-                    }
-                }
+            'ENGINE': 'multilingual_haystack.backends.LanguageSearchEngine',
+            'BASE_ENGINE': 'events.custom_elasticsearch_search_backend.CustomEsSearchEngine',
+            'URL': env('ELASTICSEARCH_URL'),
+            'INDEX_NAME': f'linkedevents-{language_code}',
+            'MAPPINGS': CUSTOM_MAPPINGS,
+        }
+        }
 
 
 def dummy_haystack_connection_for_lang(language_code):
     return {f'default-{language_code}': {
-                'ENGINE': 'multilingual_haystack.backends.LanguageSearchEngine',
-                'BASE_ENGINE': 'haystack.backends.simple_backend.SimpleEngine'
-                }
-            }
+        'ENGINE': 'multilingual_haystack.backends.LanguageSearchEngine',
+        'BASE_ENGINE': 'haystack.backends.simple_backend.SimpleEngine'
+    }
+    }
 
 
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
@@ -497,7 +502,8 @@ if 'SECRET_KEY' not in locals():
             secret.write(SECRET_KEY)
             secret.close()
         except IOError:
-            Exception('Please create a %s file with random characters to generate your secret key!' % secret_file)
+            Exception(
+                'Please create a %s file with random characters to generate your secret key!' % secret_file)
 
 #
 # Anymail
@@ -510,3 +516,6 @@ if env('MAIL_MAILGUN_KEY'):
         'MAILGUN_API_URL': env('MAIL_MAILGUN_API'),
     }
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+SMBACKEND_USER = env('SMBACKEND_USER')
+SMBACKEND_PASS = env('SMBACKEND_PASS')
