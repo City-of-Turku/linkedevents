@@ -492,8 +492,6 @@ if 'SECRET_KEY' not in locals():
     try:
         SECRET_KEY = open(secret_file).read().strip()
     except IOError:
-        import random
-        system_random = random.SystemRandom()
         try:
             SECRET_KEY = env('SECRET_GEN')
             secret = open(secret_file, 'w')
