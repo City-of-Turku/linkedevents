@@ -45,27 +45,32 @@ logger.addHandler(
 class PMDImporter(Importer):
     # Required super 'base' class dependencies...
     name = "payment_method_defaults"  # Command calling name.
-    supported_languages = ['fi', 'sv', 'en']  # Language requirement.
-    data_source = None  # Base data_source requirement.
-    organization = None  # Base organization requirement.
+    supported_languages = ('fi', 'sv', 'en')  # Language requirement.
+    data_source = organization = None
 
-    def setup(self: 'events.importer.payment_method_defaults.PMDImporter') -> None:
-        data = [
-            'Käteinen',
-            'Maksukortti',
-            'Virikeseteli',
-            'Tyky-ranneke',
-            'Verkkomaksu',
-            'Mobile Pay',
-            'Museokortti',
-            'Lasku',
-        ]
+    def setup(self) -> None:
+        # Multilang payment methods:
+        data = {
+            'KÄTEINEN': {'fi': 'Käteinen', 'sv': 'Kontant', 'en': 'Cash'},
+            'MAKSUKORTTI': {'fi': 'Maksukortti', 'sv': 'Betalkort', 'en': 'Charge Card'},
+            'VIRIKESETELI': {'fi': 'Virikeseteli', 'sv': 'Fritidssedel', 'en': 'Recreational Voucher'},
+            'TYKY-RANNEKE': {'fi': 'Tyky-ranneke', 'sv': 'Tyky-armband', 'en': 'Tyky-bracelet'},
+            'VERKKOMAKSU': {'fi': 'Verkkomaksu', 'sv': 'Onlinebetalning', 'en': 'Online Payment'},
+            'MOBILE_PAY': {'fi': 'MobilePay', 'sv': 'MobilePay', 'en': 'MobilePay'},
+            'MUSEOKORTTI': {'fi': 'Museokortti', 'sv': 'Museikort', 'en': 'Museum Card'},
+            'LASKU': {'fi': 'Lasku', 'sv': 'Räkning', 'en': 'Invoice'},
+        }
 
-        for idx, word in enumerate(data, start=1):
+        for idx, words in enumerate(data.values(), start=1):
             try:
                 pm = PaymentMethod()
                 pm.id = str(idx)
-                pm.name = word
+                pm.name = words['fi']
+                for lang in self.supported_languages:
+                    setattr(pm, 'name_%s' % lang, words[lang])
+                logger.info("Saved payment method ID: %s with names: %s" %
+                            (idx, words))
                 pm.save()
             except Exception as e:
-                logger.error(e)
+                logger.error(
+                    "Error while trying to save payment method data: %s, due to: %s" % (words, e))
