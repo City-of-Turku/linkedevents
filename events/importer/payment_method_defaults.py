@@ -49,7 +49,7 @@ class PMDImporter(Importer):
     data_source = organization = None
 
     def setup(self) -> None:
-        # Multilang payment methods:
+        """Setup phase for payment methods."""
         data = {
             'KÄTEINEN': {'fi': 'Käteinen', 'sv': 'Kontant', 'en': 'Cash'},
             'MAKSUKORTTI': {'fi': 'Maksukortti', 'sv': 'Betalkort', 'en': 'Charge Card'},
