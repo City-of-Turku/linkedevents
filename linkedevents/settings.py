@@ -78,6 +78,7 @@ env = environ.Env(
         str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
     SMBACKEND_USER=(str, None),
     SMBACKEND_PASS=(str, None),
+    SECRET_GEN=(str, '')
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -483,6 +484,7 @@ if os.path.exists(f):
     sys.modules[module_name] = module
     exec(open(f, "rb").read())
 
+
 # We generate a persistent SECRET_KEY if it is not defined. Note that
 # setting SECRET_KEY will override the persisted key
 if 'SECRET_KEY' not in locals():
@@ -493,9 +495,7 @@ if 'SECRET_KEY' not in locals():
         import random
         system_random = random.SystemRandom()
         try:
-            SECRET_KEY = ''.join(
-                [system_random.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)')
-                 for i in range(64)])
+            SECRET_KEY = env('SECRET_GEN')
             secret = open(secret_file, 'w')
             import os
             os.chmod(secret_file, 0o0600)
