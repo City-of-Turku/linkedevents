@@ -78,7 +78,6 @@ env = environ.Env(
         str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
     SMBACKEND_USER=(str, ''),
     SMBACKEND_PASS=(str, ''),
-    SECRET_GEN=(str, '')
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
