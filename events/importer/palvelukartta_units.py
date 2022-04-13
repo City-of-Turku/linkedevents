@@ -109,6 +109,7 @@ async def fetch(session: Any, URL: str, id: int) -> dict:
         json_response = json.loads(data)
         result = json_response.get('results', None)
         if result:
+            logger.info('Gathered all units from page: %s' % id)
             return result
         else:
             err_result = json_response.get('detail', None)
@@ -128,6 +129,7 @@ async def main(unit_pages: int) -> dict:
             # Testipalvelukartta needs turku VPN connection.
             URL = "https://testipalvelukartta-api.turku.fi/api/v2/unit/?page=%s&page_size=50" % page_no
             tasks.append(fetch(session=session, URL=URL, id=page_no))
+            logger.info("Asynchronous task: %s instantiated" % page_no)
         try:
             res = await asyncio.gather(*tasks, return_exceptions=False)
             return res
@@ -152,7 +154,7 @@ def async_main(retry_count=3) -> dict:
             settings.SMBACKEND_USER, settings.SMBACKEND_PASS))
         response = fetch.json()
         count = response["count"]
-        print(count)
+        logger.info('Gathering: %s units...' % count)
         calc = math.modf(count/50)
 
         if calc[0] != float(0):

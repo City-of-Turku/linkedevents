@@ -76,8 +76,8 @@ env = environ.Env(
         str, 'helusers.adapter.SocialAccountAdapter'),
     HELUSERS_AUTHENTICATION_BACKEND=(
         str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
-    SMBACKEND_USER=(str, None),
-    SMBACKEND_PASS=(str, None),
+    SMBACKEND_USER=(str, ''),
+    SMBACKEND_PASS=(str, ''),
     SECRET_GEN=(str, '')
 )
 
@@ -498,5 +498,6 @@ if env('MAIL_MAILGUN_KEY'):
     }
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Palvelukartta import 'might' need these if API authentications are set in place. Consult if need be.
 SMBACKEND_USER = env('SMBACKEND_USER')
 SMBACKEND_PASS = env('SMBACKEND_PASS')
