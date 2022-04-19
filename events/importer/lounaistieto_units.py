@@ -293,7 +293,6 @@ class LounaistietoUnitsImporter(Importer):
         if isinstance(unit.get('kohteen_nimi'), str):
             name = self.__secure_text(unit['kohteen_nimi'])
             if isinstance(name, str):
-                name = name.strip()
                 if len(name) <= 255:
                     data['NAME'] = name
 
@@ -318,7 +317,6 @@ class LounaistietoUnitsImporter(Importer):
         if isinstance(unit.get('puhelinnumero'), str):
             phone = self.__secure_text(unit['puhelinnumero'])
             if isinstance(name, str):
-                phone = phone.strip()
                 if len(phone) <= 128:
                     data['TELEPHONE'] = phone
 
@@ -327,8 +325,7 @@ class LounaistietoUnitsImporter(Importer):
             street = self.__format_street(street_name=unit['osoite'])
             street = self.__secure_text(street)
             if isinstance(street, str):
-                street = street.strip()
-                if street != '' and len(street) <= 80:
+                if len(street) <= 80:
                     # Safeguard from regex manipulation:
                     for ch in SAFE_REGEX:
                         street = street.replace(ch, '')
