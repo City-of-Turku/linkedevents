@@ -129,8 +129,8 @@ class ImageBankImporter(Importer):
                 min_scale = min((1280 / img.width, 720 / img.height)) # Get the scaling factor of the longest distance.
                 img = img.resize((int(img.width * min_scale), int(img.height * min_scale))) # Resize by multiplying scale by dimensions.
                 img.save('%s/%s.%s' % (paths, img_file_name, 'webp'), format='webp') # Convert and save the image to the path in webp format.
-            except ZeroDivisionError:
-                logger.error("Image is 0 pixels in a certain dimension. Unable to process.")
+            except Exception as e:
+                logger.error("Unable to process image due to: %s" % e)
 
             return 'images/%s.webp' % img_file_name
 
