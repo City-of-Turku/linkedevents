@@ -707,7 +707,7 @@ class TurkuOriginalImporter(Importer):
             # Match Events & Images together in the ManyToMany relationship table.
             def _fetch_from_image_table(p, p2, raise_exception=True):
                 try:
-                    img = Image.objects.get(image=f'images/{json_event[p2]}.jpg')
+                    img = Image.objects.get(image=f'images/{json_event[p2]}.webp')
                     event_obj = Event.objects.get(origin_id=json_event[p])
                 except (Image.DoesNotExist, Event.DoesNotExist):
                     if not raise_exception:
