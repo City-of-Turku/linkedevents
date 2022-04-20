@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+import re
 import logging
 import requests
 import requests_cache
@@ -12,6 +15,8 @@ from events.models import Language, EventLink, Offer
 from django_orghierarchy.models import Organization, OrganizationClass
 from pytz import timezone
 from django.conf import settings
+from pathlib import Path
+from PIL import Image as pil_image
 
 from events.utils import get_field_translations
 from .util import clean_text
@@ -21,27 +26,8 @@ from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
 from copy import copy
 
-if not exists(join(dirname(__file__), 'logs')):
-    mkdir(join(dirname(__file__), 'logs'))
-
-__setattr__ = setattr
-
-logger = logging.getLogger(__name__)  # Per module logger
-curFileExt = basename(__file__)
-curFile = splitext(curFileExt)[0]
-logFile = \
-    logging.FileHandler(
-        '%s' % (join(dirname(__file__), 'logs', curFile+'.logs'))
-    )
-logFile.setFormatter(
-    logging.Formatter(
-        '[%(asctime)s] <%(name)s> (%(lineno)d): %(message)s'
-    )
-)
-logFile.setLevel(logging.DEBUG)
-logger.addHandler(
-    logFile
-)
+# Per module logger
+logger = logging.getLogger(__name__)
 
 VIRTUAL_LOCATION_ID = "virtual:public"
 
@@ -161,7 +147,7 @@ class APIBrokenError(Exception):
 
 @register_importer
 class TurkuOriginalImporter(Importer):
-    name = curFile
+    name = 'turku_old_events'
     supported_languages = LANGUAGES_TURKU_OLD  # LANGUAGES
     languages_to_detect = []
     current_tick_index = 0
@@ -297,6 +283,26 @@ class TurkuOriginalImporter(Importer):
             return item.split(',')
         return []
 
+
+    def _request_image_url(self, img_url: str, uid: str) -> str:
+        """Fetches, processes, converts and saves the image into webp format."""
+        img = requests.get(img_url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True).raw
+        img_file_name = uid
+        paths = Path('%s/images' % settings.MEDIA_ROOT)
+
+        try:
+            img = pil_image.open(img)
+            # Scales the image so that it fits within the bounding box of a certain resolution.
+            min_scale = min((1280 / img.width, 720 / img.height)) # Get the scaling factor of the longest distance.
+            img = img.resize((int(img.width * min_scale), int(img.height * min_scale))) # Resize by multiplying scale by dimensions.
+            img.save('%s/%s.%s' % (paths, img_file_name, 'webp'), format='webp') # Convert and save the image to the path in webp format.
+        except Exception as e:
+            logger.error("Unable to process image due to: %s" % e)
+            return None
+
+        return 'images/%s.webp' % img_file_name
+
+
     def _import_event(self, lang, event_el, events, event_type):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(
@@ -401,29 +407,12 @@ class TurkuOriginalImporter(Importer):
                 # Saves an image from the URL onto our server & database Image table.
                 # We only want mother event images and single event images.
 
-                IMAGE_TYPE = 'jpg'
-                PATH_EXTEND = 'images'
-
-                def request_image_url():
-                    img = requests.get(eventTku['event_image_ext_url']['src'],
-                                       headers={'User-Agent': 'Mozilla/5.0'}).content
-                    imgfile = eventTku['drupal_nid']
-                    path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
-                        'root': settings.MEDIA_ROOT,
-                        'pathext': PATH_EXTEND,
-                        'img': imgfile,
-                        'type': IMAGE_TYPE
-                    })
-                    with open(path, 'wb') as file:
-                        file.write(img)
-                    return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
-
                 self.image_obj, _ = Image.objects.update_or_create(
                     defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                         license=self.cc_by_license,
                         data_source=self.data_source,
                         publisher=self.organization,
-                        image=request_image_url()))
+                        image=self._request_image_url(img_url=eventTku['event_image_ext_url']['src'], uid=eventTku['drupal_nid'])))
 
         def set_attr(field_name, val):
             if field_name in evItem:
