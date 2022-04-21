@@ -103,9 +103,14 @@ SERVICE_TYPES = {
     'taxi',
 }
 
+ENCODE_FORMAT = 'ISO-8859-15'
+
 # Place regex calls need to cleaned.
 SAFE_REGEX = ['\\', '`', '*', '_', '{', '}', '[', ']',
               '(', ')', '>', '#', '+', '.', '!', '$', '\'']
+
+SAFE_STRINGS = ['\\', '`', '*', '_',
+                '{', '}', '[', ']', '<', '>', '\'', '|', '\r\n', '\xa0']
 
 
 def proc_time_frmt(stage: str) -> None:
@@ -211,6 +216,22 @@ class LounaistietoUnitsImporter(Importer):
             street_name = street_name.split(',')[0].strip()
         return street_name
 
+    def __secure_text(self, txt: str) -> None:
+        """Method for patching (securing) text."""
+        # Remove all unsupported language letters and tags:
+        txt = strip_tags(txt.encode(
+            ENCODE_FORMAT, 'ignore').decode(ENCODE_FORMAT))
+        # Remove extra unsupported letters due to security reasons:
+        for letter in txt:
+            if letter in SAFE_STRINGS:
+                letter = letter.replace(letter, ' ')
+        # Make sure no duplicate spaces are found in sentences:
+        txt = ' '.join(txt.split()).strip()
+        # Nullify empty strings:
+        if txt == '':
+            txt = None
+        return txt
+
     def build_data(self, unit: dict, geom: dict) -> dict:
         """Processes, validates and builds the data. Skips invalid units."""
         data = {
@@ -270,8 +291,8 @@ class LounaistietoUnitsImporter(Importer):
 
         # Get name:
         if isinstance(unit.get('kohteen_nimi'), str):
-            name = unit['kohteen_nimi'].strip()
-            if name != '':
+            name = self.__secure_text(unit['kohteen_nimi'])
+            if isinstance(name, str):
                 if len(name) <= 255:
                     data['NAME'] = name
 
@@ -294,16 +315,17 @@ class LounaistietoUnitsImporter(Importer):
 
         # Get telephone:
         if isinstance(unit.get('puhelinnumero'), str):
-            phone = unit['puhelinnumero'].strip()
-            if phone != '':
+            phone = self.__secure_text(unit['puhelinnumero'])
+            if isinstance(name, str):
                 if len(phone) <= 128:
                     data['TELEPHONE'] = phone
 
         # Get osoite:
         if isinstance(unit.get('osoite'), str):
             street = self.__format_street(street_name=unit['osoite'])
-            if street:
-                if street.strip() != '':
+            street = self.__secure_text(street)
+            if isinstance(street, str):
+                if len(street) <= 80:
                     # Safeguard from regex manipulation:
                     for ch in SAFE_REGEX:
                         street = street.replace(ch, '')
