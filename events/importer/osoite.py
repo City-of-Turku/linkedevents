@@ -1,199 +1,343 @@
 # -*- coding: utf-8 -*-
+
+# Dependencies.
+import requests
+import dateutil
+import asyncio
+import aiohttp
 import logging
+import math
+import time
+import pytz
+import json
+import sys
+import re
+from datetime import datetime
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
+from queue import Empty, Queue
+from threading import Thread
 
-from django import db
-from django.conf import settings
-from django.core.management import call_command
-from django.utils.module_loading import import_string
-from django_orghierarchy.models import Organization
-from django_orghierarchy.models import OrganizationClass
-
-from events.models import DataSource, Place
-from .sync import ModelSyncher
+# Django:
+from django_orghierarchy.models import Organization, OrganizationClass
+from events.models import DataSource, BaseModel, Place
 from .base import Importer, register_importer
+from django.utils.html import strip_tags
+from django.conf import settings
+from django.db import transaction
+from django.contrib.gis.gdal import SpatialReference, CoordTransform
+from django.contrib.postgres.search import SearchVector
 
+
+# GeoDjango:
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.gdal import SpatialReference, CoordTransform
+from django.contrib.gis.gdal.error import GDALException
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
+
+# Query speed measurement (used if need be).
+from django.db import connection, reset_queries
+
+# Type checking:
+from typing import TYPE_CHECKING, Any, Tuple, List
 # Per module logger
 logger = logging.getLogger(__name__)
 
-GK23_SRID = 3877
+# Determines how many threads are run simultaneously when importing places.
+THREAD_POOL_SIZE = 8
 
-#NOTE! this import uses munigeo library component and there must be turku specific file turku.py
+MUNICIPALITIES = { 
+    # Code, municipality_id, name_fi, name_sv
+    19: ("aura","Aura", "Aura"),
+    202: ("kaarina","Kaarina", "S:t Karins"),
+    284: ("koski_tl", "Koski Tl", "Koskis"),
+    304: ("kustavi", "Kustavi", "Gustavs"),
+    322: ("kemiönsaari", "Kemiönsaari", "Kimitoön"),
+    400: ("laitila", "Laitila", "Letala"),
+    423: ("lieto", "Lieto", "Lundo"),
+    430: ("loimaa", "Loimaa", "Loimaa"),
+    445: ("parainen", "Parainen", "Pargas"),
+    480: ("marttila", "Marttila", "S:t Mårtens"),
+    481: ("masku", "Masku", "Masko"),
+    503: ("mynämäki", "Mynämäki", "Virmo"),
+    529: ("naantali", "Naantali", "Nådendal"),
+    538: ("nousiainen", "Nousiainen", "Nousis"),
+    561: ("oripää", "Oripää", "Oripää"),
+    577: ("paimio", "Paimio", "Pemar"),
+    631: ("pyhäranta", "Pyhäranta", "Pyhäranta"),
+    636: ("pöytyä", "Pöytyä", "Pöytis"),
+    680: ("raisio", "Raisio", "Reso"),
+    704: ("rusko", "Rusko", "Rusko"),
+    734: ("salo", "Salo", "Salo"),
+    738: ("sauvo", "Sauvo", "Sagu"),
+    761: ("somero", "Somero", "Somero"),
+    833: ("taivassalo", "Taivassalo", "Tövsala"),
+    853: ("turku", "Turku", "Åbo"),
+    895: ("uusikaupunki", "Uusikaupunki", "Nystad"),
+    918: ("vehmaa", "Vehmaa", "Vemo"),   
+}
+# Per module logger
+logger = logging.getLogger(__name__)
+BASE_URL = "https://testipalvelukartta-api.turku.fi/api/v2/address/"
+# The source data is serializer into 4326
+SOURCE_DATA_SRID = 4326
+SOURCE_SRS = SpatialReference(SOURCE_DATA_SRID)
+TARGET_SRS = SpatialReference(settings.PROJECTION_SRID)
+# 1000 is the max page size in munigeo
+PAGE_SIZE = 1000
+
+def proc_time_frmt(stage: str) -> None:
+    # Formatter for logs.
+    ft = math.modf(time.process_time())
+    curtime = float(str(ft[0])[:3])+ft[1]
+    logger.info('%s finished after %s seconds from the initial start!' % (stage, curtime))
+
 
 @register_importer
 class OsoiteImporter(Importer):
-    name = 'osoite'
-    supported_languages = ['fi', 'sv']
+    # Importer class dependant attributes:
+    name = "osoite"  # Command calling name.
+    start_time = None
+    places_imported = 0
+    supported_languages = ('fi', 'sv', 'en')  # Base file requirement.
+    coord_transform = CoordTransform(SOURCE_SRS, TARGET_SRS)
+    retry_strategy = Retry(
+        total=10,
+        status_forcelist=[408, 429, 500, 502, 503, 504],
+        method_whitelist=[
+            "GET",
+        ],
+        backoff_factor=40,  # 20, 40, 80 , 160, 320, 640, 1280...seconds
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy, pool_maxsize=THREAD_POOL_SIZE)
+    http = requests.Session()
+    http.mount("https://", adapter)
+    http.mount("http://", adapter)
 
-    def setup(self):
-    
-    
-        #public data source for organizations model
-        ds_args = dict(id='org', user_editable=True)
-        defaults = dict(name='Ulkoa tuodut organisaatiotiedot')
-        self.data_source, _ = DataSource.objects.update_or_create(defaults=defaults, **ds_args)         
-        
-        #public organization class for all places
-        ds_args = dict(origin_id='12', data_source=self.data_source)
-        defaults = dict(name='Paikkatieto')
-        self.organizationclass, _ =  OrganizationClass.objects.update_or_create(defaults=defaults, **ds_args)
-    
-        #address data source  
-        ds_args = dict(id='osoite', user_editable=True)
-        defaults = dict(name='Ulkoa tuodut osoitetiedot (sis. paikan)')
-        self.data_source, _ = DataSource.objects.update_or_create(defaults=defaults, **ds_args)
-        
-        #Organization for addresses
-        org_args = dict(origin_id='1000', data_source=self.data_source, classification_id="org:12")
-        defaults = dict(name='Osoiterekisteri')
-        self.organization, _ = Organization.objects.update_or_create(defaults=defaults, **org_args)
-        if self.options.get('remap', None):
-            # This will prevent deletion checking, marking all deleted places as deleted
-            # again and remapping them accordingly! Otherwise, places already deleted
-            # will not be remapped by the syncher.
-            self.check_deleted = lambda x: False
-            self.mark_deleted = self.delete_and_replace
-            
-    def get_street_address(self, address, language):
-        # returns the address sans municipality in the desired language, or Finnish as fallback
-        street = getattr(address.street, 'name_' + language)
-        if street:
-            s = '%s %s' % (street, address.number)
-            if address.number_end:
-                s += '-%s' % address.number_end
-            if address.letter:
-                s += '%s' % address.letter
-            return s
+    def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
+        ''' 
+        Main class data logic. Create DB objects & set class attributes.
+        This was created with easy expandability of the setup data dictionary in mind.
+        We are using save() throughout this program to avoid race conditions with update_or_create()
+        '''
+        attrs = iter(attr_map)
+        for sub_key in data[key].values():
+            q_obj = query()
+            for cur_val_idx, current_value in enumerate(sub_key):
+                for t_key in data['funcargs']['terms']:
+                    for idx, sub_t_key in enumerate(data[t_key]):
+                        key_to_find = "%s_%s" % (t_key, sub_t_key)
+                        if current_value == key_to_find:
+                            current_value = getattr(self, data['attr_maps'][t_key][idx])
+                setattr(q_obj, obj_model[cur_val_idx], current_value)
+            q_obj.save()
+            setattr(self, next(attrs), q_obj)
 
-    def get_whole_address(self, address, language):
-        # returns the address plus municipality in the desired language, or Finnish as fallback
-        municipality = getattr(address.street.municipality, 'name_' + language)
-        rtn = self.get_street_address(address, language)
-        if rtn:
-            return rtn + ', ' + municipality
+    def setup(self) -> None:
+        self.data = {
+            # Public organization, PTV and OSM data_source.
+            'ds': {
+                'osoite': ('osoite', 'Ulkoa tuodut osoitetiedot (sis. paikan)', True),
+                'org': ('org', 'Ulkoa tuodut organisaatiotiedot', True),
+            },
+            # Public organization class for all instances.
+            'orgclass': {
+                'paikka': ('org:12', '12', 'Paikkatieto', BaseModel.now(), 'ds_org'),                
+            },
+            # General ontology organization for keywords.
+            'org': {
+                'osoite': ('osoite:1000', '1000', 'Osoiterekisteri', BaseModel.now(), 'org:12', 'ds_osoite'),                
+            },
+            # Attribute name mapping for all due to class related attributes (ex. data_source and organization are necessary).
+            'attr_maps': {
+                'ds': ('data_source', 'data_source_org', ),
+                'orgclass': ('organization_class_12', ),
+                'org': ('organization', ),
+            },
+            # Models for easy iteration (Selected attributes):
+            'model_maps': {
+                'ds': ('id', 'name', 'user_editable'),
+                'orgclass': ('id', 'origin_id', 'name', 'created_time', 'data_source_id'),
+                'org': ('id', 'origin_id', 'name', 'created_time', 'classification_id', 'data_source_id'),
+            },
+            # Function arguments.
+            'funcargs': {
+                'terms': ('ds', 'orgclass', 'org'),
+                'termobjs': (DataSource, OrganizationClass, Organization)
+            },
+        }
+        # Keys in data share per element relevant information. Bring together element per key in data dict for iterator params.
+        mapped = list(map(lambda f, fto, mm, atm: [f, fto, self.data['model_maps'][mm], self.data['attr_maps'][atm]],
+                      self.data['funcargs']['terms'], self.data['funcargs']['termobjs'], self.data['model_maps'], self.data['attr_maps']))
+        # Call the iterator function. Params use the mapped elements.
+        for args in mapped:
+            self.iterator(
+                data=self.data, key=args[0], query=args[1], obj_model=args[2], attr_map=args[3])
+        proc_time_frmt('Setup')
+        self.handle()
 
-    def pk_get(self, resource_name, res_id=None):
-        # support all munigeo resources, not just addresses
-        Klass = import_string('munigeo.models.' + resource_name)
-        if res_id is not None:
-            return Klass.objects.get(origin_id=res_id)
-        return Klass.objects.all()
-
-    def delete_and_replace(self, obj):
-        obj.deleted = True
-        obj.save(update_fields=['deleted'])
-        # we won't stand idly by and watch kymp delete used addresses willy-nilly without raising a ruckus!
-        if obj.events.count() > 0:
-            # sadly, addresses are identified by, well, address alone. Therefore we have no other data that
-            # could be used to find out if there is a replacement location.
-            logger.warning("Osoiteluettelo deleted address %s (%s) with events. This means that the street in "
-                           "question has probably changed address numbers, as they do. Please check all "
-                           "addresses on the street for events and save any new address numbers in the "
-                           "replaced_by field. If several addresses have changed on the street, you may have to "
-                           "manually move the events instead. Until then, events will stay mapped to the old "
-                           "addresses." %
-                           (obj.id, str(obj)))
-        return True
-
-    def mark_deleted(self, obj):
-        if obj.deleted:
-            return False
-        return self.delete_and_replace(obj)
-
-    def check_deleted(self, obj):
-        return obj.deleted
-
-    @db.transaction.atomic
-    def _import_address(self, syncher, address_obj):
-        # addresses have no static ids, just format the address cleanly
-        origin_id = str(address_obj).replace(' - ', '-').replace(',', '').replace(' ', '_').lower()
-        obj = syncher.get(origin_id)
-        obj_id = 'osoite:' + origin_id
-        if not obj:
-            obj = Place(data_source=self.data_source, origin_id=origin_id)
-            obj._changed = True
-            obj._created = True
-            obj.id = obj_id
-        else:
-            assert obj.id == obj_id
-            obj._created = False
-        obj._changed_fields = []
-
-        # we must construct the names and street addresses from the address object
-        info = {}
-        for lang in self.supported_languages:
-            info['name_' + lang] = self.get_whole_address(address_obj, lang)
-            info['street_address_' + lang] = self.get_street_address(address_obj, lang)
-            info['municipality_' + lang] = getattr(address_obj.street.municipality, 'name_' + lang) \
-                or getattr(address_obj.street.municipality, 'name_fi')
-
-        self._save_translated_field(obj, 'name', info, 'name')
-        self._save_translated_field(obj, 'street_address', info, 'street_address')
-        self._save_translated_field(obj, 'address_locality', info, 'municipality')
-
-        position = address_obj.location
-        #print("[OSOITE.PY]: ---> POSITION: ", position)
-        #position = None
-        obj._changed = True
-        if position and obj.position:
-            # If the distance is less than 10cm, assume the location
-            # hasn't changed.
-            assert obj.position.srid == settings.PROJECTION_SRID
-            if position.distance(obj.position) < 0.10:
-                position = obj.position
-                #position = None
-        if position != obj.position:
-            obj._changed = True
-            obj._changed_fields.append('position')
-            obj.position = position
-
-        if obj.publisher_id != self.organization.id:
-            obj.publisher = self.organization
-            obj._changed_fields.append('publisher')
-            obj._changed = True
-
-        if obj.deleted:
-            obj.deleted = False
-            # address has been reinstated, hip hip hooray!
-            # there's no way we can find any events from other addresses that should now be in this address
-            # so we cannot do address replace here (the way we do with tprek units)
-            obj._changed_fields.append('deleted')
-            obj._changed = True
-
-        if obj._changed:
-            if obj._created:
-                verb = "created"
+    def get_search_column(self, lang):
+        """
+        Reads the columns, config languages and weights from the model
+        to be indexed. Creates and returns a CombinedSearchVector, that
+        can be stored into the search_column.
+        """
+        search_column = None
+        columns = Place.get_search_column_indexing(lang)
+        for column in columns:
+            if search_column:
+                search_column += SearchVector(column[0], config=column[1], weight=column[2])
             else:
-                verb = "changed (fields: %s)" % ', '.join(obj._changed_fields)
-            logger.info("%s %s" % (obj, verb))
-            obj.save()
+                search_column = SearchVector(column[0], config=column[1], weight=column[2])
 
-        syncher.mark(obj)
+        return search_column
 
-    def import_places(self):
-        # munigeo saves addresses in local db, we just create Places from them.
-        # note that the addresses only change daily and the import is time-consuming, so we should not run this hourly
+    def index_search_columns(self):
+        for lang in self.supported_languages:
+            key = "search_column_%s" % lang
+            logger.info(
+                f"{lang} Places indexed: {Place.objects.update(**{key: self.get_search_column(lang)})}"
+            )
+
+    def get_is_municipality_in_source_data(self, municipality_id):
+        request_url = f"{BASE_URL}?municipality={municipality_id}&page_size=1"
+        response = requests.get(request_url)
+        # requesting with a non existing municipality returns 400 Bad Request.
+        if response.status_code == 400:
+            return False
+        else: 
+            # Network and server errors are handled in the retry strategy.           
+            return True
+
+    def get_count(self, url):
+        url += "&page_size=1"
+        response = self.http.get(url)        
+        count = response.json()["count"]
+        return count     
+
+    def fetch_page(self, url, page):
+        request_url = f"{url}&page={page}&page_size={PAGE_SIZE}"
+        logger.info(f"Fetching page {page} from {request_url}")
+        response = self.http.get(request_url)
+        results = response.json()["results"]
+        return results
+    
+    def worker(self, page_queue, results_queue, url):
+        while not page_queue.empty():
+            try:
+                page = page_queue.get_nowait()
+            except Empty:
+                break
+            try:
+                results = self.fetch_page(url, page)
+            except Exception as err:
+                results_queue.put(err)
+            else:
+                results_queue.put(results)
+            finally:
+                page_queue.task_done()
+
+    def get_position(self, result):
+        lon = None
+        lat = None
+        try:
+            lon = result["location"]["coordinates"][0]
+            lat = result["location"]["coordinates"][1]
+        except KeyError:
+            return None
+
+        position = Point(lat, lon, srid=SOURCE_DATA_SRID)
+        position.transform(self.coord_transform)
+        return position
+
+    @transaction.atomic
+    def save_page(self, results, municipality):
+        municipality_id = municipality[0]
+        municipality_name = {"fi": municipality[1]}
+        municipality_name["sv"] = municipality[2]
+        municipality_name["en"] = municipality[1]
+
+        for result in results:                      
+            full_name =  {"fi": result["full_name_fi"]}
+            full_name["sv"] = result["full_name_sv"]
+            full_name["en"] = result["full_name_en"]
+            origin_id = f"{full_name['fi'].replace(' ','_')}_{municipality_id}".lower() 
+            id = f"osoite:{origin_id}"                   
+            entry = {"id":id}
+            for lang in self.supported_languages:
+                entry["name_" + lang] = f"{full_name[lang]}, {municipality_name[lang]}"
+                entry["street_address_" + lang] = full_name[lang]
+                entry["address_locality_" + lang] = municipality_name[lang]            
+            
+            entry["origin_id"] = origin_id
+            entry["created_time"] = BaseModel.now()
+            entry["position"] = self.get_position(result)
+            entry["data_source_id"] = getattr(self, "data_source")
+            entry["publisher_id"] = getattr(self, "organization").id     
+            place = Place(**entry) 
+            place.save()
+        len_results = len(results)
+        logger.info(f"Page saved with {len_results} Places.")
+        self.places_imported += len_results       
+
+    def import_municipality(self, municipality): 
+        # contains the page numbers to fetch
+        page_queue = Queue()
+        # contains the results fetched
+        results_queue = Queue()       
+        url = f"{BASE_URL}?municipality={municipality[0]}"
+        count = self.get_count(url)
+        num_pages = int(count / PAGE_SIZE) + 1
+        logger.info(f"Fetching municipality:{municipality[1]}")
+        logger.info(f"Number of pages to fetch: {num_pages} with page size: {PAGE_SIZE}.")
         
-        #NOTE! this use munigeo library component and there is turku specific file turku.py
-        #Check at munigeo import in requirements files django-munigeo==0.2.26 includes this turku.py file 
-        # addresses require the municipalities to be present in the db
-        call_command('geo_import', 'finland', municipalities=True)
-        #call_command('geo_import', 'helsinki', addresses=True)
-        call_command('geo_import', 'turku', addresses=True)
+        for pool in range(0, num_pages, THREAD_POOL_SIZE):
+            threads = []
+            # Create threads to the pool
+            for page in range(1, THREAD_POOL_SIZE + 1):
+                page_number = page + pool
+                if page_number <= num_pages:
+                    page_queue.put(page_number)
+                    threads.append(
+                        Thread(
+                            target=self.worker,
+                            args=(page_queue, results_queue, url),
+                        )
+                    )
 
-        queryset = Place.objects.filter(data_source=self.data_source)
-        if self.options.get('single', None):
-            obj_id = self.options['single']
-            obj_list = [self.pk_get('Address', obj_id)]
-            queryset = queryset.filter(id=obj_id)
-        else:
-            logger.info("Loading addresses...")
-            obj_list = self.pk_get('Address')
-            logger.info("%s addresses loaded" % len(obj_list))
-        syncher = ModelSyncher(queryset, lambda obj: obj.origin_id, delete_func=self.mark_deleted,
-                               check_deleted_func=self.check_deleted)
-        for idx, obj in enumerate(obj_list):
-            if idx and (idx % 1000) == 0:
-                logger.info("%s addresses processed" % idx)
-            self._import_address(syncher, obj)
+            for thread in threads:
+                thread.start()
+            page_queue.join()
+            while threads:
+                threads.pop().join()
+            while not results_queue.empty():
+                results = results_queue.get()
+                if not isinstance(results, Exception):
+                    self.save_page(results, municipality)
+                else:
+                    raise results
+      
+            end_time = datetime.now()
+            duration = end_time - self.start_time
+            output_rate = self.places_imported / duration.total_seconds()
+            logger.info(f"Duration: {str(duration)[:7]}, Places imported {self.places_imported} ")
+            logger.info(f"Output rate(places/second): {round(output_rate,2)}")
+ 
+    def import_places(self):
+        self.start_time = datetime.now()
+        for municipality in MUNICIPALITIES.values():
+            # Check if municipality exist in the source data.
+            if self.get_is_municipality_in_source_data(municipality[0]):
+                # Delete only if data_source_id is "osoite", leave "ptv" and "osm" places.
+                Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
+                self.import_municipality(municipality)   
+            else:
+                logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
+        logger.info("Indexing search columns...")
+        self.index_search_columns()        
 
-        syncher.finish(self.options.get('remap', False))
+    def handle(self) -> None:
+        self.import_places()        
+        logger.info(f"Imported {self.places_imported} Places.")
+        proc_time_frmt('Importer')
+

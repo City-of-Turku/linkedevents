@@ -16,6 +16,7 @@ from datetime import timedelta
 from functools import partial
 
 # django and drf
+from django.db import connection
 from django.db.transaction import atomic
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.utils import translation
@@ -769,7 +770,7 @@ def _text_qset_by_translated_field(field, val):
     languages = utils.get_fixed_lang_codes()
     qset = Q()
     for lang in languages:
-        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})
+        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})   
     return qset
 
 
@@ -1084,8 +1085,14 @@ class PlaceSerializer(LinkedEventsSerializer, GeoModelSerializer):
 
     class Meta:
         model = Place
-        exclude = ('n_events_changed',)
-
+        exclude = (
+            'n_events_changed',
+            'search_column_fi', 
+            'search_column_sv',
+            'search_column_en'
+        )
+  
+   
 
 class PlaceFilter(django_filters.rest_framework.FilterSet):
     division = django_filters.Filter(field_name='divisions', lookup_expr='in',
@@ -1135,6 +1142,9 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                        'street_address', 'postal_code')
     # we want to display tprek before osoite etc.
     ordering = ('-n_events', '-data_source', 'name')
+    # Default maximum value of results to be returned.
+    search_query_limit = 100
+    search_configs = {'fi': 'finnish','sv': 'swedish', 'en': 'english'}
 
     def get_queryset(self):
         """
@@ -1150,6 +1160,8 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         show_all_places (places without events are included)
         show_deleted (deleted places are included)
         """
+        params = self.request.query_params
+
         queryset = Place.objects.prefetch_related(
             'divisions__type', 'divisions__municipality')
         data_source = self.request.query_params.get('data_source')
@@ -1165,14 +1177,56 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # Optionally filter places by filter parameter,
         # can be used e.g. with typeahead.js
         # match to street as well as name, to make it easier to find units by address
-        val = self.request.query_params.get(
-            'text') or self.request.query_params.get('filter')
+        if 'text' or 'filter' in params:
+            val = params.get('text') or params.get('filter')
+            val = val.strip()
+      
         if val:
-            qset = _text_qset_by_translated_field(
-                'name', val) | _text_qset_by_translated_field('street_address', val)
-            queryset = queryset.filter(qset)
+            search_query_str = self.get_search_query_str(val)
+            if 'locale' in params:
+                locale = params.get('locale')
+            else:
+                locale = 'fi'
+            if 'limit' in params:
+                try:
+                    self.search_query_limit = int(params.get('limit'))
+                except ValueError:
+                    raise ParseError("'limit' must be of type int.")
+            # Use PostgreSQL Full Text Search on indexed columns populated
+            # with lexems. 
+            sql = f"""
+                SELECT id, ts_rank_cd(search_column_{locale}, search_query)
+                As RANK from events_place, 
+                to_tsquery('{self.search_configs[locale]}','{search_query_str}') search_query
+                WHERE search_query @@ search_column_{locale}
+                ORDER BY rank DESC LIMIT {self.search_query_limit};
+            """
+            cursor = connection.cursor()
+            cursor.execute(sql)
+            all_results = cursor.fetchall()           
+            # append all Place ids into a list for filtering
+            ids = [row[0] for row in all_results]
+            queryset = Place.objects.filter(id__in=ids)        
+       
         return queryset
 
+    def get_search_query_str(self, val):
+        search_query_str = None  
+        # Build conditional query string that is used in the SQL query.
+        # split my "," or whitespace
+        q_vals = re.split(r",\s+|\s+", val)
+        q_vals = [s.strip() for s in q_vals]
+        for q in q_vals:
+            if search_query_str:
+                # if ends with "|"" make it a or
+                if q[-1] == "|":
+                    search_query_str += f"| {q[:-1]}:*"
+                # else make it an and.
+                else:
+                    search_query_str += f"& {q}:*"
+            else:
+                search_query_str = f"{q}:*"   
+        return search_query_str
 
 register_view(PlaceRetrieveViewSet, 'place')
 register_view(PlaceListViewSet, 'place')
