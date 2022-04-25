@@ -21,6 +21,7 @@ from threading import Thread
 # Django:
 from django_orghierarchy.models import Organization, OrganizationClass
 from events.models import DataSource, BaseModel, Place
+from events.importer.util import get_search_column
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
 from django.conf import settings
@@ -107,7 +108,7 @@ class OsoiteImporter(Importer):
         method_whitelist=[
             "GET",
         ],
-        backoff_factor=40,  # 20, 40, 80 , 160, 320, 640, 1280...seconds
+        backoff_factor=40,  # 20, 40, 80, 160, 320, 640, 1280...seconds
     )
     adapter = HTTPAdapter(max_retries=retry_strategy, pool_maxsize=THREAD_POOL_SIZE)
     http = requests.Session()
@@ -176,27 +177,11 @@ class OsoiteImporter(Importer):
         proc_time_frmt('Setup')
         self.handle()
 
-    def get_search_column(self, lang):
-        """
-        Reads the columns, config languages and weights from the model
-        to be indexed. Creates and returns a CombinedSearchVector, that
-        can be stored into the search_column.
-        """
-        search_column = None
-        columns = Place.get_search_column_indexing(lang)
-        for column in columns:
-            if search_column:
-                search_column += SearchVector(column[0], config=column[1], weight=column[2])
-            else:
-                search_column = SearchVector(column[0], config=column[1], weight=column[2])
-
-        return search_column
-
     def index_search_columns(self):
         for lang in self.supported_languages:
             key = "search_column_%s" % lang
             logger.info(
-                f"{lang} Places indexed: {Place.objects.update(**{key: self.get_search_column(lang)})}"
+                f"{lang} Places indexed: {Place.objects.update(**{key: get_search_column(Place, lang)})}"
             )
 
     def get_is_municipality_in_source_data(self, municipality_id):
@@ -324,6 +309,9 @@ class OsoiteImporter(Importer):
             logger.info(f"Output rate(places/second): {round(output_rate,2)}")
  
     def import_places(self):
+        # Disable sending signals for the model, as it would cause too much overhead.
+        # Instead populate the search columns after the import is finished.
+        Place._meta.auto_created = True
         self.start_time = datetime.now()
         for municipality in MUNICIPALITIES.values():
             # Check if municipality exist in the source data.
@@ -335,7 +323,9 @@ class OsoiteImporter(Importer):
                 logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
         logger.info("Indexing search columns...")
         self.index_search_columns()        
-
+        # Enable sending signals for the model
+        Place._meta.auto_created = True
+     
     def handle(self) -> None:
         self.import_places()        
         logger.info(f"Imported {self.places_imported} Places.")
