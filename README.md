@@ -136,6 +136,14 @@ python manage.py event_import turku_image_bank
 python manage.py event_import turku_old_events --events
 ```
 
+Populating Search Columns
+----------------------
+
+The Place model contains search columns for languages Finnish, Swedish and English. The columns contains lexems that are indexed as GIN indexes. These columns are used when searching in the Place model. The columns are populated with lexems in signals with the post_save signal or in the Osoite importer after all the addresses are imported. The population of search columns can also be run manually by running the following command. 
+```
+python manage.py index_search_columns
+```
+
 Production notes
 ----------------
 
