@@ -1179,9 +1179,8 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # match to street as well as name, to make it easier to find units by address
         if 'text' or 'filter' in params:
             val = params.get('text') or params.get('filter')
-            val = val.strip()
-            # Remove single quotes from search string, they cause faulty strings to to_tsvector
-            val = val.replace("'", "")
+            # Remove single quotes from search string, they cause faulty strings in to_tsvector
+            val = val.strip().replace("'", "")
       
         if val:
             search_query_str = self.get_search_query_str(val)
