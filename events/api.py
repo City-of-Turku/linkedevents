@@ -1180,6 +1180,8 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         if 'text' or 'filter' in params:
             val = params.get('text') or params.get('filter')
             val = val.strip()
+            # Remove single quotes from search string, they cause faulty strings to to_tsvector
+            val = val.replace("'", "")
       
         if val:
             search_query_str = self.get_search_query_str(val)
