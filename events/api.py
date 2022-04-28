@@ -1178,10 +1178,11 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # can be used e.g. with typeahead.js
         # match to street as well as name, to make it easier to find units by address
         if 'text' or 'filter' in params:
-            val = params.get('text') or params.get('filter')
-            val = val.strip()
+            val = params.get('text') or params.get('filter', None)
       
         if val:
+            # Remove single quotes from search string, they cause faulty strings in to_tsvector          
+            val = val.strip().replace("'", "")         
             search_query_str = self.get_search_query_str(val)
             if 'locale' in params:
                 locale = params.get('locale')
@@ -1206,7 +1207,9 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
             all_results = cursor.fetchall()           
             # append all Place ids into a list for filtering
             ids = [row[0] for row in all_results]
-            queryset = Place.objects.filter(id__in=ids)        
+            queryset = Place.objects.filter(id__in=ids) 
+        else:
+            queryset = Place.objects.none()       
        
         return queryset
 
