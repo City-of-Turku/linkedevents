@@ -565,8 +565,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
 
-
-        if 'PUT' in context['request']:
+        if 'PUT' in dir(context['request']):
             import pdb
             pdb.set_trace()
 
