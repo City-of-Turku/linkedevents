@@ -567,8 +567,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
 
         # Image put validation.
         if 'PUT' in self.request.method or self.request.method == 'PUT':
-            import pdb
-            pdb.set_trace()
             # test
             if self.publisher.id == 'yksilo:2000':
                 if instance.created_by.id != self.user.id:
