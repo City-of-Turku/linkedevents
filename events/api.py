@@ -1403,12 +1403,12 @@ class ImageSerializer(LinkedEventsSerializer):
         return representation
 
     def validate(self, data):
-        # name the image after the file, if name was not provided
-        if 'name' not in data or not data['name']:
-            if 'url' in data:
-                data['name']['fi'] = str(data['url']).rsplit('/', 1)[-1]
-            if 'image' in data:
-                data['name']['fi'] = str(data['image']).rsplit('/', 1)[-1]
+        # Name the image after the file, if name was not provided.
+        if isinstance(data, dict):
+            if not data.get('name'):
+                for prop in ('url', 'image'):
+                    if data.get(prop):
+                        data['name'] = {'fi': str(data[prop]).rsplit('/', 1)[-1]}
         super().validate(data)
         return data
 
