@@ -1404,7 +1404,7 @@ class ImageSerializer(LinkedEventsSerializer):
 
     def validate(self, data):
         # Name the image after the file, if name was not provided.
-        if isinstance(data, dict):
+        if data:
             if not data.get('name'):
                 for prop in ('url', 'image'):
                     if data.get(prop):
