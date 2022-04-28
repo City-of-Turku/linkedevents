@@ -564,6 +564,11 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 _("User doesn't belong to any organization"))
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
+
+        # modf
+        import pdb
+        pdb.set_trace()
+
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
             if isinstance(self.user, ApiKeyUser):
@@ -1443,9 +1448,6 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
             publisher = publisher.lower().split(',')
             q = get_publisher_query(publisher)
             queryset = queryset.filter(q)
-        
-        import pdb
-        pdb.set_trace()
 
         data_source = self.request.query_params.get('data_source')
         # Filter by data source, multiple sources separated by comma
