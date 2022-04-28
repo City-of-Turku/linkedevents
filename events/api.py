@@ -565,10 +565,18 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
 
-
+        # Image put validation.
         if 'PUT' in self.request.method or self.request.method == 'PUT':
             import pdb
             pdb.set_trace()
+            # test
+            if self.publisher.id == 'yksilo:2000':
+                if instance.created_by.id != self.user.id:
+                    raise PermissionDenied()
+
+            if self.publisher.id != instance.publisher.id:
+                raise PermissionDenied()
+
 
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
