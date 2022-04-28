@@ -1443,6 +1443,9 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
             publisher = publisher.lower().split(',')
             q = get_publisher_query(publisher)
             queryset = queryset.filter(q)
+        
+        import pdb
+        pdb.set_trace()
 
         data_source = self.request.query_params.get('data_source')
         # Filter by data source, multiple sources separated by comma
