@@ -566,14 +566,17 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # therefore, we only do permission checks for single instances
 
         # Image put validation.
-        if 'PUT' in self.request.method or self.request.method == 'PUT':
-            # test
-            if self.publisher.id == 'yksilo:2000':
-                if instance.created_by.id != self.user.id:
-                    raise PermissionDenied()
+        if isinstance(instance, Image):
+            if 'PUT' in self.request.method or self.request.method == 'PUT':
+                # test
+                if self.publisher.id == 'yksilo:2000':
+                    if instance.created_by.id != self.user.id:
+                        raise PermissionDenied(
+                            _("Can't update another users image within your organization."))
 
-            if self.publisher.id != instance.publisher.id:
-                raise PermissionDenied()
+                if self.publisher.id != instance.publisher.id:
+                    raise PermissionDenied(
+                        _("Can't update an image outside your organization."))
 
 
         if not isinstance(instance, QuerySet) and instance:
