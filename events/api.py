@@ -564,6 +564,21 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 _("User doesn't belong to any organization"))
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
+
+        # Image put validation.
+        if isinstance(instance, Image):
+            if 'PUT' in self.request.method or self.request.method == 'PUT':
+                # test
+                if self.publisher.id == 'yksilo:2000':
+                    if instance.created_by.id != self.user.id:
+                        raise PermissionDenied(
+                            _("Can't update another users image within your organization."))
+
+                if self.publisher.id != instance.publisher.id:
+                    raise PermissionDenied(
+                        _("Can't update an image outside your organization."))
+
+
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
             if isinstance(self.user, ApiKeyUser):
