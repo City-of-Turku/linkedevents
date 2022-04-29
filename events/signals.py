@@ -1,14 +1,50 @@
 import logging
+import operator
+from functools import reduce
 
+from django.contrib.postgres.search import SearchVector
+from django.db import transaction
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django_orghierarchy.models import Organization
-from events.models import Event
+from events.models import Event, Place
 from notifications.models import (NotificationType, NotificationTemplateException, render_notification_template)
 from smtplib import SMTPException
 
 logger = logging.getLogger(__name__)
+
+@receiver(post_save, sender=Place)
+def place_post_save(sender, **kwargs):
+    obj = kwargs["instance"]
+    transaction.on_commit(populate_search_column(obj))
+
+
+def populate_search_column(obj):
+    # Get the information of columns and weights to be added to search from the model.
+    columns = {}
+    columns["fi"] = obj.get_search_column_indexing("fi")
+    columns["sv"] = obj.get_search_column_indexing("sv")
+    columns["en"] = obj.get_search_column_indexing("en")
+    id = obj.id
+
+    def on_commit():
+        search_vectors = {}
+        for lang in ["fi", "sv", "en"]:
+            search_vectors[lang] = []
+            for column in columns[lang]:
+                search_vectors[lang].append(
+                    SearchVector(column[0], config=column[1], weight=column[2])
+                )
+            # Add all SearchVectors in search_vectors list to search_column.
+            key = "search_column_%s" % lang
+            obj.__class__.objects.filter(id=id).update(
+                **{key: reduce(operator.add, search_vectors[lang])}
+            )
+    return on_commit
+
 
 def post_update(instance, *args, **kwargs):
     try:

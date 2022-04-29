@@ -18,7 +18,7 @@ django-mptt
 django-munigeo-turku>=0.2.31
 django-orghierarchy-turku
 django-reversion
-django==2.2.24
+django==2.2.27
 djangorestframework
 djangorestframework-bulk
 djangorestframework-gis
@@ -30,7 +30,7 @@ icalendar
 isodate
 jinja2
 langdetect
-lxml==4.6.3
+lxml==4.6.5
 markdown
 pillow
 --no-binary psycopg2

@@ -6,52 +6,31 @@ from django.db import transaction
 from events.models import Keyword, KeywordSet, DataSource
 
 TURKU_KEYWORD_SET_DATA = {
-    'id': 'turku:topic',
-    'name_en': 'Turku topic',
-    'name_fi': 'Turku-aihepiiri',
-    'name_sv': 'Åbo-tema',
+    'id': 'turku:coursetopics',
+    'name_en': 'Turku coursetopics',
+    'name_fi': 'Turku-koulutusaihepiirit',
+    'name_sv': 'Åbo-undervisningsämnen',
     'data_source_id': 'turku',
     'usage': KeywordSet.KEYWORD,
 }
 
 TURKU_KEYWORD_IDS = [
-    # Event content based:
-    'tsl:p28',  # Kuvataide
-    'tsl:p29',  # Tanssi
-    'tsl:p9',  # Musiikki
-    'tsl:p11',  # Teatteri, performanssi ja sirkus
-    'tsl:p4',  # Kirjallisuus ja sanataide
-    'tsl:p30',  # Elokuva
-    'tsl:p31',  # Käsityöt
-    'tsl:p10',  # Ruoka ja juoma
-    'tsl:p7',  # Liikunta ja urheilu
-    'tsl:p32',  # Terveys ja hyvinvointi
-    'tsl:p33',  # Luonto ja kulttuuriympäristö
-    'tsl:p34',  # Uskonto ja hengellisyys
-    'tsl:p35',  # Yritystoiminta ja työelämä
-    'tsl:p36',  # Yhteiskunta
-    'tsl:p37',  # Historia
-    'tsl:p14',  # Muut
-
     # Event type based:
-    'tsl:p38',  # Festivaalit
-    'tsl:p39',  # Kaupunkitapahtumat
-    'tsl:p40',  # Keskustelutilaisuudet
-    'tsl:p41',  # Kilpailut
-    'tsl:p42',  # Kokoukset, seminaarit ja kongressit
-    'tsl:p43',  # Konsertit
-    'tsl:p44',  # Koulutustapahtumat
-    'tsl:p45',  # Leirit
-    'tsl:p46',  # Luennot
-    'tsl:p47',  # Markkinat
-    'tsl:p48',  # Messut
-    'tsl:p49',  # Myyjäiset
-    'tsl:p50',  # Näyttelyt
-    'tsl:p51',  # Opastukset
-    'tsl:p52',  # Retket
-    'tsl:p53',  # Työpajat
-    'tsl:p54',  # Verkostoitumistapahtumat
-    'tsl:p55',  # Muu
+    'tsl:p59',  # Kädentaidot
+    'tsl:p28',  # Kuvataide
+    'tsl:p9',   # Musiikki
+    'tsl:p56',  # Teatteri, tanssi ja sirkus
+    'tsl:p60',  # Liikunta
+    'tsl:p32',  # Terveys ja hyvinvointi
+    'tsl:p61',  # Kielet ja kirjallisuus
+    'tsl:p62',  # Viestintä ja media
+    'tsl:p63',  # Historia, yhteiskunta ja talous
+    'tsl:p64',  # Psykologia ja filosofia
+    'tsl:p10',  # Ruoka ja juoma
+    'tsl:p65',  # Kasvien hoito ja viljely
+    'tsl:p66',  # Luonto ja ympäristö
+    'tsl:p67',  # Tietotekniikka
+    'tsl:p68',  # Muu koulutus
 ]
 
 

@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
+import re
 import logging
 import requests
 import requests_cache
-import re
 import dateutil.parser
 import time
 import pytz
@@ -13,6 +15,10 @@ from events.models import Language, EventLink, Offer
 from django_orghierarchy.models import Organization, OrganizationClass
 from pytz import timezone
 from django.conf import settings
+from pathlib import Path
+from PIL import Image as pil_image
+
+from events.utils import get_field_translations
 from .util import clean_text
 from .sync import ModelSyncher
 from .base import Importer, register_importer, recur_dict
@@ -20,30 +26,10 @@ from os import mkdir
 from os.path import abspath, join, dirname, exists, basename, splitext
 from copy import copy
 
-if not exists(join(dirname(__file__), 'logs')):
-    mkdir(join(dirname(__file__), 'logs'))
-
-__setattr__ = setattr
-
-logger = logging.getLogger(__name__)  # Per module logger
-curFileExt = basename(__file__)
-curFile = splitext(curFileExt)[0]
-logFile = \
-    logging.FileHandler(
-        '%s' % (join(dirname(__file__), 'logs', curFile+'.logs'))
-    )
-logFile.setFormatter(
-    logging.Formatter(
-        '[%(asctime)s] <%(name)s> (%(lineno)d): %(message)s'
-    )
-)
-logFile.setLevel(logging.DEBUG)
-logger.addHandler(
-    logFile
-)
+# Per module logger
+logger = logging.getLogger(__name__)
 
 VIRTUAL_LOCATION_ID = "virtual:public"
-KEYW_LIST = []
 
 TURKU_LUOKITUS_KEYWORD_IDS = {
     # Hobby content target:
@@ -57,28 +43,25 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Luonto': 'tsl:p8',  # Luonto
     'Musiikki': 'tsl:p9',  # Musiikki
     'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
-    'Teatteri, performanssi ja sirkus': 'tsl:p11',  # Teatteri, performanssi ja sirkus
+    # Teatteri, tanssi ja sirkus (Previously "Teatteri, performanssi ja sirkus - tsl:p11")
+    'Teatteri, tanssi ja sirkus': 'tsl:p56',
     'Tiede ja tekniikka': 'tsl:p12',  # Tiede ja tekniikka
     'Yhteisöllisyys ja auttaminen': 'tsl:p13',  # Yhteisöllisyys ja auttaminen
-    'Muut': 'tsl:p14',  # Muut
+    'Muu': 'tsl:p58',  # Muu (Previously "Muut - tsl:p14")
 
     # Event content based:
     'Kuvataide': 'tsl:p28',  # Kuvataide
     'Tanssi': 'tsl:p29',  # Tanssi
-    'Musiikki': 'tsl:p9',  # Musiikki
     'Teatteri, performanssi ja sirkus': 'tsl:p11',  # Teatteri, performanssi ja sirkus
-    'Kirjallisuus ja sanataide': 'tsl:p4',  # Kirjallisuus ja sanataide
     'Elokuva': 'tsl:p30',  # Elokuva
     'Käsityöt': 'tsl:p31',  # Käsityöt
-    'Ruoka ja juoma': 'tsl:p10',  # Ruoka ja juoma
-    'Liikunta ja urheilu': 'tsl:p7',  # Liikunta ja urheilu
     'Terveys ja hyvinvointi': 'tsl:p32',  # Terveys ja hyvinvointi
     'Luonto ja kulttuuriympäristö': 'tsl:p33',  # Luonto ja kulttuuriympäristö
     'Uskonto ja hengellisyys': 'tsl:p34',  # Uskonto ja hengellisyys
     'Yritystoiminta ja työelämä': 'tsl:p35',  # Yritystoiminta ja työelämä
     'Yhteiskunta': 'tsl:p36',  # Yhteiskunta
     'Historia': 'tsl:p37',  # Historia
-    'Muut': 'tsl:p14',  # Muut
+    'Muu sisältö': 'tsl:p55',  # Muu sisältö
 
     # Event type based:
     'Festivaalit': 'tsl:p38',  # Festivaalit
@@ -98,7 +81,7 @@ TURKU_LUOKITUS_KEYWORD_IDS = {
     'Retket': 'tsl:p52',  # Retket
     'Työpajat': 'tsl:p53',  # Työpajat
     'Verkostoitumistapahtumat': 'tsl:p54',  # Verkostoitumistapahtumat
-    'Muu': 'tsl:p55',  # Muu
+    'Muu tapahtumatyyppi': 'tsl:p57',  # Muu tapahtumatyyppi
 }
 
 # These words are not meant to be changed, as they come from the API.
@@ -111,7 +94,7 @@ TURKU_DRUPAL_CATEGORY_EN_YSOID = {
     'Museum': 'tsl:p37',  # Historia
     'Lectures': 'tsl:p46',  # Luennot
     'Participation': 'tsl:p55',  # Muu
-    'Multiculturalism': 'tsl:p14',  # Muut
+    'Multiculturalism': 'tsl:p55',  # Muu (Previously "Muut - p14")
     'cruises and tours': 'tsl:p52',  # Retket
     'Trips': 'tsl:p52',  # Retket
     'Guided tours and sightseeing tours': 'tsl:p51',  # Opastukset
@@ -125,7 +108,7 @@ TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID = {
     'Adults': 'tsl:p21',  # Aikuiset
     'Child families': 'tsl:p18',  # Lapset ja lapsiperheet
     'Immigrants': 'tsl:p15',  # Maahamuuttaneet
-    'Travellers': 'tsl:p24',  # Matkailijat
+    'Travellers': 'tsl:p20',  # Nuoret aikuiset (Previously "Matkailijat - tsl:p24")
     'Youth': 'tsl:p19',  # Nuoret
     'Elderly': 'tsl:p22',  # Ikääntyneet
     'Jobseekers': 'tsl:p25',  # Työnhakijat
@@ -142,6 +125,12 @@ CITY_LIST = [
     'aura', 'marttila', 'kaarina', 'lieto', 'paimio', 'sauvo'
 ]
 TZ = timezone('Europe/Helsinki')
+
+SAFE_TAGS = (
+    'u', 'b', 'h2', 'h3', 'em', 'ul',
+    'li', 'strong', 'br', 'p', 'a'
+)
+
 notFoundKeys = []
 
 
@@ -158,7 +147,7 @@ class APIBrokenError(Exception):
 
 @register_importer
 class TurkuOriginalImporter(Importer):
-    name = curFile
+    name = 'turku_old_events'
     supported_languages = LANGUAGES_TURKU_OLD  # LANGUAGES
     languages_to_detect = []
     current_tick_index = 0
@@ -288,6 +277,32 @@ class TurkuOriginalImporter(Importer):
             return default
         return item
 
+    def get_or_empty(self, item, collection) -> list:
+        item = collection.get(item, None)
+        if item:
+            return item.split(',')
+        return []
+
+
+    def _request_image_url(self, img_url: str, uid: str) -> str:
+        """Fetches, processes, converts and saves the image into webp format."""
+        img = requests.get(img_url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True).raw
+        img_file_name = uid
+        paths = Path('%s/images' % settings.MEDIA_ROOT)
+
+        try:
+            img = pil_image.open(img)
+            # Scales the image so that it fits within the bounding box of a certain resolution.
+            min_scale = min((1280 / img.width, 720 / img.height)) # Get the scaling factor of the longest distance.
+            img = img.resize((int(img.width * min_scale), int(img.height * min_scale))) # Resize by multiplying scale by dimensions.
+            img.save('%s/%s.%s' % (paths, img_file_name, 'webp'), format='webp') # Convert and save the image to the path in webp format.
+        except Exception as e:
+            logger.error("Unable to process image due to: %s" % e)
+            return None
+
+        return 'images/%s.webp' % img_file_name
+
+
     def _import_event(self, lang, event_el, events, event_type):
         eventTku = self._get_eventTku(event_el)
         start_time = self.dt_parse(
@@ -310,11 +325,6 @@ class TurkuOriginalImporter(Importer):
         evItem['data_source'] = self.data_source
         evItem['publisher'] = self.organization
         evItem['end_time'] = end_time
-
-        ok_tags = (
-            'u', 'b', 'h2', 'h3', 'em', 'ul',
-            'li', 'strong', 'br', 'p', 'a'
-        )
 
         evItem['name'] = {
             "fi": eventTku['title_fi'],
@@ -397,29 +407,12 @@ class TurkuOriginalImporter(Importer):
                 # Saves an image from the URL onto our server & database Image table.
                 # We only want mother event images and single event images.
 
-                IMAGE_TYPE = 'jpg'
-                PATH_EXTEND = 'images'
-
-                def request_image_url():
-                    img = requests.get(eventTku['event_image_ext_url']['src'],
-                                       headers={'User-Agent': 'Mozilla/5.0'}).content
-                    imgfile = eventTku['drupal_nid']
-                    path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
-                        'root': settings.MEDIA_ROOT,
-                        'pathext': PATH_EXTEND,
-                        'img': imgfile,
-                        'type': IMAGE_TYPE
-                    })
-                    with open(path, 'wb') as file:
-                        file.write(img)
-                    return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
-
                 self.image_obj, _ = Image.objects.update_or_create(
                     defaults=dict(name='', photographer_name='', alt_text=''), **dict(
                         license=self.cc_by_license,
                         data_source=self.data_source,
                         publisher=self.organization,
-                        image=request_image_url()))
+                        image=self._request_image_url(img_url=eventTku['event_image_ext_url']['src'], uid=eventTku['drupal_nid'])))
 
         def set_attr(field_name, val):
             if field_name in evItem:
@@ -453,58 +446,55 @@ class TurkuOriginalImporter(Importer):
         event_keywords = evItem.get('keywords', set())
         event_audience = evItem.get('audience', set())
 
-        if eventTku['event_categories'] is not None:
-            eventTku['event_categories'] = eventTku['event_categories']+','
-            categories = eventTku['event_categories'].split(',')
-            for name in categories:
-                name = name.strip()
-                if name == 'Theatre and other perfomance art':
-                    name = 'Theatre and other performance art'
-                    # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
-                if name == 'Virtual events':
-                    evItem['location']['id'] = VIRTUAL_LOCATION_ID
-                if name in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                    ysoId = TURKU_DRUPAL_CATEGORY_EN_YSOID[name]
-                    if isinstance(ysoId, list):
-                        for x in range(len(ysoId)):
-                            event_keywords.add(
-                                Keyword.objects.get(id=ysoId[x])
-                            )
-                    else:
+
+        event_categories = self.get_or_empty('event_categories', eventTku)
+        keywords = self.get_or_empty('keywords', eventTku)
+        target_audience = self.get_or_empty('target_audience', eventTku)
+
+        for name in map(str.strip, event_categories):
+            if name == 'Theatre and other perfomance art':
+                name = 'Theatre and other performance art'
+                # Theatre and other performance art is spelled incorrectly in the JSON. "Perfomance".
+            if name == 'Virtual events':
+                evItem['location']['id'] = VIRTUAL_LOCATION_ID
+
+            ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.get(name, None)
+            if ysoId:
+                if isinstance(ysoId, list):
+                    for x in range(len(ysoId)):
                         event_keywords.add(
-                            Keyword.objects.get(id=ysoId)
+                            Keyword.objects.get(id=ysoId[x])
                         )
-
-        if eventTku.get('keywords', None):
-            eventTku['keywords'] = eventTku['keywords'] + ','
-            keywords = eventTku['keywords'].split(',')
-            for name in keywords:
-                name.strip()
-                if name not in TURKU_DRUPAL_CATEGORY_EN_YSOID.keys():
-                    try:
-                        event_keywords.add(
-                            Keyword.objects.get(name=name)
-                        )
-                    except:
-                        if name != "":
-                            notFoundKeys.append({
-                                name: eventTku['drupal_nid']
-                            })
-                        pass
-
-        evItem['keywords'] = event_keywords
-
-        if eventTku['target_audience'] is not None:
-            eventTku['target_audience'] = eventTku['target_audience'] + ','
-            audience = eventTku['target_audience'].split(',')
-            for name in audience:
-                if name in TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.keys():
-                    ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID[name]
-                    event_audience.add(
+                    continue
+                try:
+                    event_keywords.add(
                         Keyword.objects.get(id=ysoId)
                     )
+                except Keyword.DoesNotExist:
+                    continue
 
+        for name in map(str.strip, keywords):
+            if not TURKU_DRUPAL_CATEGORY_EN_YSOID.get(name):
+                try:
+                    event_keywords.add(
+                        Keyword.objects.get(name=name)
+                    )
+                except Keyword.DoesNotExist:
+                    if name:
+                        notFoundKeys.append({
+                            name: eventTku['drupal_nid']
+                        })
+
+        for name in map(str.strip, target_audience):
+            ysoId = TURKU_DRUPAL_AUDIENCES_KEYWORD_EN_YSOID.get(name, None)
+            if ysoId:
+                event_audience.add(
+                    Keyword.objects.get(id=ysoId)
+                )
+
+        evItem['keywords'] = event_keywords
         evItem['audience'] = event_audience
+
         evItem['info_url'] = {
             "fi": eventTku['website_url'],
             "sv": eventTku['website_url'],
@@ -513,31 +503,22 @@ class TurkuOriginalImporter(Importer):
 
         if event_type in ('m', 's'):
             # Add a default offer
-            free_offer = {
-                'is_free': True,
+            offer = {
+                'is_free': bool(int(eventTku.get('free_event', True))),
                 'price': None,
                 'description': None,
                 'info_url': None,
             }
-            eventOffer_is_free = bool(int(eventTku['free_event']))
             # Fill if events is not free price event
-            if not eventOffer_is_free:
-                free_offer['is_free'] = False
-                if eventTku['event_price']:
-                    ok_tags = (
-                        'u', 'b', 'h2', 'h3', 'em', 'ul',
-                        'li', 'strong', 'br', 'p', 'a'
-                    )
-                    price = str(eventTku['event_price'])
-                    price = bleach.clean(price, tags=ok_tags, strip=True)
-                    free_offer_price = clean_text(price, True)
-                    free_offer['price'] = {'fi': free_offer_price}
-                    free_offer['info_url'] = {'fi': None}
-                if str(eventTku['buy_tickets_url']):
-                    free_offer_buy_tickets = eventTku['buy_tickets_url']
-                    free_offer['info_url'] = {'fi': free_offer_buy_tickets}
-                free_offer['description'] = None
-            evItem['offers'] = [free_offer]
+            if not offer['is_free']:
+                event_price = eventTku.get('event_price', '')
+                buy_tickets_url = eventTku.get('buy_tickets_url', '')
+                if event_price:
+                    price = bleach.clean(event_price, tags=SAFE_TAGS, strip=True)
+                    offer['description'] = {'fi': clean_text(price, True)}
+                if buy_tickets_url:
+                    offer['info_url'] = {'fi': buy_tickets_url}
+            evItem['offers'] = [offer]
 
         if event_type == "m":
             evItem['super_event_type'] = Event.SuperEventType.RECURRING
@@ -577,14 +558,12 @@ class TurkuOriginalImporter(Importer):
 
         jsr = root_doc['events']
 
-        earliest_end_time = None
-
         def to_import(lang, ev, events, ev_type):
-            event = self._import_event(lang, ev, events, ev_type)
+            self._import_event(lang, ev, events, ev_type)
 
         # Import Single Event(s).
         for x in jsr:
-            for k, v in x.items():
+            for _, v in x.items():
                 if v['event_type'] == "Single event":
                     to_import(lang, v, events, 's')
         # Pre-Process.
@@ -614,7 +593,6 @@ class TurkuOriginalImporter(Importer):
                         'twitter_url': x['twitter_url']
                     })
                     to_import(lang, z, events, 'c')
-        now = datetime.now().replace(tzinfo=TZ)
         return root_doc, mothers_with_children, mothers_children
 
     def save_extra(self, drupal_url, mothersList, childList):
@@ -635,99 +613,91 @@ class TurkuOriginalImporter(Importer):
             except:
                 pass
 
-            if json_event['drupal_nid']:
-                for x in childList:
-                    if json_event['drupal_nid'] == x['drupal_nid_super']:
-                        try:
-                            child = Event.objects.get(
-                                origin_id=x['drupal_nid'])
-                            mother = Event.objects.get(
-                                origin_id=json_event['drupal_nid'])
+            if json_event.get('drupal_nid', None):
+                for json_child in childList:
+                    if json_event['drupal_nid'] != json_child['drupal_nid_super']:
+                        continue
 
-                            sub_event_type = None
-                            #sub_recurring, sub_umbrella
-                            if mother.super_event_type == "recurring":
-                                sub_event_type = "sub_recurring"
+                    try:
+                        child = Event.objects.get(
+                            origin_id=json_child['drupal_nid'])
+                        mother = Event.objects.get(
+                            origin_id=json_event['drupal_nid'])
+                    except Event.DoesNotExist:
+                        continue
 
-                            elif mother.super_event_type == "umbrella":
-                                sub_event_type = "sub_umbrella"
+                    #sub_recurring, sub_umbrella
+                    sub_event_type = f'sub_{mother.super_event_type}' \
+                        if mother.super_event_type in ('recurring', 'umbrella') else None
 
-                            try:
-                                Event.objects.update_or_create(
-                                    id=child.id,
-                                    defaults={
-                                        'date_published': mother.date_published,
-                                        'provider': mother.provider,
-                                        'provider_fi': mother.provider_fi,
-                                        'provider_sv': mother.provider_sv,
-                                        'provider_en': mother.provider_en,
-                                        'description': mother.description,
-                                        'description_fi': mother.description_fi,
-                                        'description_sv': mother.description_sv,
-                                        'description_en': mother.description_en,
-                                        'short_description': mother.short_description,
-                                        'short_description_fi': mother.short_description_fi,
-                                        'short_description_sv': mother.short_description_sv,
-                                        'short_description_en': mother.short_description_en,
-                                        'location_id': mother.location_id,
-                                        'location_extra_info': mother.location_extra_info,
-                                        'location_extra_info_fi': mother.location_extra_info_fi,
-                                        'location_extra_info_sv': mother.location_extra_info_sv,
-                                        'location_extra_info_en': mother.location_extra_info_en,
-                                        'info_url': mother.info_url,
-                                        'info_url_fi': mother.info_url_fi,
-                                        'info_url_sv': mother.info_url_fi,
-                                        'info_url_en': mother.info_url_fi,
-                                        'super_event': mother,
-                                        'sub_event_type': sub_event_type,
-                                    }
-                                )
-                            except Exception as ex:
-                                pass
-                        except Exception as ex:
-                            pass
+                    child, _ = Event.objects.update_or_create(
+                        id=child.id,
+                        defaults={
+                            'date_published': mother.date_published,
+                            'provider': mother.provider,
+                            'provider_fi': mother.provider_fi,
+                            'provider_sv': mother.provider_sv,
+                            'provider_en': mother.provider_en,
+                            'description': mother.description,
+                            'description_fi': mother.description_fi,
+                            'description_sv': mother.description_sv,
+                            'description_en': mother.description_en,
+                            'short_description': mother.short_description,
+                            'short_description_fi': mother.short_description_fi,
+                            'short_description_sv': mother.short_description_sv,
+                            'short_description_en': mother.short_description_en,
+                            'location_id': mother.location_id,
+                            'location_extra_info': mother.location_extra_info,
+                            'location_extra_info_fi': mother.location_extra_info_fi,
+                            'location_extra_info_sv': mother.location_extra_info_sv,
+                            'location_extra_info_en': mother.location_extra_info_en,
+                            'info_url': mother.info_url,
+                            'info_url_fi': mother.info_url_fi,
+                            'info_url_sv': mother.info_url_fi,
+                            'info_url_en': mother.info_url_fi,
+                            'super_event': mother,
+                            'sub_event_type': sub_event_type,
+                        }
+                    )
 
-                        try:
-                            # Re-get object from Event once saved.
-                            child = Event.objects.get(
-                                origin_id=x['drupal_nid'])
-                            mother = Event.objects.get(
-                                origin_id=json_event['drupal_nid'])
-                            # Get object from Offer once we have the Event object.
-                            try:
-                                motherOffer = Offer.objects.get(
-                                    event_id=mother.id)
-                                Offer.objects.update_or_create(
-                                    event_id=child.id,
-                                    price=motherOffer.price,
-                                    info_url=motherOffer.info_url,
-                                    description=motherOffer.description,
-                                    is_free=motherOffer.is_free
-                                )
-                            except Exception as ex:
-                                pass
-                        except Exception as ex:
-                            pass
+                    # Get object from Offer once we have the Event object.
+                    try:
+                        motherOffer = Offer.objects.get(
+                            event_id=mother.id)
+                    except Offer.DoesNotExist:
+                        continue
+
+                    offer, _ = Offer.objects.update_or_create(
+                        event_id=child.id,
+                        info_url=motherOffer.info_url,
+                        is_free=motherOffer.is_free,
+                    )
+                    for lang, value in get_field_translations(motherOffer, 'price'):
+                        description = getattr(motherOffer, 'description_%s' % lang, '') \
+                            if lang else getattr(motherOffer, 'description', '')
+                        field = 'description_%s' % lang if lang else 'description'
+                        setattr(offer, field, '{value}{nl}{description}'.format(
+                            value=value or '',
+                            description=description or '',
+                            nl='\n' if value else ''
+                        ))
+                    offer.save()
 
             def fb_tw(ft):
                 originid = json_event['drupal_nid']
                 # Get Language object.
-                ft_name = "extlink_"+ft
-                ft_link = ft+"_url"
                 try:
                     myLang = Language.objects.get(id="fi")
-                except:
-                    pass
-                try:
                     eventObj = Event.objects.get(origin_id=originid)
-                    EventLink.objects.update_or_create(
-                        name=ft_name,
-                        event_id=eventObj.id,
-                        language_id=myLang.id,
-                        link=json_event[ft+'_url']
-                    )
-                except:
-                    pass
+                except (Language.DoesNotExist, Event.DoesNotExist):
+                    return
+
+                EventLink.objects.update_or_create(
+                    name=f'extlink_{ft}',
+                    event_id=eventObj.id,
+                    language_id=myLang.id,
+                    link=json_event.get(f'{ft}_url', '')
+                )
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
@@ -735,25 +705,21 @@ class TurkuOriginalImporter(Importer):
                 fb_tw('twitter')
 
             # Match Events & Images together in the ManyToMany relationship table.
+            def _fetch_from_image_table(p, p2, raise_exception=True):
+                try:
+                    img = Image.objects.get(image=f'images/{json_event[p2]}.webp')
+                    event_obj = Event.objects.get(origin_id=json_event[p])
+                except (Image.DoesNotExist, Event.DoesNotExist):
+                    if not raise_exception:
+                        return None
+                    raise
+                event_obj.images.add(img)
+
+            # Match Events & Images together in the ManyToMany relationship table.      
             try:
-                def fetch_from_image_table(p, p2):
-                    try:
-                        eventObj = Event.objects.get(origin_id=json_event[p])
-                        img_format = '%s/%s.%s' % ('images',
-                                                   json_event[p2], 'jpg')
-                        img_obj_returned = Image.objects.get(image=img_format)
-                        eventObj.images.add(img_obj_returned.id)
-                        return img_obj_returned
-                    except:
-                        pass
-                    return None
-                fetched_img = fetch_from_image_table(
-                    'drupal_nid', 'drupal_nid')  # Mothers and Singles
-                if not fetched_img:
-                    # Children inherit their Mothers images.
-                    fetch_from_image_table('drupal_nid', 'drupal_nid_super')
-            except:
-                pass
+                _fetch_from_image_table('drupal_nid', 'drupal_nid')
+            except (Image.DoesNotExist, Event.DoesNotExist):
+                _fetch_from_image_table('drupal_nid', 'drupal_nid_super', raise_exception=False)
 
     def import_events(self):
         events = recur_dict()

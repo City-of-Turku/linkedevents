@@ -37,6 +37,10 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import (  # add the Postgres recommended GIN index
+    GinIndex,
+)
 from image_cropping import ImageRatioField
 from munigeo.models import AdministrativeDivision
 from notifications.models import render_notification_template, NotificationType, NotificationTemplateException
@@ -287,6 +291,16 @@ class KeywordLabel(models.Model):
 
 
 class Keyword(BaseModel, ImageMixin, ReplacedByMixin):
+
+    class Ontology_type:
+        CONCEPT = 1
+        HIERARCHY = 2
+
+    ONTOLOGY_TYPES = (
+        (Ontology_type.CONCEPT, "OntologyConcept"),
+        (Ontology_type.HIERARCHY, "OntologyHierarchy"),
+    )
+
     publisher = models.ForeignKey(
         'django_orghierarchy.Organization', on_delete=models.CASCADE, verbose_name=_('Publisher'),
         db_index=True, null=True, blank=True,
@@ -302,11 +316,22 @@ class Keyword(BaseModel, ImageMixin, ReplacedByMixin):
         editable=False,
         db_index=True
     )
+    ontology_type = models.SmallIntegerField(verbose_name=_('Ontology type'),
+                                             default=Ontology_type.CONCEPT, choices=ONTOLOGY_TYPES)
+    parents = models.ManyToManyField(
+        "self", blank=True, symmetrical=False, related_name='keyword-parents+')
+    children = models.ManyToManyField(
+        "self", blank=True, symmetrical=False, related_name='keyword-children+')
     n_events_changed = models.BooleanField(default=False, db_index=True)
     replaced_by = models.ForeignKey(
         'Keyword', on_delete=models.SET_NULL, related_name='aliases', null=True, blank=True)
 
     schema_org_type = "Thing/LinkedEventKeyword"
+    is_hidden = models.BooleanField(
+        default=False,
+        verbose_name=_('Is hidden'),
+        help_text=_('Is this keyword excluded from keyword list and set searches')
+    )
 
     def __str__(self):
         return self.name
@@ -442,17 +467,46 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         db_index=True
     )
     n_events_changed = models.BooleanField(default=False, db_index=True)
-
-    class Meta:
+    search_column_fi = SearchVectorField(null=True)
+    search_column_sv = SearchVectorField(null=True)
+    search_column_en = SearchVectorField(null=True)
+    
+    class Meta:            
         verbose_name = _('place')
         verbose_name_plural = _('places')
         unique_together = (('data_source', 'origin_id'),)
+        indexes = (
+            GinIndex(fields=["search_column_fi"]),
+            GinIndex(fields=["search_column_sv"]),
+            GinIndex(fields=["search_column_en"]),
+        )
 
     def __unicode__(self):
         values = filter(lambda x: x, [
             self.street_address, self.postal_code, self.address_locality
         ])
         return u', '.join(values)
+
+    @classmethod
+    def get_search_column_indexing(cls, lang):
+        """
+        Defines the columns to be indexed to the search_column
+        ,config language and weight.
+        """
+        if lang == "fi":
+            return [  
+                ("name_fi", "finnish", "A"),              
+            ]   
+        elif lang == "sv":
+            return [
+                ("name_sv", "swedish", "A"),
+            ]
+        elif lang == "en":
+            return [
+                ("name_en", "english", "A"),
+            ]
+        else:
+            return []
 
     @transaction.atomic
     def save(self, *args, **kwargs):

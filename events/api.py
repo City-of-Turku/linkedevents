@@ -5,13 +5,18 @@ from __future__ import unicode_literals
 import base64
 import re
 import struct
+import difflib
 import time
 import urllib.parse
+import pdb
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import time as datetime_time
+from datetime import timedelta
 from functools import partial
 
 # django and drf
+from django.db import connection
 from django.db.transaction import atomic
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.utils import translation
@@ -20,7 +25,7 @@ from django.core.files.base import ContentFile
 from django.db.utils import IntegrityError
 from django.conf import settings
 from django.urls import NoReverseMatch
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, When, Case, CharField
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.utils.encoding import force_text
@@ -208,6 +213,49 @@ def clean_text_fields(data, allowed_html_fields=[]):
                 # for non-html data, ampersands should be bare
                 data[k] = data[k].replace('&amp;', '&')
     return data
+
+
+def parse_hours(val, param):
+
+    if len(val) > 2:
+        raise ParseError(
+            f'Only hours and minutes can be given in {param}. For example: 16:00.')
+    try:
+        hour = int(val[0])
+    except ValueError:
+        raise ParseError(
+            f'Hours should be passed as numbers in {param}. For example: 16:00.')
+    if not (0 <= hour <= 23):
+        raise ParseError(
+            f'Hours should be between 0 and 23 in {param}, for example: 16:00. You have passed {hour}.')
+    if len(val) == 2 and val[1]:
+        try:
+            minute = int(val[1])
+        except ValueError:
+            raise ParseError(
+                f'Minutes should be passed as numbers in {param}. For example: 16:20.')
+        if not (0 <= minute <= 59):
+            raise ParseError(
+                f'Minutes should be between 0 and 59 in {param} as in 16:20. You passed {minute}.')
+        return hour, minute
+    return hour, 0
+
+
+def parse_bool(val, param):
+    if val.lower() == 'true':
+        return True
+    elif val.lower() == 'false':
+        return False
+    else:
+        raise ParseError(
+            f'{param} can take the values True or False. You passed {val}.')
+
+
+def parse_digit(val, param):
+    try:
+        return int(val)
+    except ValueError:
+        raise ParseError(f'{param} must be an integer, you passed "{val}"')
 
 
 class JSONLDRelatedField(relations.HyperlinkedRelatedField):
@@ -402,13 +450,19 @@ class TranslatedModelSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({field_name: 'This field is a translated field. Instead of a string,'
                                                    ' you must supply an object with strings corresponding'
                                                    ' to desired language ids.'})
-            for language in (lang for lang in utils.get_fixed_lang_codes() if lang in obj):
-                value = obj[language]  # "musiikkiklubit"
-                if language == settings.LANGUAGES[0][0]:  # default language
-                    # { "name": "musiikkiklubit" }
-                    extra_fields[field_name] = value
-                # { "name_fi": "musiikkiklubit" }
+
+            for language in (lang for lang in utils.get_fixed_lang_codes()):
+                value = None
+                if language in obj:
+                    value = obj[language]  # "musiikkiklubit"
+                    # default language
+                    if language == settings.LANGUAGES[0][0]:
+                        # { "name": "musiikkiklubit" }
+                        extra_fields[field_name] = value
+
+                # { "name_fi": "musiikkiklubit" } or {"name_fi": None}
                 extra_fields['{}_{}'.format(field_name, language)] = value
+
             del data[field_name]  # delete original translated fields
 
         # handle other than translated fields
@@ -510,6 +564,21 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 _("User doesn't belong to any organization"))
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
+
+        # Image put validation.
+        if isinstance(instance, Image):
+            if 'PUT' in self.request.method or self.request.method == 'PUT':
+                # test
+                if self.publisher.id == 'yksilo:2000':
+                    if instance.created_by.id != self.user.id:
+                        raise PermissionDenied(
+                            _("Can't update another users image within your organization."))
+
+                if self.publisher.id != instance.publisher.id:
+                    raise PermissionDenied(
+                        _("Can't update an image outside your organization."))
+
+
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
             if isinstance(self.user, ApiKeyUser):
@@ -716,8 +785,7 @@ def _text_qset_by_translated_field(field, val):
     languages = utils.get_fixed_lang_codes()
     qset = Q()
     for lang in languages:
-        kwarg = {field + '_' + lang + '__icontains': val}
-        qset |= Q(**kwarg)
+        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})   
     return qset
 
 
@@ -749,6 +817,22 @@ class JSONAPIViewMixin(object):
         return context
 
 
+class KeywordFilterSerializer(TranslatedModelSerializer):
+    ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
+    id = serializers.CharField(required=False)
+
+    class Meta:
+        model = Keyword
+        fields = ('id', 'name', 'ontology_type')
+
+    def to_representation(self, instance):
+        request = self.context['request']
+        parent = self.context.get('parent', None)
+        ret = super().to_representation(instance)
+        ret['@id'] = utils.build_url(request, instance.pk, parent=parent)
+        return ret
+
+
 class KeywordSerializer(LinkedEventsSerializer):
     view_name = 'keyword-detail'
     alt_labels = serializers.SlugRelatedField(
@@ -757,10 +841,32 @@ class KeywordSerializer(LinkedEventsSerializer):
         default_timezone=pytz.UTC, required=False, allow_null=True)
     last_modified_time = DateTimeField(
         default_timezone=pytz.UTC, required=False, allow_null=True)
+    parents = JSONLDRelatedField(
+        serializer=KeywordFilterSerializer, many=True, required=True, allow_empty=False,
+        view_name='keyword-detail', queryset=Keyword.objects.all())
+    children = JSONLDRelatedField(
+        serializer=KeywordFilterSerializer, many=True, required=True, allow_empty=False,
+        view_name='keyword-detail', queryset=Keyword.objects.all())
+    ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
 
     class Meta:
         model = Keyword
-        exclude = ('n_events_changed',)
+        exclude = ('n_events_changed', )
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+
+        def _cp(val):
+            c_or_p = []
+            for value in getattr(instance, val).all():
+                data = KeywordFilterSerializer(
+                    context={'request': self.request, 'parent': instance}).to_representation(value)
+                c_or_p.append(data)
+            return c_or_p
+
+        ret['children'] = _cp('children')
+        ret['parents'] = _cp('parents')
+        return ret
 
 
 class KeywordRetrieveViewSet(JSONAPIViewMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -787,9 +893,6 @@ class KeywordListViewSet(JSONAPIViewMixin, mixins.ListModelMixin, viewsets.Gener
     queryset = queryset.select_related(
         'publisher').prefetch_related('alt_labels__name')
     serializer_class = KeywordSerializer
-    filter_backends = (filters.OrderingFilter,)
-    ordering_fields = ('n_events', 'id', 'name', 'data_source')
-    ordering = ('-data_source', '-n_events', 'name')
 
     def get_queryset(self):
         """
@@ -798,15 +901,21 @@ class KeywordListViewSet(JSONAPIViewMixin, mixins.ListModelMixin, viewsets.Gener
         If the request has no filter parameters, we only return keywords that meet the following criteria:
         -the keyword has events
         -the keyword is not deprecated
+        -the keyword is not hidden
 
         Supported keyword filtering parameters:
         data_source (only keywords with the given data sources are included)
         filter (only keywords containing the specified string are included)
         show_all_keywords (keywords without events are included)
         show_deprecated (deprecated keywords are included)
+        locale (automatically used depending on the chosen language in frontend)
         """
-        queryset = Keyword.objects.all()
+        queryset = Keyword.objects.exclude(is_hidden=True)
         data_source = self.request.query_params.get('data_source')
+        locale = self.request.query_params.get('locale', 'fi')
+        # Validate supported language types.
+        if locale not in ('fi', 'sv', 'en'):
+            locale = 'fi'
         # Filter by data source, multiple sources separated by comma
         if data_source:
             data_source = data_source.lower().split(',')
@@ -820,11 +929,55 @@ class KeywordListViewSet(JSONAPIViewMixin, mixins.ListModelMixin, viewsets.Gener
         # can be used e.g. with typeahead.js
         val = self.request.query_params.get(
             'text') or self.request.query_params.get('filter')
+
         if val:
-            # Also consider alternative labels to broaden the search!
-            qset = _text_qset_by_translated_field(
-                'name', val) | Q(alt_labels__name__icontains=val)
-            queryset = queryset.filter(qset).distinct()
+            ''' 
+            If search results do not return keywords, 
+            we expand the search results with alt labels. 
+            '''
+            qset = Q(**{"name_%s__icontains" % locale: val})
+            if not (queryset.filter(qset).distinct()).exists():
+                qset = qset | Q(alt_labels__name__icontains=val)
+                queryset = queryset.filter(qset).distinct()
+            else:
+                queryset = queryset.filter(qset).distinct()
+
+        def _get_preserved_order(ids):
+            """
+            Returns a Case expression that can be used in the order_by method,
+            ordering will be equal to the order of ids in the ids list.
+            """
+            if ids:
+                return Case(*[When(id=idx, then=pos) for pos, idx in enumerate(ids)])
+            else:
+                return Case()
+
+        if isinstance(val, str):
+            if val.strip() != '':
+                ''' 
+                String diffing algorithm (using difflib) for better search results;
+                Difflib uses a modified ratcliff/obershelp algorithm.
+                '''
+                ratio_list, ordered_ratio_list = [], []
+                for termi in queryset:
+                    if termi:
+                        has_name_locale = getattr(termi, "name_%s" % locale)
+                        if isinstance(has_name_locale, str):
+                            if has_name_locale.strip() != '':
+                                tempi = difflib.SequenceMatcher(
+                                    None, val, has_name_locale)
+                                if tempi:
+                                    rat = tempi.ratio()
+                                    if not isinstance(rat, bool) and isinstance(rat, (int, float)):
+                                        ratio_list.append(
+                                            (termi.id, rat))
+                if ratio_list:
+                    if len(ratio_list) > 1:
+                        ratio_list.sort(key=lambda x: x[1], reverse=True)
+                    ordered_ratio_list = [x[0] for x in ratio_list]
+                    queryset = queryset.order_by(
+                        _get_preserved_order(ordered_ratio_list))
+
         return queryset
 
 
@@ -843,6 +996,13 @@ class KeywordSetSerializer(LinkedEventsSerializer):
     last_modified_time = DateTimeField(
         default_timezone=pytz.UTC, required=False, allow_null=True)
 
+    def to_representation(self, obj):
+        data = super(KeywordSetSerializer, self).to_representation(obj)
+        non_hidden_keywords = [keyword for keyword in data.get(
+            'keywords') if not keyword.get('is_hidden')]
+        data['keywords'] = non_hidden_keywords
+        return data
+
     class Meta:
         model = KeywordSet
         fields = '__all__'
@@ -851,6 +1011,9 @@ class KeywordSetSerializer(LinkedEventsSerializer):
 class KeywordSetViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = KeywordSet.objects.all()
     serializer_class = KeywordSetSerializer
+    filter_backends = (filters.OrderingFilter,)
+    ordering_fields = ('name')
+    ordering = ('name')
 
 
 register_view(KeywordSetViewSet, 'keyword_set')
@@ -937,8 +1100,14 @@ class PlaceSerializer(LinkedEventsSerializer, GeoModelSerializer):
 
     class Meta:
         model = Place
-        exclude = ('n_events_changed',)
-
+        exclude = (
+            'n_events_changed',
+            'search_column_fi', 
+            'search_column_sv',
+            'search_column_en'
+        )
+  
+   
 
 class PlaceFilter(django_filters.rest_framework.FilterSet):
     division = django_filters.Filter(field_name='divisions', lookup_expr='in',
@@ -988,6 +1157,9 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                        'street_address', 'postal_code')
     # we want to display tprek before osoite etc.
     ordering = ('-n_events', '-data_source', 'name')
+    # Default maximum value of results to be returned.
+    search_query_limit = 100
+    search_configs = {'fi': 'finnish','sv': 'swedish', 'en': 'english'}
 
     def get_queryset(self):
         """
@@ -1003,6 +1175,8 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         show_all_places (places without events are included)
         show_deleted (deleted places are included)
         """
+        params = self.request.query_params
+
         queryset = Place.objects.prefetch_related(
             'divisions__type', 'divisions__municipality')
         data_source = self.request.query_params.get('data_source')
@@ -1018,14 +1192,59 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # Optionally filter places by filter parameter,
         # can be used e.g. with typeahead.js
         # match to street as well as name, to make it easier to find units by address
-        val = self.request.query_params.get(
-            'text') or self.request.query_params.get('filter')
+        if 'text' or 'filter' in params:
+            val = params.get('text') or params.get('filter', None)
+      
         if val:
-            qset = _text_qset_by_translated_field(
-                'name', val) | _text_qset_by_translated_field('street_address', val)
-            queryset = queryset.filter(qset)
+            # Remove single quotes from search string, they cause faulty strings in to_tsvector          
+            val = val.strip().replace("'", "")         
+            search_query_str = self.get_search_query_str(val)
+            if 'locale' in params:
+                locale = params.get('locale')
+            else:
+                locale = 'fi'
+            if 'limit' in params:
+                try:
+                    self.search_query_limit = int(params.get('limit'))
+                except ValueError:
+                    raise ParseError("'limit' must be of type int.")
+            # Use PostgreSQL Full Text Search on indexed columns populated
+            # with lexems. 
+            sql = f"""
+                SELECT id, ts_rank_cd(search_column_{locale}, search_query)
+                As RANK from events_place, 
+                to_tsquery('{self.search_configs[locale]}','{search_query_str}') search_query
+                WHERE search_query @@ search_column_{locale}
+                ORDER BY rank DESC LIMIT {self.search_query_limit};
+            """
+            cursor = connection.cursor()
+            cursor.execute(sql)
+            all_results = cursor.fetchall()           
+            # append all Place ids into a list for filtering
+            ids = [row[0] for row in all_results]
+            queryset = Place.objects.filter(id__in=ids) 
+        else:
+            queryset = Place.objects.none()       
+       
         return queryset
 
+    def get_search_query_str(self, val):
+        search_query_str = None  
+        # Build conditional query string that is used in the SQL query.
+        # split my "," or whitespace
+        q_vals = re.split(r",\s+|\s+", val)
+        q_vals = [s.strip() for s in q_vals]
+        for q in q_vals:
+            if search_query_str:
+                # if ends with "|"" make it a or
+                if q[-1] == "|":
+                    search_query_str += f"| {q[:-1]}:*"
+                # else make it an and.
+                else:
+                    search_query_str += f"& {q}:*"
+            else:
+                search_query_str = f"{q}:*"   
+        return search_query_str
 
 register_view(PlaceRetrieveViewSet, 'place')
 register_view(PlaceListViewSet, 'place')
@@ -1051,6 +1270,9 @@ class LanguageSerializer(LinkedEventsSerializer):
 class LanguageViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
+    filter_backends = (filters.OrderingFilter,)
+    ordering_fields = ('name')
+    ordering = ('name')
 
 
 register_view(LanguageViewSet, 'language')
@@ -1152,6 +1374,9 @@ class PaymentMethodSerializer(LinkedEventsSerializer):
 class PaymentViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = PaymentMethod.objects.all()
     serializer_class = PaymentMethodSerializer
+    filter_backends = (filters.OrderingFilter,)
+    ordering_fields = ('name')
+    ordering = ('name')
 
 
 register_view(PaymentViewSet, 'paymentmethod')
@@ -1193,12 +1418,12 @@ class ImageSerializer(LinkedEventsSerializer):
         return representation
 
     def validate(self, data):
-        # name the image after the file, if name was not provided
-        if 'name' not in data or not data['name']:
-            if 'url' in data:
-                data['name']['fi'] = str(data['url']).rsplit('/', 1)[-1]
-            if 'image' in data:
-                data['name']['fi'] = str(data['image']).rsplit('/', 1)[-1]
+        # Name the image after the file, if name was not provided.
+        if data:
+            if not data.get('name'):
+                for prop in ('url', 'image'):
+                    if data.get(prop):
+                        data['name'] = {'fi': str(data[prop]).rsplit('/', 1)[-1]}
         super().validate(data)
         return data
 
@@ -1379,17 +1604,17 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
                 self.fields_needed_to_publish = list(
                     self.fields_needed_to_publish)
                 self.fields_needed_to_publish.remove('location')
-                self.fields_needed_to_publish.append('virtualevent_url')
                 self.fields_needed_to_publish = tuple(
                     self.fields_needed_to_publish)
 
         if 'super_event_type' in data:
             if data['super_event_type'] == 'recurring':
-                self.fields_needed_to_publish = list(
-                    self.fields_needed_to_publish)
-                self.fields_needed_to_publish.remove('start_time')
-                self.fields_needed_to_publish = tuple(
-                    self.fields_needed_to_publish)
+                if 'start_time' in self.fields_needed_to_publish:
+                    self.fields_needed_to_publish = list(
+                        self.fields_needed_to_publish)
+                    self.fields_needed_to_publish.remove('start_time')
+                    self.fields_needed_to_publish = tuple(
+                        self.fields_needed_to_publish)
 
         # check that published events have a location, keyword and start_time
         languages = utils.get_fixed_lang_codes()
@@ -1561,9 +1786,6 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             if field_name.startswith('extension_') and field.source in validated_data:
                 validated_data.pop(field.source)
 
-        # update validated fields
-        super().update(instance, validated_data)
-
         # update offers
         if isinstance(offers, list):
             instance.offers.all().delete()
@@ -1593,6 +1815,8 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
                 request=request, event=instance, data=original_validated_data)
 
         post_update(instance)
+        # update validated fields
+        super().update(instance, validated_data)
 
         return instance
 
@@ -2002,6 +2226,38 @@ def _filter_event_queryset(queryset, params, srs=None):
             q = q | Q(in_language__id=lang)
         queryset = queryset.filter(q)
 
+    val = params.get('starts_after', None)
+    param = 'starts_after'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(
+            start_time__time__gte=datetime_time(hour, minute))
+
+    val = params.get('starts_before', None)
+    param = 'starts_before'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(
+            start_time__time__lte=datetime_time(hour, minute))
+
+    val = params.get('ends_after', None)
+    param = 'ends_after'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(
+            end_time__time__gte=datetime_time(hour, minute))
+
+    val = params.get('ends_before', None)
+    param = 'ends_before'
+    if val:
+        split_time = val.split(':')
+        hour, minute = parse_hours(split_time, param)
+        queryset = queryset.filter(
+            end_time__time__lte=datetime_time(hour, minute))
+
     # Filter by translation only
     val = params.get('translation', None)
     if val:
@@ -2021,22 +2277,28 @@ def _filter_event_queryset(queryset, params, srs=None):
         queryset = queryset.filter(q)
 
     # Filter by audience min age
-    val = params.get('audience_min_age', None)
+    val = params.get('audience_min_age', None) or params.get(
+        'audience_min_age_lt', None)
     if val:
-        try:
-            min_age = int(val)
-        except ValueError:
-            raise ParseError(_('Audience minimum age must be a digit.'))
+        min_age = parse_digit(val, 'audience_min_age')
         queryset = queryset.filter(audience_min_age__lte=min_age)
 
-    # Filter by audience max age
-    val = params.get('audience_max_age', None)
+    val = params.get('audience_min_age_gt', None)
     if val:
-        try:
-            max_age = int(val)
-        except ValueError:
-            raise ParseError(_('Audience maximum age must be a digit.'))
+        min_age = parse_digit(val, 'audience_min_age_gt')
+        queryset = queryset.filter(audience_min_age__gte=min_age)
+
+    # Filter by audience max age
+    val = params.get('audience_max_age', None) or params.get(
+        'audience_max_age_gt', None)
+    if val:
+        max_age = parse_digit(val, 'audience_max_age')
         queryset = queryset.filter(audience_max_age__gte=max_age)
+
+    val = params.get('audience_max_age_lt', None)
+    if val:
+        max_age = parse_digit(val, 'audience_min_age_lt')
+        queryset = queryset.filter(audience_max_age__lte=max_age)
 
     # Filter deleted events
     val = params.get('show_deleted', None)
@@ -2054,6 +2316,26 @@ def _filter_event_queryset(queryset, params, srs=None):
             queryset = queryset.filter(offers__is_free=True)
         elif val.lower() == 'false':
             queryset = queryset.exclude(offers__is_free=True)
+
+    val = params.get('suitable_for', None)
+    ''' Excludes all the events that have max age limit below or min age limit above the age or age range specified.
+    Suitable events with just one age boundary specified are returned, events with no age limits specified are
+    excluded. '''
+
+    if val:
+        vals = val.split(',')
+        if len(vals) > 2:
+            raise ParseError(
+                f'suitable_for takes at maximum two values, you provided {len(vals)}')
+        int_vals = [parse_digit(i, 'suitable_for') for i in vals]
+        if len(int_vals) == 2:
+            lower_boundary = min(int_vals)
+            upper_boundary = max(int_vals)
+        else:
+            lower_boundary = upper_boundary = int_vals[0]
+        queryset = queryset.exclude(Q(audience_min_age__gt=lower_boundary) |
+                                    Q(audience_max_age__lt=upper_boundary) |
+                                    Q(Q(audience_min_age=None) & Q(audience_max_age=None)))
 
     return queryset
 
