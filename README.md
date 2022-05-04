@@ -92,6 +92,7 @@ want to have all of the features working.
 ```bash
 #YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies.
 #A large part of Linked Events features are built on top of YSO, this importer should be used in all installations.
+#(Developed solely by: https://github.com/Anthon98)
 python manage.py event_import ontology
 
 #TSL-wordlist(Turun sanalista)-importer adds a City-of-Turku specific wordlist that is used by some of the keyword set importers.
