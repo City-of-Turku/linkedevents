@@ -6,7 +6,7 @@ from modeltranslation.admin import TranslationAdmin
 from reversion.admin import VersionAdmin
 from admin_auto_filters.filters import AutocompleteFilter
 from events.api import generate_id
-from events.models import Place, License, DataSource, Event, Keyword, KeywordSet, Language, PaymentMethod
+from events.models import Place, License, DataSource, Event, Keyword, KeywordSet, Language, PaymentMethod, Sidefield
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -224,3 +224,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
             return ['id']
         else:
             return []
+
+
+admin.site.register(Sidefield, SidefieldAdmin)
