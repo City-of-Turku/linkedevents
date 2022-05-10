@@ -1327,6 +1327,10 @@ class SidefieldSerializer(TranslatedModelSerializer):
     offers_sidefield = serializers.CharField(required=False)
     keyword_sidefield = serializers.CharField(required=False)
 
+    class Meta:
+        model = Sidefield
+        exclude = ['id']
+
 
 class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Sidefield.objects.all()
@@ -1334,6 +1338,9 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     filter_backends = (filters.OrderingFilter,)
     orderingfields = ('')
     ordering = ('')
+
+
+register_view(SidefieldViewSet, 'sidefield')
 
 
 class ImageSerializer(LinkedEventsSerializer):
