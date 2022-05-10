@@ -212,3 +212,15 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 
 
 admin.site.register(PaymentMethod, PaymentAdmin)
+
+
+class SidefieldAdmin(BaseAdmin, TranslationAdmin):
+    fields = ('location_sidefield', 'umbrella_sidefield', 'times_sidefield', 'offers_sidefield', 'keyword_sidefield')
+    list_display = ('location_sidefield', 'umbrella_sidefield',
+                    'times_sidefield', 'offers_sidefield', 'keyword_sidefield')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ['id']
+        else:
+            return []

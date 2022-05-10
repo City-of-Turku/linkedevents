@@ -67,7 +67,7 @@ from events.custom_elasticsearch_search_backend import (
 from events.extensions import apply_select_and_prefetch, get_extensions_from_request
 from events.models import (
     Place, Event, Keyword, KeywordSet, Language, OpeningHoursSpecification, EventLink,
-    Offer, DataSource, Image, PublicationStatus, PUBLICATION_STATUSES, License, Video, PaymentMethod
+    Offer, DataSource, Image, PublicationStatus, PUBLICATION_STATUSES, License, Sidefield, Video, PaymentMethod
 )
 from events.translation import EventTranslationOptions, ImageTranslationOptions
 from helevents.models import User
@@ -1318,6 +1318,22 @@ class OfferSerializer(TranslatedModelSerializer):
     class Meta:
         model = Offer
         exclude = ['id', 'event']
+
+
+class SidefieldSerializer(TranslatedModelSerializer):
+    location_sidefield = serializers.CharField(required=False)
+    umbrella_sidefield = serializers.CharField(required=False)
+    times_sidefield = serializers.CharField(required=False)
+    offers_sidefield = serializers.CharField(required=False)
+    keyword_sidefield = serializers.CharField(required=False)
+
+
+class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = Sidefield.objects.all()
+    serializer_class = SidefieldSerializer
+    filter_backends = (filters.OrderingFilter,)
+    orderingfields = ('')
+    ordering = ('')
 
 
 class ImageSerializer(LinkedEventsSerializer):
