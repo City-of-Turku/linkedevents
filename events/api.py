@@ -1326,6 +1326,7 @@ class SidefieldSerializer(TranslatedModelSerializer):
     times_sidefield = serializers.CharField(required=False)
     offers_sidefield = serializers.CharField(required=False)
     keyword_sidefield = serializers.CharField(required=False)
+    category_sidefield = serializers.CharField(required=False)
 
     class Meta:
         model = Sidefield
@@ -1336,8 +1337,8 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Sidefield.objects.all()
     serializer_class = SidefieldSerializer
     filter_backends = (filters.OrderingFilter,)
-    orderingfields = ('')
-    ordering = ('')
+    #orderingfields = ('')
+    #ordering = ('')
 
 
 register_view(SidefieldViewSet, 'sidefield')
