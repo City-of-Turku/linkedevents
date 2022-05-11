@@ -1321,6 +1321,7 @@ class OfferSerializer(TranslatedModelSerializer):
 
 
 class SidefieldSerializer(TranslatedModelSerializer):
+    type_id = EnumChoiceField(Event.TYPE_IDS, required=False)
     location_sidefield = serializers.CharField(required=False)
     umbrella_sidefield = serializers.CharField(required=False)
     times_sidefield = serializers.CharField(required=False)

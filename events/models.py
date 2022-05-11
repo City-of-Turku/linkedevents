@@ -906,6 +906,22 @@ reversion.register(Offer)
 
 
 class Sidefield(models.Model, SimpleValueMixin):
+
+    class Type_Id:
+        GENERAL = 1
+        COURSE = 2
+        VOLUNTEERING = 3
+        HOBBIES = 4
+
+    TYPE_IDS = (
+        (Type_Id.GENERAL, _("General")),
+        (Type_Id.COURSE, _("Course")),
+        (Type_Id.VOLUNTEERING, _("Volunteering")),
+        (Type_Id.HOBBIES, _("Hobbies")),
+    )
+
+    type_id = models.SmallIntegerField(blank=False, null=False, db_index=False,
+                                       default=Type_Id.GENERAL, choices=TYPE_IDS)
     location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
     umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=1000, blank=True)
     times_sidefield = models.CharField(verbose_name=_('Times Sidefield'), max_length=1000, blank=True)

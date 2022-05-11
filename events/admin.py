@@ -215,9 +215,13 @@ admin.site.register(PaymentMethod, PaymentAdmin)
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
-    fields = ('location_sidefield', 'umbrella_sidefield', 'times_sidefield',
-              'offers_sidefield', 'keyword_sidefield', 'category_sidefield')
-    list_display = ('location_sidefield', 'umbrella_sidefield',
+    fields = ('type_id', 'location_sidefield_fi', 'location_sidefield_sv', 'location_sidefield_en',
+              'umbrella_sidefield_fi', 'umbrella_sidefield_sv', 'umbrella_sidefield_en',
+              'times_sidefield_fi', 'times_sidefield_sv', 'times_sidefield_en',
+              'offers_sidefield_fi', 'offers_sidefield_sv', 'offers_sidefield_en',
+              'keyword_sidefield_fi', 'keyword_sidefield_sv', 'keyword_sidefield_en',
+              'category_sidefield_fi', 'category_sidefield_sv', 'category_sidefield_en',)
+    list_display = ('type_id', 'location_sidefield', 'umbrella_sidefield',
                     'times_sidefield', 'offers_sidefield', 'keyword_sidefield', 'category_sidefield')
 
     def get_readonly_fields(self, request, obj=None):
