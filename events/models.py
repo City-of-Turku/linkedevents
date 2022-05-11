@@ -906,12 +906,12 @@ reversion.register(Offer)
 
 
 class Sidefield(models.Model, SimpleValueMixin):
-    location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=100, blank=True)
-    umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=100, blank=True)
-    times_sidefield = models.CharField(verbose_name=_('Times Sidefield'), max_length=100, blank=True)
-    offers_sidefield = models.CharField(verbose_name=_('Offers Sidefield'), max_length=100, blank=True)
-    keyword_sidefield = models.CharField(verbose_name=_('Keyword Sidefield'), max_length=100, blank=True)
-    category_sidefield = models.CharField(verbose_name=_('Category Sidefield'), max_length=100, blank=True)
+    location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
+    umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=1000, blank=True)
+    times_sidefield = models.CharField(verbose_name=_('Times Sidefield'), max_length=1000, blank=True)
+    offers_sidefield = models.CharField(verbose_name=_('Offers Sidefield'), max_length=1000, blank=True)
+    keyword_sidefield = models.CharField(verbose_name=_('Keyword Sidefield'), max_length=1000, blank=True)
+    category_sidefield = models.CharField(verbose_name=_('Category Sidefield'), max_length=1000, blank=True)
 
 
 class EventLink(models.Model, SimpleValueMixin):
