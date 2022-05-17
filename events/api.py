@@ -568,13 +568,18 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
-                # test
 
                 if instance.publisher.id == 'image:1500':
                     # Kattoo että kuvapankin kuvan data ie oo muuttunu.
                     # Jos se on muuttunu niin kato sen käyttäjän publisher id:tä.
                     # Jos se on admin tai on kuvanapankin organisaatiossa niin fine sit tää validaatio menee läpi.
                     print("Yep, olet vaihtamassa kuvapankin kuvaan")
+                    current_kv = Image.objects.get(id=instance.id)
+                    if current_kv:
+                        print("Kuvapankin kuva löytyy tietokannasta")
+                        # Validate that there are no changes.
+                        for attrs in instance:
+                            print("Attribuutti:", attrs)
 
 
                 '''
