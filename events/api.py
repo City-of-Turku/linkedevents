@@ -578,8 +578,9 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                     if current_kv:
                         print("Kuvapankin kuva löytyy tietokannasta")
                         # Validate that there are no changes.
-                        for attrs in instance:
-                            print("Attribuutti:", attrs)
+                        print(dir(instance))
+                        for attr, value in instance.__dict__.items():
+                            print(attr, value)
 
 
                 '''
