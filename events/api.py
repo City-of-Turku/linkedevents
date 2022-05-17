@@ -583,6 +583,18 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                             print(attr, value)
 
 
+                if instance.publisher.id == 'yksilo:2000':
+                    # Kattoo että kuvapankin kuvan data ie oo muuttunu.
+                    # Jos se on muuttunu niin kato sen käyttäjän publisher id:tä.
+                    # Jos se on admin tai on kuvanapankin organisaatiossa niin fine sit tää validaatio menee läpi.
+                    print("Olet vaihtamassa yksilön kuvaa.")
+                    current_kv = Image.objects.get(id=instance.id)
+                    if current_kv:
+                        print("Yksityiskäyttäjän kuva löytyy tietokannasta.")
+                        # Validate that there are no changes.
+                        for attr, value in instance.__dict__.items():
+                            print(attr, value)
+
                 '''
                 if self.publisher.id == 'yksilo:2000':
 
