@@ -568,65 +568,23 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
+                if instance.publisher.id == 'image:1500':
+                    fields_to_prevent = ('name', 'alt_text', 'photographer_name', 'license')
+                    for k, v in self.request.data.items():
+                        print("[PAYLOADI]: %s -> %s" % (k, v))
+                    
+                    for kk, vv in instance.__dict__.items():
+                        print("[DATABASE]: %s -> %s" % (kk, vv))
 
-                for x, v in self.request.data.items():
-                    print(x, v)
-                
+                '''
                 gg = self.request.data['name']['fi']
 
                 if instance.name != gg:
                     print("Olet vaihtamassa kuvan nimeä toiseen. Edellinen nimi on:", instance.name, "kun taas uusi on:", gg)
                     raise PermissionDenied(
                             _("Et voi vaihtaa nimee toiseen."))
-
-                if instance.publisher.id == 'turku:853':
-
-                    current_kv = Image.objects.get(id=instance.id)
-                    if current_kv:
-                        for attr, value in instance.__dict__.items():
-                            print("Nykyisen instance kuvan data on", attr, value)
-                        
-                        for attr, value in current_kv.__dict__.items():
-                            print("Tietokannan kuvan data on", attr, value)
-                        
-
-                if instance.publisher.id == 'image:1500':
-                    # Kattoo että kuvapankin kuvan data ie oo muuttunu.
-                    # Jos se on muuttunu niin kato sen käyttäjän publisher id:tä.
-                    # Jos se on admin tai on kuvanapankin organisaatiossa niin fine sit tää validaatio menee läpi.
-                    print("Yep, olet vaihtamassa kuvapankin kuvaan")
-                    current_kv = Image.objects.get(id=instance.id)
-                    if current_kv:
-                        print("Kuvapankin kuva löytyy tietokannasta")
-                        # Validate that there are no changes.
-                        print(dir(instance))
-                        for attr, value in instance.__dict__.items():
-                            print(attr, value)
-
-
-                if instance.publisher.id == 'yksilo:2000':
-                    # Kattoo että kuvapankin kuvan data ie oo muuttunu.
-                    # Jos se on muuttunu niin kato sen käyttäjän publisher id:tä.
-                    # Jos se on admin tai on kuvanapankin organisaatiossa niin fine sit tää validaatio menee läpi.
-                    print("Olet vaihtamassa yksilön kuvaa.")
-                    current_kv = Image.objects.get(id=instance.id)
-                    if current_kv:
-                        print("Yksityiskäyttäjän kuva löytyy tietokannasta.")
-                        # Validate that there are no changes.
-                        for attr, value in instance.__dict__.items():
-                            print(attr, value)
-
                 '''
-                if self.publisher.id == 'yksilo:2000':
-
-                    if instance.created_by.id != self.user.id:
-                        raise PermissionDenied(
-                            _("Can't update another users image within your organization."))
-
-                if self.publisher.id != instance.publisher.id:
-                    raise PermissionDenied(
-                        _("Can't update an image outside your organization."))
-                '''
+                
 
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
