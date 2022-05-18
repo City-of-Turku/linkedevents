@@ -568,7 +568,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
-                if instance.publisher.id == 'image:1500':
+                if instance.publisher.id == 'turku:853':
                     fields_to_prevent = ('name', 'alt_text', 'photographer_name', 'license')
                     for k, v in self.request.data.items():
                         print("[PAYLOADI]: %s -> %s" % (k, v))
