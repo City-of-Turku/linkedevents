@@ -570,45 +570,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 
-                print("Instancen kuvan nimi on", instance.name)
-
-                print("Nyt meni putti put put")
-                if instance.publisher.id == 'turku:853':
-
-                    current_kv = Image.objects.get(id=instance.id)
-                    if current_kv:
-                        for attr, value in instance.__dict__.items():
-                            print("Nykyisen instance kuvan data on", attr, value)
-                        
-                        for attr, value in current_kv.__dict__.items():
-                            print("Tietokannan kuvan data on", attr, value)
-                        
-
-                if instance.publisher.id == 'image:1500':
-                    # Kattoo että kuvapankin kuvan data ie oo muuttunu.
-                    # Jos se on muuttunu niin kato sen käyttäjän publisher id:tä.
-                    # Jos se on admin tai on kuvanapankin organisaatiossa niin fine sit tää validaatio menee läpi.
-                    print("Yep, olet vaihtamassa kuvapankin kuvaan")
-                    current_kv = Image.objects.get(id=instance.id)
-                    if current_kv:
-                        print("Kuvapankin kuva löytyy tietokannasta")
-                        # Validate that there are no changes.
-                        print(dir(instance))
-                        for attr, value in instance.__dict__.items():
-                            print(attr, value)
-
-
-                if instance.publisher.id == 'yksilo:2000':
-                    # Kattoo että kuvapankin kuvan data ie oo muuttunu.
-                    # Jos se on muuttunu niin kato sen käyttäjän publisher id:tä.
-                    # Jos se on admin tai on kuvanapankin organisaatiossa niin fine sit tää validaatio menee läpi.
-                    print("Olet vaihtamassa yksilön kuvaa.")
-                    current_kv = Image.objects.get(id=instance.id)
-                    if current_kv:
-                        print("Yksityiskäyttäjän kuva löytyy tietokannasta.")
-                        # Validate that there are no changes.
-                        for attr, value in instance.__dict__.items():
-                            print(attr, value)
+                for k, v in self.request.data.items():
+                    print(k, v)
 
                 '''
                 if self.publisher.id == 'yksilo:2000':
