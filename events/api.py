@@ -568,6 +568,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
+                
+                print("Nyt meni putti put put")
 
                 if instance.publisher.id == 'image:1500':
                     # Kattoo että kuvapankin kuvan data ie oo muuttunu.
