@@ -526,6 +526,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             return
         if 'request' in context:
             self.request = context['request']
+            print(self.request.data)
 
         # for post and put methods as well as field visibility, user information is needed
         self.method = self.request.method
@@ -569,6 +570,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 
+                print("Instancen kuvan nimi on", instance.name)
+
                 print("Nyt meni putti put put")
                 if instance.publisher.id == 'turku:853':
 
