@@ -569,12 +569,31 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 if instance.publisher.id == 'turku:853':
-                    fields_to_prevent = ('name', 'alt_text', 'photographer_name', 'license')
-                    for k, v in self.request.data.items():
-                        print("[PAYLOADI]: %s -> %s" % (k, v))
-                    
+                    fields_to_prevent = {
+                        'name': dict,
+                        'alt_text': dict,
+                        'photographer_name': str,
+                        'license_id': str,
+                    }
+
+                    for v in ('name', 'alt_text', 'photographer_name', 'license_id'):
+                        print(getattr(instance, v))
+
+                    '''
+                    for k, v in fields_to_prevent.items():
+                        if v in ('name', 'alt'):
+                            for x in ('fi', 'sv', 'en'):
+                                db_val = getattr(instance, v)
+                                break
+                        else:
+                            db_val = getattr(instance, v):
+                    '''
+
+                    '''
                     for kk, vv in instance.__dict__.items():
                         print("[DATABASE]: %s -> %s" % (kk, vv))
+                    '''
+
 
                 '''
                 gg = self.request.data['name']['fi']
