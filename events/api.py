@@ -570,8 +570,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
 
-                for x in self.request.data:
-                    print(x)
+                for x, v in self.request.data.items():
+                    print(x, v)
 
 
                 if instance.publisher.id == 'turku:853':
