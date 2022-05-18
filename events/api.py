@@ -570,7 +570,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 
-                for k, v in self.request.data.items():
+                for k, v in self.request.data:
                     print(k, v)
 
                 '''
