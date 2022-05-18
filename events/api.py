@@ -570,6 +570,16 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 
                 print("Nyt meni putti put put")
+                if instance.publisher.id == 'turku:853':
+
+                    current_kv = Image.objects.get(id=instance.id)
+                    if current_kv:
+                        for attr, value in instance.__dict__.items():
+                            print("Nykyisen instance kuvan data on", attr, value)
+                        
+                        for attr, value in current_kv.__dict__.items():
+                            print("Tietokannan kuvan data on", attr, value)
+                        
 
                 if instance.publisher.id == 'image:1500':
                     # Kattoo että kuvapankin kuvan data ie oo muuttunu.
