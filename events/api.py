@@ -526,7 +526,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
             return
         if 'request' in context:
             self.request = context['request']
-            print(self.request.data)
 
         # for post and put methods as well as field visibility, user information is needed
         self.method = self.request.method
@@ -572,7 +571,13 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
 
                 for x, v in self.request.data.items():
                     print(x, v)
+                
+                gg = self.request.data['name']['fi']
 
+                if instance.name != gg:
+                    print("Olet vaihtamassa kuvan nimeä toiseen. Edellinen nimi on:", instance.name, "kun taas uusi on:", gg)
+                    raise PermissionDenied(
+                            _("Et voi vaihtaa nimee toiseen."))
 
                 if instance.publisher.id == 'turku:853':
 
