@@ -569,7 +569,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
             if instance_field != request_field:
                 if self.publisher.id != instance_obj.publisher.id:
-                    print("Perm denied?")
+                    print("Perm denied?", instance_field, request_field)
                     raise PermissionDenied(
                         _("You're not allowed to modify imagebank data."))
 
