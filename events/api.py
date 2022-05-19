@@ -590,8 +590,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                     for rd_key, rd_value in self.request.data.items():
                         if rd_key in fields_to_prevent:
                             if fields_to_prevent[rd_key] == 'multilang':
-                                for request_field_langs in rd_value:
-                                    print(request_field_langs)
+                                for request_field_lang, request_field_val in rd_value.items():
+                                    print(request_field_lang, request_field_val)
 
 
 
