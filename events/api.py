@@ -569,6 +569,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
             if instance_field != request_field:
                 if self.publisher.id != instance_obj.publisher.id:
+                    print("Perm denied?")
                     raise PermissionDenied(
                         _("You're not allowed to modify imagebank data."))
 
@@ -600,9 +601,11 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                             # Validate and prevent changes to multilang fields (name and alt_text).
                             if fields_to_prevent[rd_key] == 'multilang':
                                 for request_field_lang, request_field_val in rd_value.items():
+                                    print("for looppi.")
                                     instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
                                     _imagebank_validation_error(instance_multilang_field, request_field_val, instance)
                             else:
+                                print("else")
                                 instance_field = getattr(instance, '%s' % rd_key)
                                 _imagebank_validation_error(instance_field, rd_value, instance)
                 else:
