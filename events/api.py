@@ -569,41 +569,32 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 if instance.publisher.id == 'turku:853':
+                    # From the payload we do not want the following fields to change:
+                    # id, license, created_time, last_modified_time, url, cropping, photographer_name,
+                    # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
+                    # Left hand side are the payload fields, right hand side corresponds to the DB fields.
                     fields_to_prevent = {
-                        'name': dict,
-                        'alt_text': dict,
-                        'photographer_name': str,
-                        'license_id': str,
-                    }
+                            'id': 'id',
+                            'license': 'license_id',
+                            'created_time': 'created_time',
+                            'last_modified_time': 'last_modified_time',
+                            'url': 'url',
+                            'cropping': 'cropping',
+                            'photographer_name': 'photographer_name',
+                            'data_source': 'data_source_id',
+                            'publisher': 'publisher_id',
+                            'name': 'multilang',
+                            'alt_text': 'multilang',
+                        }
 
-                    for v in ('name', 'alt_text', 'photographer_name', 'license_id'):
-                        print(getattr(instance, v))
-
-                    '''
-                    for k, v in fields_to_prevent.items():
-                        if v in ('name', 'alt'):
-                            for x in ('fi', 'sv', 'en'):
-                                db_val = getattr(instance, v)
-                                break
-                        else:
-                            db_val = getattr(instance, v):
-                    '''
-
-                    '''
-                    for kk, vv in instance.__dict__.items():
-                        print("[DATABASE]: %s -> %s" % (kk, vv))
-                    '''
+                    for rd_key, rd_value in self.request.data.items():
+                        if rd_key in fields_to_prevent:
+                            if fields_to_prevent[rd_key] == 'multilang':
+                                for request_field_langs in rd_value:
+                                    print(request_field_langs)
 
 
-                '''
-                gg = self.request.data['name']['fi']
 
-                if instance.name != gg:
-                    print("Olet vaihtamassa kuvan nimeä toiseen. Edellinen nimi on:", instance.name, "kun taas uusi on:", gg)
-                    raise PermissionDenied(
-                            _("Et voi vaihtaa nimee toiseen."))
-                '''
-                
 
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
