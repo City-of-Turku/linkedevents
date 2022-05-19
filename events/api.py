@@ -577,8 +577,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 print("------------------")
-                for k, v in self.request.data.items():
-                    print(k, v)
+                for v in self.request.data:
+                    print(v)
 
                 '''
                 if instance.publisher.id == 'image:1500':
