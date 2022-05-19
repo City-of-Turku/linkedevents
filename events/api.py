@@ -587,7 +587,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                             'url': 'url',
                             'cropping': 'cropping',
                             'photographer_name': 'photographer_name',
-                            'data_source': 'data_source_id',
                             'publisher': 'publisher_id',
                             'name': 'multilang',
                             'alt_text': 'multilang',
