@@ -565,10 +565,17 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
 
+
+        def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
+            if instance_field != request_field:
+                if self.publisher.id != instance_obj.publisher.id:
+                    raise PermissionDenied(
+                        _("You're not allowed to modify imagebank data."))
+
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
-                if instance.publisher.id == 'turku:853':
+                if instance.publisher.id == 'image:1500':
                     # From the payload we do not want the following fields to change:
                     # id, license, created_time, last_modified_time, url, cropping, photographer_name,
                     # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
@@ -589,16 +596,24 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
 
                     for rd_key, rd_value in self.request.data.items():
                         if rd_key in fields_to_prevent:
+                            # Validate and prevent changes to multilang fields (name and alt_text).
                             if fields_to_prevent[rd_key] == 'multilang':
                                 for request_field_lang, request_field_val in rd_value.items():
                                     instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
-                                    if instance_multilang_field != request_field_val:
-                                        if self.publisher.id != 'image:1500':
-                                            raise PermissionDenied(
-                                                _("You're not allowed to modify imagebank data."))
+                                    _imagebank_validation_error(instance_multilang_field, request_field_val, instance)
+                            else:
+                                instance_field = getattr(instance, '%s' % rd_key)
+                                _imagebank_validation_error(instance_field, rd_value, instance)
+                else:
 
+                    if self.publisher.id == 'yksilo:2000':
+                        if instance.created_by.id != self.user.id:
+                            raise PermissionDenied(
+                                _("Can't update another users image within your organization."))
 
-
+                    if self.publisher.id != instance.publisher.id:
+                        raise PermissionDenied(
+                            _("Can't update an image outside your organization."))
 
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
