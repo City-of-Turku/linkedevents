@@ -583,10 +583,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                     # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
                     # Left hand side are the payload fields, right hand side corresponds to the DB fields.
                     fields_to_prevent = {
-                            'id': 'id',
                             'license': 'license_id',
-                            'created_time': 'created_time',
-                            'last_modified_time': 'last_modified_time',
                             'url': 'url',
                             'cropping': 'cropping',
                             'photographer_name': 'photographer_name',
