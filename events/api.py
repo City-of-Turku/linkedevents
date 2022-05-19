@@ -576,6 +576,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 if instance.publisher.id == 'image:1500':
+                    print("Täällä.")
                     # From the payload we do not want the following fields to change:
                     # id, license, created_time, last_modified_time, url, cropping, photographer_name,
                     # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
@@ -605,7 +606,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                                 instance_field = getattr(instance, '%s' % rd_key)
                                 _imagebank_validation_error(instance_field, rd_value, instance)
                 else:
-
+                    print("Täällä kaks.")
                     if self.publisher.id == 'yksilo:2000':
                         if instance.created_by.id != self.user.id:
                             raise PermissionDenied(
