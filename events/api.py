@@ -592,6 +592,9 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                             if fields_to_prevent[rd_key] == 'multilang':
                                 for request_field_lang, request_field_val in rd_value.items():
                                     print(request_field_lang, request_field_val)
+                                    instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
+                                    if instance_multilang_field != request_field_val:
+                                        print("Olet vaihtamassa kuvan %s kenttää johonkin toiseen arvoon. Et saa." % rd_key)
 
 
 
