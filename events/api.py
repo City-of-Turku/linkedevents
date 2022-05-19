@@ -569,7 +569,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
             if instance_field != request_field:
                 if self.publisher.id != instance_obj.publisher.id:
-                    print("Perm denied?", instance_field, request_field)
                     raise PermissionDenied(
                         _("You're not allowed to modify imagebank data."))
 
@@ -579,9 +578,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 if isinstance(self.request.data, dict):
                     if not 'images' in self.request.data:
                         if instance.publisher.id == 'image:1500':
-                            # From the payload we do not want the following fields to change:
-                            # id, license, created_time, last_modified_time, url, cropping, photographer_name,
-                            # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
                             # Left hand side are the payload fields, right hand side corresponds to the DB fields.
                             fields_to_prevent = {
                                     'license': 'license_id',
