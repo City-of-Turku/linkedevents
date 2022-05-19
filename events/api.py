@@ -576,50 +576,42 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
-                print("------------------")
-                for v in self.request.data:
-                    print(v)
+                if isinstance(self.request.data, dict):
+                    if not 'images' in self.request.data:
+                        if instance.publisher.id == 'image:1500':
+                            # From the payload we do not want the following fields to change:
+                            # id, license, created_time, last_modified_time, url, cropping, photographer_name,
+                            # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
+                            # Left hand side are the payload fields, right hand side corresponds to the DB fields.
+                            fields_to_prevent = {
+                                    'license': 'license_id',
+                                    'url': 'url',
+                                    'cropping': 'cropping',
+                                    'photographer_name': 'photographer_name',
+                                    'publisher': 'publisher_id',
+                                    'name': 'multilang',
+                                    'alt_text': 'multilang',
+                                }
 
-                '''
-                if instance.publisher.id == 'image:1500':
-                    print("Täällä.")
-                    # From the payload we do not want the following fields to change:
-                    # id, license, created_time, last_modified_time, url, cropping, photographer_name,
-                    # data_source, publisher, name (fi, sv, en), alt_text (fi, sv, en), @id, @context, @type
-                    # Left hand side are the payload fields, right hand side corresponds to the DB fields.
-                    fields_to_prevent = {
-                            'license': 'license_id',
-                            'url': 'url',
-                            'cropping': 'cropping',
-                            'photographer_name': 'photographer_name',
-                            'publisher': 'publisher_id',
-                            'name': 'multilang',
-                            'alt_text': 'multilang',
-                        }
+                            for rd_key, rd_value in self.request.data.items():
+                                if rd_key in fields_to_prevent:
+                                    # Validate and prevent changes to multilang fields (name and alt_text).
+                                    if fields_to_prevent[rd_key] == 'multilang':
+                                        for request_field_lang, request_field_val in rd_value.items():
+                                            instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
+                                            _imagebank_validation_error(instance_multilang_field, request_field_val, instance)
+                                    else:
+                                        instance_field = getattr(instance, '%s' % rd_key)
+                                        _imagebank_validation_error(instance_field, rd_value, instance)
+                        else:
+                            if self.publisher.id == 'yksilo:2000':
+                                if instance.created_by.id != self.user.id:
+                                    raise PermissionDenied(
+                                        _("Can't update another users image within your organization."))
 
-                    for rd_key, rd_value in self.request.data.items():
-                        if rd_key in fields_to_prevent:
-                            # Validate and prevent changes to multilang fields (name and alt_text).
-                            if fields_to_prevent[rd_key] == 'multilang':
-                                for request_field_lang, request_field_val in rd_value.items():
-                                    print("for looppi.")
-                                    instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
-                                    _imagebank_validation_error(instance_multilang_field, request_field_val, instance)
-                            else:
-                                print("else")
-                                instance_field = getattr(instance, '%s' % rd_key)
-                                _imagebank_validation_error(instance_field, rd_value, instance)
-                else:
-                    print("Täällä kaks.")
-                    if self.publisher.id == 'yksilo:2000':
-                        if instance.created_by.id != self.user.id:
-                            raise PermissionDenied(
-                                _("Can't update another users image within your organization."))
-
-                    if self.publisher.id != instance.publisher.id:
-                        raise PermissionDenied(
-                            _("Can't update an image outside your organization."))
-            '''
+                            if self.publisher.id != instance.publisher.id:
+                                raise PermissionDenied(
+                                    _("Can't update an image outside your organization."))
 
 
         if not isinstance(instance, QuerySet) and instance:
