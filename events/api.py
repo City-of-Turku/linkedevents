@@ -593,7 +593,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                                 for request_field_lang, request_field_val in rd_value.items():
                                     instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
                                     if instance_multilang_field != request_field_val:
-                                        if self.publisher.id != instance.publisher.id:
+                                        if self.publisher.id != 'image:1500':
                                             raise PermissionDenied(
                                                 _("You're not allowed to modify imagebank data."))
 
