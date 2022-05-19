@@ -576,6 +576,11 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # Image put validation.
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
+                print("------------------")
+                for k, v in self.request.data.items():
+                    print(k, v)
+
+                '''
                 if instance.publisher.id == 'image:1500':
                     print("Täällä.")
                     # From the payload we do not want the following fields to change:
@@ -614,6 +619,8 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                     if self.publisher.id != instance.publisher.id:
                         raise PermissionDenied(
                             _("Can't update an image outside your organization."))
+            '''
+
 
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
