@@ -1516,7 +1516,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
 
-        print(data_source, user_organization)
+        print(data_source, user_organization.id)
         print("Nyt meni putti...")
         print(self.request.data)
 
