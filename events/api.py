@@ -565,12 +565,13 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
 
+        print("test")
 
-        def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
-            if instance_field != request_field:
-                if self.publisher.id != instance_obj.publisher.id:
-                    raise PermissionDenied(
-                        _("You're not allowed to modify imagebank data."))
+        #def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
+        #    if instance_field != request_field:
+        #        if self.publisher.id != instance_obj.publisher.id:
+        #            raise PermissionDenied(
+        #                _("You're not allowed to modify imagebank data."))
 
         # Image put validation.
         '''
@@ -1510,12 +1511,11 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
         return queryset
 
-    '''
+
     def update(self, instance, *args, **kwargs):
-        print("Nyt meni putti.")
+        print("Nyt meni putti...")
         response = super().update(request=self.request, *args, **kwargs)
         return response
-    '''
 
     def perform_destroy(self, instance):
         # ensure image can only be deleted within the organization
