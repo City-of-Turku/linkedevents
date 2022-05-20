@@ -1511,7 +1511,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
     def update(self, instance, *args, **kwargs):
         print("Nyt meni putti.")
-        response = super().update(*args, **kwargs)
+        response = super().update(request=self.request, *args, **kwargs)
         return response
 
     def perform_destroy(self, instance):
