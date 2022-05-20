@@ -1514,14 +1514,21 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
     def update(self, instance, *args, **kwargs):
         print("Nyt meni putti...")
-
         print(self.request.data)
 
         if isinstance(self.request.data, dict):
             if 'id' in self.request.data:
                 img_obj = Image.objects.get(id=self.request.data['id'])
                 if img_obj:
-                    print(img_obj.publisher.id)
+                    if img_obj.publisher:
+                        if img_obj.publisher.id == instance.user.publisher.id:
+                            print("Kyllä.")
+                        else:
+                            raise PermissionDenied(
+                                _("You can't modify an image outside your own organization."))
+            else:
+                raise PermissionDenied(
+                    _('You need to specify the image ID in the request.'))
 
         '''
         if instance.publisher.id == 'image:1500':
