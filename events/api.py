@@ -565,53 +565,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
 
-        print("test")
-
-        #def _imagebank_validation_error(instance_field, request_field, instance_obj) -> None:
-        #    if instance_field != request_field:
-        #        if self.publisher.id != instance_obj.publisher.id:
-        #            raise PermissionDenied(
-        #                _("You're not allowed to modify imagebank data."))
-
-        # Image put validation.
-        '''
-        if isinstance(instance, Image):
-            if 'PUT' in self.request.method or self.request.method == 'PUT':
-                if isinstance(self.request.data, dict):
-                    if not 'images' in self.request.data:
-                        if instance.publisher.id == 'image:1500':
-                            # Left hand side are the payload fields, right hand side corresponds to the DB fields.
-                            fields_to_prevent = {
-                                    'license': 'license_id',
-                                    'url': 'url',
-                                    'cropping': 'cropping',
-                                    'photographer_name': 'photographer_name',
-                                    'publisher': 'publisher_id',
-                                    'name': 'multilang',
-                                    'alt_text': 'multilang',
-                                }
-
-                            for rd_key, rd_value in self.request.data.items():
-                                if rd_key in fields_to_prevent:
-                                    # Validate and prevent changes to multilang fields (name and alt_text).
-                                    if fields_to_prevent[rd_key] == 'multilang':
-                                        for request_field_lang, request_field_val in rd_value.items():
-                                            instance_multilang_field = getattr(instance, '%s_%s' % (rd_key, request_field_lang))
-                                            _imagebank_validation_error(instance_multilang_field, request_field_val, instance)
-                                    else:
-                                        instance_field = getattr(instance, '%s' % rd_key)
-                                        _imagebank_validation_error(instance_field, rd_value, instance)
-                        else:
-                            if self.publisher.id == 'yksilo:2000':
-                                if instance.created_by.id != self.user.id:
-                                    raise PermissionDenied(
-                                        _("Can't update another users image within your organization."))
-
-                            if self.publisher.id != instance.publisher.id:
-                                raise PermissionDenied(
-                                    _("Can't update an image outside your organization."))
-        '''
-
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
             if isinstance(self.user, ApiKeyUser):
@@ -1511,8 +1464,8 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
         return queryset
 
-
     def update(self, instance, *args, **kwargs):
+        """Handles thorough PUT method /images/ endoint validation."""
         data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
 
@@ -1521,23 +1474,32 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 img_obj = Image.objects.get(id=self.request.data['id'])
                 if img_obj:
                     if img_obj.publisher:
+                        # Validate that we can only modify images within our own organization.
                         if img_obj.publisher.id != user_organization.id:
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
+
+                        if user_organization.id == 'yksilo:2000':
+                            if img_obj.created_by:
+                                if img_obj.created_by.id != instance.user.id:
+                                    raise PermissionDenied(
+                                        _("You can't modify an image that you didn't create."))
+                            else:
+                                raise ParseError(
+                                    _("Image does not have a created_by value."))
+                    else:
+                        raise ParseError(
+                            _("Image does not have a publisher, can't proceed."))
+                else:
+                    raise ParseError(
+                        _("Can't update because the specified image does not exist."))
             else:
-                raise PermissionDenied(
+                raise ParseError(
                     _('You need to specify the image ID in the request.'))
+        else:
+            raise ParseError(
+                _('Wrong request format. Needs to be a dictionary.'))
 
-        '''
-        if self.publisher.id == 'yksilo:2000':
-            if instance.created_by.id != self.user.id:
-                raise PermissionDenied(
-                    _("Can't update another users image within your organization."))
-
-            if self.publisher.id != instance.publisher.id:
-                raise PermissionDenied(
-                    _("Can't update an image outside your organization."))
-        '''
         response = super().update(request=self.request, *args, **kwargs)
         return response
 
