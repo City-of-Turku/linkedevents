@@ -1514,6 +1514,27 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
     def update(self, instance, *args, **kwargs):
         print("Nyt meni putti...")
+
+        if instance.publisher.id == 'image:1500':
+            print("Olet muokkaamassa kuvapankin kuvaa.")
+
+        if instance.publisher.id == 'yksilo:2000':
+            print("Olet muokkaamassa yksityiskäyttäjän kuvaa.")
+        
+        if instance.publisher.id == 'turku:853':
+            print("Olet muokkaamassa Turun kaupungin kuvaa.")
+        
+
+        '''
+        if self.publisher.id == 'yksilo:2000':
+            if instance.created_by.id != self.user.id:
+                raise PermissionDenied(
+                    _("Can't update another users image within your organization."))
+
+            if self.publisher.id != instance.publisher.id:
+                raise PermissionDenied(
+                    _("Can't update an image outside your organization."))
+        '''
         response = super().update(request=self.request, *args, **kwargs)
         return response
 
