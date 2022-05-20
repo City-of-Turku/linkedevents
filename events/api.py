@@ -1517,6 +1517,8 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
         print(instance, dir(instance))
 
+        print(self.request.data)
+
         '''
         if instance.publisher.id == 'image:1500':
             print("Olet muokkaamassa kuvapankin kuvaa.")
