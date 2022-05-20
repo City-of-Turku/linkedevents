@@ -1516,37 +1516,17 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
 
-        print(data_source, user_organization.id)
-        print("Nyt meni putti...")
-        print(self.request.data)
-
         if isinstance(self.request.data, dict):
             if 'id' in self.request.data:
                 img_obj = Image.objects.get(id=self.request.data['id'])
                 if img_obj:
                     if img_obj.publisher:
-                        print(img_obj.publisher.id, user_organization)
-                        if img_obj.publisher.id == user_organization:
-                            print("Kyllä.")
-                        else:
-                            print("Failaako tää?")
+                        if img_obj.publisher.id != user_organization.id:
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
             else:
-                print("Vai failaako tää")
                 raise PermissionDenied(
                     _('You need to specify the image ID in the request.'))
-
-        '''
-        if instance.publisher.id == 'image:1500':
-            print("Olet muokkaamassa kuvapankin kuvaa.")
-
-        if instance.publisher.id == 'yksilo:2000':
-            print("Olet muokkaamassa yksityiskäyttäjän kuvaa.")
-        
-        if instance.publisher.id == 'turku:853':
-            print("Olet muokkaamassa Turun kaupungin kuvaa.")
-        '''
 
         '''
         if self.publisher.id == 'yksilo:2000':
