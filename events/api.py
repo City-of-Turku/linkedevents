@@ -1512,7 +1512,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         return queryset
 
 
-    def update(self, *args, **kwargs):
+    def update(self, instance, *args, **kwargs):
         print("Nyt meni putti...")
 
         print(self.request.data)
@@ -1522,6 +1522,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 img_obj = Image.objects.get(id=self.request.data['id'])
                 if img_obj:
                     print(img_obj.publisher.id)
+
         '''
         if instance.publisher.id == 'image:1500':
             print("Olet muokkaamassa kuvapankin kuvaa.")
