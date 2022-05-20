@@ -1509,6 +1509,9 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
         return queryset
 
+    def update(self, request, instance):
+        print("Nyt meni putti.")
+
     def perform_destroy(self, instance):
         # ensure image can only be deleted within the organization
         data_source, organization = get_authenticated_data_source_and_publisher(
