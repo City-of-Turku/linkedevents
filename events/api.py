@@ -1515,6 +1515,9 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
     def update(self, instance, *args, **kwargs):
         print("Nyt meni putti...")
 
+        print(instance, dir(instance))
+
+        '''
         if instance.publisher.id == 'image:1500':
             print("Olet muokkaamassa kuvapankin kuvaa.")
 
@@ -1523,7 +1526,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         
         if instance.publisher.id == 'turku:853':
             print("Olet muokkaamassa Turun kaupungin kuvaa.")
-        
+        '''
 
         '''
         if self.publisher.id == 'yksilo:2000':
