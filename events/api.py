@@ -1465,7 +1465,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         return queryset
 
     def update(self, instance, *args, **kwargs):
-        """Handles thorough PUT method /images/ endoint validation."""
+        """Handles thorough PUT method /image/ endoint validation."""
         data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
 
