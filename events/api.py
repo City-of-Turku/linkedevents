@@ -1509,7 +1509,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
         return queryset
 
-    def update(self, request, instance):
+    def update(self, *args, **kwargs):
         print("Nyt meni putti.")
 
     def perform_destroy(self, instance):
