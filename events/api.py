@@ -1525,12 +1525,15 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 img_obj = Image.objects.get(id=self.request.data['id'])
                 if img_obj:
                     if img_obj.publisher:
+                        print(img_obj.publisher.id, user_organization)
                         if img_obj.publisher.id == user_organization:
                             print("Kyllä.")
                         else:
+                            print("Failaako tää?")
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
             else:
+                print("Vai failaako tää")
                 raise PermissionDenied(
                     _('You need to specify the image ID in the request.'))
 
