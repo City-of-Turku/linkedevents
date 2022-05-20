@@ -573,6 +573,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                         _("You're not allowed to modify imagebank data."))
 
         # Image put validation.
+        '''
         if isinstance(instance, Image):
             if 'PUT' in self.request.method or self.request.method == 'PUT':
                 if isinstance(self.request.data, dict):
@@ -608,7 +609,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                             if self.publisher.id != instance.publisher.id:
                                 raise PermissionDenied(
                                     _("Can't update an image outside your organization."))
-
+        '''
 
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
