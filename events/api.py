@@ -1513,7 +1513,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
 
     def update(self, instance, *args, **kwargs):
-        _, user_organization = get_authenticated_data_source_and_publisher(
+        data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
 
 
