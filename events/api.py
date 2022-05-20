@@ -1513,6 +1513,10 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
 
 
     def update(self, instance, *args, **kwargs):
+        _, user_organization = get_authenticated_data_source_and_publisher(
+            self.request)
+
+
         print("Nyt meni putti...")
         print(self.request.data)
 
@@ -1521,7 +1525,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 img_obj = Image.objects.get(id=self.request.data['id'])
                 if img_obj:
                     if img_obj.publisher:
-                        if img_obj.publisher.id == instance.user.publisher.id:
+                        if img_obj.publisher.id == user_organization:
                             print("Kyllä.")
                         else:
                             raise PermissionDenied(
