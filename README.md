@@ -115,12 +115,21 @@ python manage.py event_import tsl --all
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_hobbytopics
 
-#Import places from Turku Servicemap API.
-#It's recommended to use at least one of the place importers when developing Linked Events.
-python manage.py event_import tpr --places
+  #Add a new keyword set to display in the UI course category selections.
+  #!Based on TSL-wordlist so import that first!
+  python manage.py add_tku_coursetopics
 
-#Import Turku-region street addresses from api.turku.fi
+#Import TPR place data from Turku Servicemap API.
 #It's recommended to use at least one of the place importers when developing Linked Events.
+python manage.py event_import palvelukartta_units
+
+#Import PTV/OSM place data from Lounaistieto API.
+#It's recommended to use at least one of the place importers when developing Linked Events.
+python manage.py event_import lounaistieto_units
+
+#Import all Southwest Finland-region street addresses from Turku Servicemap API.
+#It's recommended to use at least one of the place importers when developing Linked Events.
+#!This importer adds an immense amount of place data to the database, so running it can take 12+ hours.
 python manage.py event_import osoite --places
 
 #Import City of Turku hierarchical organization for UI user rights management
