@@ -565,20 +565,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
 
-        # Image put validation.
-        if isinstance(instance, Image):
-            if 'PUT' in self.request.method or self.request.method == 'PUT':
-                # test
-                if self.publisher.id == 'yksilo:2000':
-                    if instance.created_by.id != self.user.id:
-                        raise PermissionDenied(
-                            _("Can't update another users image within your organization."))
-
-                if self.publisher.id != instance.publisher.id:
-                    raise PermissionDenied(
-                        _("Can't update an image outside your organization."))
-
-
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
             if isinstance(self.user, ApiKeyUser):
@@ -1477,6 +1463,45 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                                           srs=self.srs)
 
         return queryset
+
+    def update(self, instance, *args, **kwargs):
+        """Handles thorough PUT method /image/ endpoint validation."""
+        data_source, user_organization = get_authenticated_data_source_and_publisher(
+            self.request)
+
+        if isinstance(self.request.data, dict):
+            if 'id' in self.request.data:
+                img_obj = Image.objects.get(id=self.request.data['id'])
+                if img_obj:
+                    if img_obj.publisher:
+                        # Validate that we can only modify images within our own organization.
+                        if img_obj.publisher.id != user_organization.id:
+                            raise PermissionDenied(
+                                _("You can't modify an image outside your own organization."))
+
+                        if user_organization.id == 'yksilo:2000':
+                            if img_obj.created_by:
+                                if img_obj.created_by.id != instance.user.id:
+                                    raise PermissionDenied(
+                                        _("You can't modify an image that you didn't create."))
+                            else:
+                                raise ParseError(
+                                    _("Image does not have a created_by value."))
+                    else:
+                        raise ParseError(
+                            _("Image does not have a publisher, can't proceed."))
+                else:
+                    raise ParseError(
+                        _("Can't update because the specified image does not exist."))
+            else:
+                raise ParseError(
+                    _('You need to specify the image ID in the request.'))
+        else:
+            raise ParseError(
+                _('Wrong request format. Needs to be a dictionary.'))
+
+        response = super().update(request=self.request, *args, **kwargs)
+        return response
 
     def perform_destroy(self, instance):
         # ensure image can only be deleted within the organization
