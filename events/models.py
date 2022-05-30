@@ -470,8 +470,8 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
     search_column_fi = SearchVectorField(null=True)
     search_column_sv = SearchVectorField(null=True)
     search_column_en = SearchVectorField(null=True)
-    
-    class Meta:            
+
+    class Meta:
         verbose_name = _('place')
         verbose_name_plural = _('places')
         unique_together = (('data_source', 'origin_id'),)
@@ -494,9 +494,9 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         ,config language and weight.
         """
         if lang == "fi":
-            return [  
-                ("name_fi", "finnish", "A"),              
-            ]   
+            return [
+                ("name_fi", "finnish", "A"),
+            ]
         elif lang == "sv":
             return [
                 ("name_sv", "swedish", "A"),
@@ -955,6 +955,9 @@ class Sidefield(models.Model, SimpleValueMixin):
 
     type_id = models.SmallIntegerField(blank=False, null=False, db_index=False,
                                        default=Type_Id.GENERAL, choices=TYPE_IDS)
+
+    sidefieldset_name = models.CharField(verbose_name=_('Sidefield set name'), max_length=50, blank=true)
+
     location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
     location_mobile = models.CharField(verbose_name=_('Location Button'), max_length=50, blank=True)
     umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=1000, blank=True)
