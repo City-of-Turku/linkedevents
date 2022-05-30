@@ -216,6 +216,10 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 admin.site.register(PaymentMethod, PaymentAdmin)
 
 
+
+
+
+'''
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
     formfield_overrides = {
@@ -237,6 +241,27 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
             return ['id']
         else:
             return []
+'''
 
+class SidefieldAdmin(BaseAdmin, TranslationAdmin):
+    fieldset_fields = ['type_id', 'sidefieldset_name']
+
+    multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
+                        'keyword_mobile', 'category_sidefield', 'category_mobile',)
+
+    for field in multilang_fields:
+        for lang in ('fi', 'sv', 'en'):
+            fields.append('%s_%s' % (field, lang))
+
+    fieldsets = (
+        (None, {
+            'fields': fieldset_fields
+        }),
+        ('Advanced options', {
+            'classes': ('collapse', ),
+            'fields': ('type_id', ),
+        }),
+    )
 
 admin.site.register(Sidefield, SidefieldAdmin)
