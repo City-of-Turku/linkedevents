@@ -277,6 +277,9 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     for fset_key, fset_values in fset_fields.items():
         fieldset_template[0] = fset_key.capitalize().replace('_', ' ')
         fieldset_template[1]['fields'] = fset_values
+
+        print("||||||||||||||||||||||")
+
         print(fieldset_template)
         fieldsets.append(fieldset_template)
         print("--------------------")
