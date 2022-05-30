@@ -224,6 +224,9 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     fields = ['type_id', 'location_sidefield', 'umbrella_sidefield',
               'times_sidefield', 'offers_sidefield', 'keyword_sidefield', 'category_sidefield']
     list_display = fields
+
+    fields.append('keyword_sidefield_en')
+
     for field in fields:
         print(field)
         # for lang in ('fi', 'sv', 'en'):
