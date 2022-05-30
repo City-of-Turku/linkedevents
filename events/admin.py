@@ -215,16 +215,16 @@ admin.site.register(PaymentMethod, PaymentAdmin)
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
-    # fields = ('type_id', 'location_sidefield_fi', 'location_sidefield_sv', 'location_sidefield_en',
-    #          'umbrella_sidefield_fi', 'umbrella_sidefield_sv', 'umbrella_sidefield_en',
-    #          'times_sidefield_fi', 'times_sidefield_sv', 'times_sidefield_en',
-    #          'offers_sidefield_fi', 'offers_sidefield_sv', 'offers_sidefield_en',
-    #          'keyword_sidefield_fi', 'keyword_sidefield_sv', 'keyword_sidefield_en',
-    #          'category_sidefield_fi', 'category_sidefield_sv', 'category_sidefield_en',)
+
+    formfield_overrides = {
+        models.CharField: {'widget': Textarea(attrs={'rows': 4, 'cols': 40})},
+    }
+
     fields = ['type_id', 'sidefieldset_name', ]
     list_display = ('sidefieldset_name', 'type_id')
     multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
-                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield', 'keyword_mobile', 'category_sidefield', 'category_mobile',)
+                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
+                        'keyword_mobile', 'category_sidefield', 'category_mobile',)
 
     for field in multilang_fields:
         for lang in ('fi', 'sv', 'en'):
