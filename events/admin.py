@@ -255,6 +255,9 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
             fieldset_fields.append('%s_%s' % (field, lang))
 
     fieldsets = [
+        (None, {
+            'fields': ('type_id', 'sidefieldset_name')
+        }),
         ['Location sidefield', {
             'classes': ('collapse',),
             'fields': ('location_sidefield',)
