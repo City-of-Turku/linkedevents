@@ -291,4 +291,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         fieldset_template[1]['fields'] = fset_values
         fieldsets.append(fieldset_template)
 
+    print(fieldsets)
+
 admin.site.register(Sidefield, SidefieldAdmin)
