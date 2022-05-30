@@ -258,10 +258,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         (None, {
             'fields': fieldset_fields
         }),
-        ('Advanced options', {
-            'classes': ('collapse', ),
-            'fields': ('type_id', ),
-        }),
     )
 
 admin.site.register(Sidefield, SidefieldAdmin)
