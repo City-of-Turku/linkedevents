@@ -55,8 +55,8 @@ translator.register(Offer, OfferTranslationOptions)
 
 
 class SidefieldTranslationOptions(TranslationOptions):
-    fields = ('location_sidefield', 'umbrella_sidefield', 'times_sidefield',
-              'offers_sidefield', 'keyword_sidefield', 'category_sidefield')
+    fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+              'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield', 'keyword_mobile', 'category_sidefield' 'category_mobile',)
 
 
 translator.register(Sidefield, SidefieldTranslationOptions)
