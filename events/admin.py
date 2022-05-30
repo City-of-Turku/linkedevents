@@ -257,11 +257,11 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     fieldsets = [
         ['Location sidefield', {
             'classes': ('collapse',),
-            'fields': ('location_sidefield')
+            'fields': ('location_sidefield',)
         }],
         ['Umbrella sidefield', {
             'classes': ('collapse',),
-            'fields': ('umbrella_sidefield')
+            'fields': ('umbrella_sidefield',)
         }],
     ]
 
