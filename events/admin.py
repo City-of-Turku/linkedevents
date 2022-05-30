@@ -254,10 +254,15 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         for lang in ('fi', 'sv', 'en'):
             fieldset_fields.append('%s_%s' % (field, lang))
 
-    fieldsets = (
-        (None, {
-            'fields': fieldset_fields
-        }),
-    )
+    fieldsets = [
+        ['Location sidefield', {
+            'classes': ('collapse',),
+            'fields': ('location_sidefield')
+        }],
+        ['Umbrella sidefield', {
+            'classes': ('collapse',),
+            'fields': ('umbrella_sidefield')
+        }],
+    ]
 
 admin.site.register(Sidefield, SidefieldAdmin)
