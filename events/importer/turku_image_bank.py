@@ -1,124 +1,154 @@
-import logging
-import os
-import requests
+# -*- coding: utf-8 -*-
+
+# Dependencies:
+import re
 import time
-import base64
-import struct
+import math
+import logging
+import requests
+from pathlib import Path
+from PIL import Image as pil_image
+
+# Django:
 from django import db
 from django.conf import settings
+from .base import Importer, register_importer
 from django.core.management import call_command
 from django.utils.module_loading import import_string
-from os import mkdir
-from os.path import abspath, join, dirname, exists, basename, splitext
-from events.models import Image, License, DataSource
+from events.models import Image, License, DataSource, BaseModel
 from django_orghierarchy.models import Organization, OrganizationClass
-from .sync import ModelSyncher
-from .base import Importer, register_importer
 
-if not exists(join(dirname(__file__), 'logs')):
-    mkdir(join(dirname(__file__), 'logs'))
+# Type checking:
+from typing import TYPE_CHECKING, Any, Tuple, List
 
+# Per module logger
 logger = logging.getLogger(__name__)
-curFileExt = basename(__file__)
-curFile = splitext(curFileExt)[0]
 
-logFile = \
-    logging.FileHandler(
-        '%s' % (join(dirname(__file__), 'logs', curFile+'.logs'))
-    )
-logFile.setFormatter(
-    logging.Formatter(
-        '[%(asctime)s] <%(name)s> (%(lineno)d): %(message)s'
-    )
-)
-logFile.setLevel(logging.DEBUG)
-logger.addHandler(
-    logFile
-)
+
+def proc_time_frmt(stage: str) -> None:
+    """Formatter for logs."""
+    ft = math.modf(time.process_time())
+    curtime = float(str(ft[0])[:3])+ft[1]
+    logger.info('%s finished after %s seconds from the initial start!' %
+                (stage, curtime))
 
 
 @register_importer
 class ImageBankImporter(Importer):
-    # Class dependencies.
-    name = curFile
-    supported_languages = ['fi', 'sv']
+    # Importer class dependant attributes:
+    name = 'turku_image_bank'
+    supported_languages = ('fi', 'sv')
 
-    def setup(self):
+    def iterator(self, data: dict, key: str, query: Any, obj_model: tuple, attr_map: tuple) -> None:
+        """
+        Main class data logic. Create DB objects & set class attributes.
+        This was created with easy expandability of the setup data dictionary in mind.
+        We are using save() throughout this program to avoid race conditions with update_or_create()
+        """
+        attrs = iter(attr_map)
+        for sub_key in data[key].values():
+            q_obj = query()
+            for cur_val_idx, current_value in enumerate(sub_key):
+                for t_key in data['funcargs']['terms']:
+                    for idx, sub_t_key in enumerate(data[t_key]):
+                        key_to_find = "%s_%s" % (t_key, sub_t_key)
+                        if current_value == key_to_find:
+                            current_value = getattr(
+                                self, data['attr_maps'][t_key][idx])
+                setattr(q_obj, obj_model[cur_val_idx], current_value)
+            q_obj.save()
+            setattr(self, next(attrs), q_obj)
 
-        # Datasources.
-        self.data_source, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='Kuvapankki'), **dict(id='image', user_editable=True))
-        self.data_source_org, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='Ulkoa tuodut organisaatiotiedot'), **dict(id='org', user_editable=True))
+    def setup(self) -> None:
+        """Setup phase with mapped needed data."""
+        self.data = {
+            # Image datasource:
+            'ds': {
+                'org': ('org', 'Ulkoa tuodut organisaatiotiedot', True),
+                'image': ('image', 'Kuvapankki', True),
+            },
+            # Image organizationclass:
+            'orgclass': {
+                'image': ('org:15', '15', 'Kuvapankki', BaseModel.now(), 'ds_org'),
+            },
+            # Organizations for images.
+            'org': {
+                'image': ('image:1500', '1500', 'Kuvapankki', BaseModel.now(), 'org:15', 'ds_image'),
+            },
+            # Attribute name mapping for all due to class related attributes (ex. data_source and organization are necessary).
+            'attr_maps': {
+                'ds': ('data_source', 'data_source_image'),
+                'orgclass': ('organization_class_15', ),
+                'org': ('organization', ),
+            },
+            # Models for easy iteration (Selected attributes):
+            'model_maps': {
+                'ds': ('id', 'name', 'user_editable'),
+                'orgclass': ('id', 'origin_id', 'name', 'created_time', 'data_source_id'),
+                'org': ('id', 'origin_id', 'name', 'created_time', 'classification_id', 'data_source_id'),
+            },
+            # Function arguments.
+            'funcargs': {
+                'terms': ('ds', 'orgclass', 'org'),
+                'termobjs': (DataSource, OrganizationClass, Organization)
+            },
+        }
+        # Keys in data share per element relevant information. Bring together element per key in data dict for iterator params.
+        mapped = list(map(lambda f, fto, mm, atm: [f, fto, self.data['model_maps'][mm], self.data['attr_maps'][atm]],
+                      self.data['funcargs']['terms'], self.data['funcargs']['termobjs'], self.data['model_maps'], self.data['attr_maps']))
+        # Call the iterator function. Params use the mapped elements.
+        for args in mapped:
+            self.iterator(
+                data=self.data, key=args[0], query=args[1], obj_model=args[2], attr_map=args[3])
+        proc_time_frmt('Setup')
+        self.handle()
 
-        # Organization classes.
-        self.organizationclass_kvpankki, _ = OrganizationClass.objects.update_or_create(
-            defaults=dict(name='Kuvapankki'), **dict(origin_id='15', data_source=self.data_source_org))
-
-        # Organizations.
-        self.organization, _ = Organization.objects.update_or_create(
-            defaults=dict(name='Kuvapankki'), **dict(origin_id='1500', data_source=self.data_source, classification_id='org:15'))
-
+    def main(self) -> None:
+        """Main processing phase."""
         try:
             self.cc_by_license = License.objects.get(id='cc_by')
         except License.DoesNotExist:
             self.cc_by_license = None
 
-        def generate_id():
-            t = time.time() * 1000000
-            b = base64.b32encode(struct.pack(">Q", int(t)).lstrip(b'\x00')).strip(b'=').lower()
-            return b.decode('utf8')
-
-        IMAGE_BANK_IMAGES = {
+        image_bank_images = (
             'https://i.imgur.com/XxE918k.jpg',
             'https://i.imgur.com/bNjPBXO.jpg',
             'https://i.imgur.com/IA5NbEy.jpg',
             'https://i.imgur.com/hYAcCOg.jpg'
-        }
+        )
 
-        IMAGE_BANK_IMAGES = iter(IMAGE_BANK_IMAGES)
-        IMAGE_TYPE = 'jpg'
-        PATH_EXTEND = 'images'
+        def _request_image_url(url: str) -> str:
+            """Fetches, processes, converts and saves the image into webp format."""
+            img = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True).raw
+            img_file_name = re.split('/|\.\s*', img_url)[-2]
+            paths = Path('%s/images' % settings.MEDIA_ROOT)
 
-        def request_image_url():
-            img = requests.get(next(IMAGE_BANK_IMAGES),
-                               headers={'User-Agent': 'Mozilla/5.0'}).content
-            imgfile = generate_id()
-            path = '%(root)s/%(pathext)s/%(img)s.%(type)s' % ({
-                'root': settings.MEDIA_ROOT,
-                'pathext': PATH_EXTEND,
-                'img': imgfile,
-                'type': IMAGE_TYPE
-            })
-            with open(path, 'wb') as file:
-                file.write(img)
-            return '%s/%s.%s' % (PATH_EXTEND, imgfile, IMAGE_TYPE)
+            try:
+                img = pil_image.open(img)
+                # Scales the image so that it fits within the bounding box of a certain resolution.
+                min_scale = min((1280 / img.width, 720 / img.height)) # Get the scaling factor of the longest distance.
+                img = img.resize((int(img.width * min_scale), int(img.height * min_scale))) # Resize by multiplying scale by dimensions.
+                img.save('%s/%s.%s' % (paths, img_file_name, 'webp'), format='webp') # Convert and save the image to the path in webp format.
+            except Exception as e:
+                logger.error("Unable to process image due to: %s" % e)
 
-        # Default Image URL's.
-        self.image_1, _ = Image.objects.update_or_create(
-            defaults=dict(name='', photographer_name='', alt_text=''), **dict(
-                license=self.cc_by_license,
-                data_source=self.data_source,
-                publisher=self.organization,
-                image=request_image_url()))
+            return 'images/%s.webp' % img_file_name
 
-        self.image_2, _ = Image.objects.update_or_create(
-            defaults=dict(name='', photographer_name='', alt_text=''), **dict(
-                license=self.cc_by_license,
-                data_source=self.data_source,
-                publisher=self.organization,
-                image=request_image_url()))
 
-        self.image_3, _ = Image.objects.update_or_create(
-            defaults=dict(name='', photographer_name='', alt_text=''), **dict(
-                license=self.cc_by_license,
-                data_source=self.data_source,
-                publisher=self.organization,
-                image=request_image_url()))
+        # Loop through URLs and generate the actual DB image object.
+        for img_url in image_bank_images:
+            new_image = Image(data_source=getattr(self, 'data_source_image'))
+            for props in ('name', 'photographer_name', 'alt_text'):
+                setattr(new_image, props, '')
+            new_image.license = self.cc_by_license
+            new_image.publisher = getattr(self, 'organization')
+            new_image_id = _request_image_url(url=img_url)
+            new_image.image = new_image_id
+            new_image.save()
+            logger.info("Saved new image ID: %s" % new_image_id)
 
-        self.image_4, _ = Image.objects.update_or_create(
-            defaults=dict(name='', photographer_name='', alt_text=''), **dict(
-                license=self.cc_by_license,
-                data_source=self.data_source,
-                publisher=self.organization,
-                image=request_image_url()))
+    def handle(self) -> None:
+        """The core handler function."""
+        self.main()
+        proc_time_frmt('Processing and saving')
+        proc_time_frmt('Importer')

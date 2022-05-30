@@ -16,6 +16,7 @@ from datetime import timedelta
 from functools import partial
 
 # django and drf
+from django.db import connection
 from django.db.transaction import atomic
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.utils import translation
@@ -563,6 +564,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 _("User doesn't belong to any organization"))
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
         # therefore, we only do permission checks for single instances
+
         if not isinstance(instance, QuerySet) and instance:
             # check permissions *before* validation
             if isinstance(self.user, ApiKeyUser):
@@ -769,7 +771,7 @@ def _text_qset_by_translated_field(field, val):
     languages = utils.get_fixed_lang_codes()
     qset = Q()
     for lang in languages:
-        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})
+        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})   
     return qset
 
 
@@ -1084,8 +1086,14 @@ class PlaceSerializer(LinkedEventsSerializer, GeoModelSerializer):
 
     class Meta:
         model = Place
-        exclude = ('n_events_changed',)
-
+        exclude = (
+            'n_events_changed',
+            'search_column_fi', 
+            'search_column_sv',
+            'search_column_en'
+        )
+  
+   
 
 class PlaceFilter(django_filters.rest_framework.FilterSet):
     division = django_filters.Filter(field_name='divisions', lookup_expr='in',
@@ -1135,6 +1143,9 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                        'street_address', 'postal_code')
     # we want to display tprek before osoite etc.
     ordering = ('-n_events', '-data_source', 'name')
+    # Default maximum value of results to be returned.
+    search_query_limit = 100
+    search_configs = {'fi': 'finnish','sv': 'swedish', 'en': 'english'}
 
     def get_queryset(self):
         """
@@ -1150,6 +1161,8 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         show_all_places (places without events are included)
         show_deleted (deleted places are included)
         """
+        params = self.request.query_params
+
         queryset = Place.objects.prefetch_related(
             'divisions__type', 'divisions__municipality')
         data_source = self.request.query_params.get('data_source')
@@ -1165,14 +1178,59 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # Optionally filter places by filter parameter,
         # can be used e.g. with typeahead.js
         # match to street as well as name, to make it easier to find units by address
-        val = self.request.query_params.get(
-            'text') or self.request.query_params.get('filter')
+        if 'text' or 'filter' in params:
+            val = params.get('text') or params.get('filter', None)
+      
         if val:
-            qset = _text_qset_by_translated_field(
-                'name', val) | _text_qset_by_translated_field('street_address', val)
-            queryset = queryset.filter(qset)
+            # Remove single quotes from search string, they cause faulty strings in to_tsvector          
+            val = val.strip().replace("'", "")         
+            search_query_str = self.get_search_query_str(val)
+            if 'locale' in params:
+                locale = params.get('locale')
+            else:
+                locale = 'fi'
+            if 'limit' in params:
+                try:
+                    self.search_query_limit = int(params.get('limit'))
+                except ValueError:
+                    raise ParseError("'limit' must be of type int.")
+            # Use PostgreSQL Full Text Search on indexed columns populated
+            # with lexems. 
+            sql = f"""
+                SELECT id, ts_rank_cd(search_column_{locale}, search_query)
+                As RANK from events_place, 
+                to_tsquery('{self.search_configs[locale]}','{search_query_str}') search_query
+                WHERE search_query @@ search_column_{locale}
+                ORDER BY rank DESC LIMIT {self.search_query_limit};
+            """
+            cursor = connection.cursor()
+            cursor.execute(sql)
+            all_results = cursor.fetchall()           
+            # append all Place ids into a list for filtering
+            ids = [row[0] for row in all_results]
+            queryset = Place.objects.filter(id__in=ids) 
+        else:
+            queryset = Place.objects.none()       
+       
         return queryset
 
+    def get_search_query_str(self, val):
+        search_query_str = None  
+        # Build conditional query string that is used in the SQL query.
+        # split my "," or whitespace
+        q_vals = re.split(r",\s+|\s+", val)
+        q_vals = [s.strip() for s in q_vals]
+        for q in q_vals:
+            if search_query_str:
+                # if ends with "|"" make it a or
+                if q[-1] == "|":
+                    search_query_str += f"| {q[:-1]}:*"
+                # else make it an and.
+                else:
+                    search_query_str += f"& {q}:*"
+            else:
+                search_query_str = f"{q}:*"   
+        return search_query_str
 
 register_view(PlaceRetrieveViewSet, 'place')
 register_view(PlaceListViewSet, 'place')
@@ -1371,12 +1429,12 @@ class ImageSerializer(LinkedEventsSerializer):
         return representation
 
     def validate(self, data):
-        # name the image after the file, if name was not provided
-        if 'name' not in data or not data['name']:
-            if 'url' in data:
-                data['name']['fi'] = str(data['url']).rsplit('/', 1)[-1]
-            if 'image' in data:
-                data['name']['fi'] = str(data['image']).rsplit('/', 1)[-1]
+        # Name the image after the file, if name was not provided.
+        if data:
+            if not data.get('name'):
+                for prop in ('url', 'image'):
+                    if data.get(prop):
+                        data['name'] = {'fi': str(data[prop]).rsplit('/', 1)[-1]}
         super().validate(data)
         return data
 
@@ -1430,6 +1488,45 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                                           srs=self.srs)
 
         return queryset
+
+    def update(self, instance, *args, **kwargs):
+        """Handles thorough PUT method /image/ endpoint validation."""
+        data_source, user_organization = get_authenticated_data_source_and_publisher(
+            self.request)
+
+        if isinstance(self.request.data, dict):
+            if 'id' in self.request.data:
+                img_obj = Image.objects.get(id=self.request.data['id'])
+                if img_obj:
+                    if img_obj.publisher:
+                        # Validate that we can only modify images within our own organization.
+                        if img_obj.publisher.id != user_organization.id:
+                            raise PermissionDenied(
+                                _("You can't modify an image outside your own organization."))
+
+                        if user_organization.id == 'yksilo:2000':
+                            if img_obj.created_by:
+                                if img_obj.created_by.id != instance.user.id:
+                                    raise PermissionDenied(
+                                        _("You can't modify an image that you didn't create."))
+                            else:
+                                raise ParseError(
+                                    _("Image does not have a created_by value."))
+                    else:
+                        raise ParseError(
+                            _("Image does not have a publisher, can't proceed."))
+                else:
+                    raise ParseError(
+                        _("Can't update because the specified image does not exist."))
+            else:
+                raise ParseError(
+                    _('You need to specify the image ID in the request.'))
+        else:
+            raise ParseError(
+                _('Wrong request format. Needs to be a dictionary.'))
+
+        response = super().update(request=self.request, *args, **kwargs)
+        return response
 
     def perform_destroy(self, instance):
         # ensure image can only be deleted within the organization

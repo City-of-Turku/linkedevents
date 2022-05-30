@@ -6,6 +6,7 @@ from langdetect import detect
 from langdetect.lang_detect_exception import LangDetectException
 from django.utils.translation.trans_real import activate, deactivate
 from django.core.validators import URLValidator, ValidationError
+from django.contrib.postgres.search import SearchVector
 
 from events.models import Place
 
@@ -169,6 +170,22 @@ def replace_location(replace=None,
         logger.info("Location %s (%s) was deleted. Discovered replacement location %s" %
                     (replace.id, str(replace), by.id))
     return True
+
+
+def get_search_column(model, lang):
+    """
+    Reads the columns, config languages and weights from the model
+    to be indexed. Creates and returns a CombinedSearchVector, that
+    can be stored into the search_column.
+    """
+    search_column = None
+    columns = model.get_search_column_indexing(lang)
+    for column in columns:
+        if search_column:
+            search_column += SearchVector(column[0], config=column[1], weight=column[2])
+        else:
+            search_column = SearchVector(column[0], config=column[1], weight=column[2])
+    return search_column
 
 
 class active_language:

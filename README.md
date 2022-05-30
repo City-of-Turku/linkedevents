@@ -92,6 +92,7 @@ want to have all of the features working.
 ```bash
 #YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies.
 #A large part of Linked Events features are built on top of YSO, this importer should be used in all installations.
+#(Developed solely by: https://github.com/Anthon98)
 python manage.py event_import ontology
 
 #TSL-wordlist(Turun sanalista)-importer adds a City-of-Turku specific wordlist that is used by some of the keyword set importers.
@@ -114,12 +115,21 @@ python manage.py event_import tsl --all
   #!Based on TSL-wordlist so import that first!
   python manage.py add_tku_hobbytopics
 
-#Import places from Turku Servicemap API.
-#It's recommended to use at least one of the place importers when developing Linked Events.
-python manage.py event_import tpr --places
+  #Add a new keyword set to display in the UI course category selections.
+  #!Based on TSL-wordlist so import that first!
+  python manage.py add_tku_coursetopics
 
-#Import Turku-region street addresses from api.turku.fi
+#Import TPR place data from Turku Servicemap API.
 #It's recommended to use at least one of the place importers when developing Linked Events.
+python manage.py event_import palvelukartta_units
+
+#Import PTV/OSM place data from Lounaistieto API.
+#It's recommended to use at least one of the place importers when developing Linked Events.
+python manage.py event_import lounaistieto_units
+
+#Import all Southwest Finland-region street addresses from Turku Servicemap API.
+#It's recommended to use at least one of the place importers when developing Linked Events.
+#!This importer adds an immense amount of place data to the database, so running it can take 12+ hours.
 python manage.py event_import osoite --places
 
 #Import City of Turku hierarchical organization for UI user rights management
@@ -134,6 +144,14 @@ python manage.py event_import turku_image_bank
 		
 #Import event data from the old Turku events calendar.
 python manage.py event_import turku_old_events --events
+```
+
+Populating Search Columns
+----------------------
+
+The Place model contains search columns for languages Finnish, Swedish and English. The columns contains lexems that are indexed as GIN indexes. These columns are used when searching in the Place model. The columns are populated with lexems in signals with the post_save signal or in the Osoite importer after all the addresses are imported. The population of search columns can also be run manually by running the following command. 
+```
+python manage.py index_search_columns
 ```
 
 Production notes
