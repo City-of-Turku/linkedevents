@@ -245,7 +245,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
-    '''
     fset_fields = {
         'type_id': ['type_id'],
         'sidefieldset_name': ['sidefieldset_name'],
@@ -268,7 +267,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         else:
             print("fset update")
             fset_fields.update(frmt)
-    '''
+
     fieldsets = [
         (None, {
             'fields': ('type_id', 'sidefieldset_name')
