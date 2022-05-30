@@ -223,8 +223,8 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     #          'category_sidefield_fi', 'category_sidefield_sv', 'category_sidefield_en',)
     fields = ['type_id']
 
-    multilang_fields = ('location_sidefield', 'umbrella_sidefield',
-        'times_sidefield', 'offers_sidefield', 'keyword_sidefield', 'category_sidefield')
+    multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield', 'keyword_mobile', 'category_sidefield' 'category_mobile',)
 
     for field in multilang_fields:
         for lang in ('fi', 'sv', 'en'):
