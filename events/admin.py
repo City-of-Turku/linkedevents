@@ -226,13 +226,9 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     multilang_fields = ('location_sidefield', 'umbrella_sidefield',
         'times_sidefield', 'offers_sidefield', 'keyword_sidefield', 'category_sidefield')
 
-    def __multilang_field_addition(self, field_name: str):
-        """Adds multilanguage support for fields in specified supported languages."""
-        for lang in ('fi', 'sv', 'en'):
-            self.fields.append('%s_%s' % (field_name, lang))
-
     for field in multilang_fields:
-        __multilang_field_addition(field_name=field)
+        for lang in ('fi', 'sv', 'en'):
+            fields.append('%s_%s' % (field_name, lang))
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
