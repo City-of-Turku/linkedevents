@@ -260,7 +260,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
             frmt[field].append('%s_%s' % (field, lang))
         # Adds multilang mobile fields to its respective sidefield:
         if (multilang_fields.index(field) + 1) % 2 == 0:
-            fset_fields[fset_fields.keys()[-1]].extend(frmt[field])
+            fset_fields[list(fset_fields.keys())[-1]].extend(frmt[field])
         else:
             fset_fields.update(frmt)
 
