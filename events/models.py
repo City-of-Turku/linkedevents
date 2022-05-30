@@ -956,11 +956,17 @@ class Sidefield(models.Model, SimpleValueMixin):
     type_id = models.SmallIntegerField(blank=False, null=False, db_index=False,
                                        default=Type_Id.GENERAL, choices=TYPE_IDS)
     location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
+    location_mobile = models.CharField(verbose_name=_('Location Button'), max_length=50, blank=True)
     umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=1000, blank=True)
+    umbrella_mobile = models.CharField(verbose_name=_('Umbrella Button'), max_length=50, blank=True)
     times_sidefield = models.CharField(verbose_name=_('Times Sidefield'), max_length=1000, blank=True)
+    times_mobile = models.CharField(verbose_name=_('Times Button'), max_length=50, blank=True)
     offers_sidefield = models.CharField(verbose_name=_('Offers Sidefield'), max_length=1000, blank=True)
+    offers_mobile = models.CharField(verbose_name=_('Offers Button'), max_length=50, blank=True)
     keyword_sidefield = models.CharField(verbose_name=_('Keyword Sidefield'), max_length=1000, blank=True)
+    keyword_mobile = models.CharField(verbose_name=_('Keyword Button'), max_length=50, blank=True)
     category_sidefield = models.CharField(verbose_name=_('Category Sidefield'), max_length=1000, blank=True)
+    category_mobile = models.CharField(verbose_name=_('Category Button'), max_length=50, blank=True)
 
 
 class EventLink(models.Model, SimpleValueMixin):

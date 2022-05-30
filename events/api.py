@@ -1381,11 +1381,17 @@ class OfferSerializer(TranslatedModelSerializer):
 class SidefieldSerializer(TranslatedModelSerializer):
     type_id = EnumChoiceField(Event.TYPE_IDS, required=False)
     location_sidefield = serializers.CharField(required=False)
+    location_mobile = serializers.CharField(required=False)
     umbrella_sidefield = serializers.CharField(required=False)
+    umbrella_mobile = serializers.CharField(required=False)
     times_sidefield = serializers.CharField(required=False)
+    times_mobile = serializers.CharField(required=False)
     offers_sidefield = serializers.CharField(required=False)
+    offers_mobile = serializers.CharField(required=False)
     keyword_sidefield = serializers.CharField(required=False)
+    keyword_mobile = serializers.CharField(required=False)
     category_sidefield = serializers.CharField(required=False)
+    category_mobile = serializers.CharField(required=False)
 
     class Meta:
         model = Sidefield
