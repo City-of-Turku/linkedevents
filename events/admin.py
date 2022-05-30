@@ -222,8 +222,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     #          'keyword_sidefield_fi', 'keyword_sidefield_sv', 'keyword_sidefield_en',
     #          'category_sidefield_fi', 'category_sidefield_sv', 'category_sidefield_en',)
     fields = ['type_id', 'sidefieldset_name', ]
-    list_display = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
-                    'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield', 'keyword_mobile', 'category_sidefield', 'category_mobile',)
+    list_display = ('sidefieldset_name', 'type_id')
     multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield', 'keyword_mobile', 'category_sidefield', 'category_mobile',)
 
