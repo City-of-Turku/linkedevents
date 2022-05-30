@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
+from django.db import models
 from django.utils.translation import ugettext as _
 from leaflet.admin import LeafletGeoAdmin
 from modeltranslation.admin import TranslationAdmin
