@@ -244,6 +244,8 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 '''
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
+
+    '''
     fset_fields = {
         'type_id': ['type_id'],
         'sidefieldset_name': ['sidefieldset_name'],
@@ -266,23 +268,22 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         else:
             print("fset update")
             fset_fields.update(frmt)
-
+    '''
     fieldsets = [
         (None, {
-            'fields': (
-                fset_fields['type_id'], 
-                fset_fields['sidefieldset_name'])
+            'fields': ('type_id', 'sidefieldset_name')
         }),
     ]
 
+    '''
     # Template for sidefield & mobile fieldsets.
     fieldset_template = ['Placeholder title.', {
         'classes': ('collapse', ),
         'fields': ['placeholder_field', 'placeholder_mobile']
     }]
-
+    '''
     
-    print(fset_fields)
+    #print(fset_fields)
 
     # Modify and append the template per processed field.
     '''
@@ -292,6 +293,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         fieldset_template[1]['fields'] = fset_values
         fieldsets.append(fieldset_template)
     '''
-    print(fieldsets)
+    #print(fieldsets)
 
 admin.site.register(Sidefield, SidefieldAdmin)
