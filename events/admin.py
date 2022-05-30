@@ -232,7 +232,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
             self.fields.append('%s_%s' % (field_name, lang))
 
     for field in multilang_fields:
-        self.__multilang_field_addition(field_name=field)
+        __multilang_field_addition(field_name=field)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
