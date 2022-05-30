@@ -259,9 +259,12 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         for lang in ('fi', 'sv', 'en'):
             frmt[field].append('%s_%s' % (field, lang))
         # Adds multilang mobile fields to its respective sidefield:
+        print(frmt)
         if (multilang_fields.index(field) + 1) % 2 == 0:
             fset_fields[list(fset_fields.keys())[-1]].extend(frmt[field])
+            print("fset modulo")
         else:
+            print("fset update")
             fset_fields.update(frmt)
 
     fieldsets = [
@@ -280,6 +283,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
     # Modify and append the template per processed field.
     for fset_key, fset_values in fset_fields.items():
+        print("in fset fields iteration.")
         fieldset_template[0] = fset_key.capitalize().replace('_', ' ') 
         fieldset_template[1]['fields'] = fset_values
         fieldsets.append(fieldset_template)
