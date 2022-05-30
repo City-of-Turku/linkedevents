@@ -956,7 +956,7 @@ class Sidefield(models.Model, SimpleValueMixin):
     type_id = models.SmallIntegerField(blank=False, null=False, db_index=False,
                                        default=Type_Id.GENERAL, choices=TYPE_IDS)
 
-    sidefieldset_name = models.CharField(verbose_name=_('Sidefield set name'), max_length=50, blank=true)
+    sidefieldset_name = models.CharField(verbose_name=_('Sidefield set name'), max_length=50, blank=True)
 
     location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
     location_mobile = models.CharField(verbose_name=_('Location Button'), max_length=50, blank=True)
