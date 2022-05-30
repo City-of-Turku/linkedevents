@@ -244,28 +244,44 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 '''
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
-    fieldset_fields = ['type_id', 'sidefieldset_name']
+    fset_fields = {
+        'type_id': ['type_id'],
+        'sidefieldset_name': ['sidefieldset_name'],
+    }
 
     multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
                         'keyword_mobile', 'category_sidefield', 'category_mobile',)
 
+    # Generate multilanguage fields:
     for field in multilang_fields:
+        frmt = {field: []}
         for lang in ('fi', 'sv', 'en'):
-            fieldset_fields.append('%s_%s' % (field, lang))
+            frmt[field].append('%s_%s' % (field, lang))
+        # Adds multilang mobile fields to its respective sidefield:
+        if (multilang_fields.index(field) + 1) % 2 == 0:
+            fset_fields[-1].extend(frmt[field])
+        else:
+            fset_fields.update(frmt)
 
     fieldsets = [
         (None, {
-            'fields': ('type_id', 'sidefieldset_name')
+            'fields': (
+                fset_fields['type_id'], 
+                fset_fields['sidefieldset_name'])
         }),
-        ['Location sidefield', {
-            'classes': ('collapse',),
-            'fields': ('location_sidefield',)
-        }],
-        ['Umbrella sidefield', {
-            'classes': ('collapse',),
-            'fields': ('umbrella_sidefield',)
-        }],
     ]
+
+    # Template for sidefield & mobile fieldsets.
+    fieldset_template = ['Placeholder title.', {
+        'classes': ('collapse', ),
+        'fields': ['placeholder_field', 'placeholder_mobile']
+    }]
+
+    # Modify and append the template per processed field.
+    for fset_key, fset_values in fset_fields.items():
+        fieldset_template[0] = fset_key.capitalize().replace('_', ' ') 
+        fieldset_template[1]['fields'] = fset_values
+        fieldsets.append(fieldset_template)
 
 admin.site.register(Sidefield, SidefieldAdmin)
