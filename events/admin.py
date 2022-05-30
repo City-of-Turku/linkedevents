@@ -285,12 +285,13 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     print(fset_fields)
 
     # Modify and append the template per processed field.
+    '''
     for fset_key, fset_values in fset_fields.items():
         print("in fset fields iteration.")
         fieldset_template[0] = fset_key.capitalize().replace('_', ' ')
         fieldset_template[1]['fields'] = fset_values
         fieldsets.append(fieldset_template)
-
+    '''
     print(fieldsets)
 
 admin.site.register(Sidefield, SidefieldAdmin)
