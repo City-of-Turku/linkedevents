@@ -252,7 +252,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
     for field in multilang_fields:
         for lang in ('fi', 'sv', 'en'):
-            fields.append('%s_%s' % (field, lang))
+            fieldset_fields.append('%s_%s' % (field, lang))
 
     fieldsets = (
         (None, {
