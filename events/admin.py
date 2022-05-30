@@ -221,16 +221,18 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     #          'offers_sidefield_fi', 'offers_sidefield_sv', 'offers_sidefield_en',
     #          'keyword_sidefield_fi', 'keyword_sidefield_sv', 'keyword_sidefield_en',
     #          'category_sidefield_fi', 'category_sidefield_sv', 'category_sidefield_en',)
-    fields = ['type_id', 'location_sidefield', 'umbrella_sidefield',
-              'times_sidefield', 'offers_sidefield', 'keyword_sidefield', 'category_sidefield']
-    list_display = fields
+    fields = ['type_id']
 
-    fields.append('keyword_sidefield_en')
+    multilang_fields = ('location_sidefield', 'umbrella_sidefield',
+        'times_sidefield', 'offers_sidefield', 'keyword_sidefield', 'category_sidefield')
 
-    for field in fields:
-        print(field)
-        # for lang in ('fi', 'sv', 'en'):
-        #    fields[field] = '%s_%s' % (field, lang)
+    def _multilang_field_addition(field_name: str):
+        """Adds multilanguage support for fields in specified supported languages."""
+        for lang in ('fi', 'sv', 'en'):
+            fields.append('%s_%s' % (field_name, lang))
+
+    for field in multilang_fields:
+        _multilang_field_addition(field_name=field)
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
