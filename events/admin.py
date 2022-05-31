@@ -216,7 +216,7 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 admin.site.register(PaymentMethod, PaymentAdmin)
 
 
-class SidefieldAdminForm(forms.ModelForm, SidefieldAdmin):
+class SidefieldAdminForm(forms.ModelForm):
     multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
