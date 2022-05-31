@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
-from django.forms import Textarea
+from django import forms
 from django.utils.translation import ugettext as _
 from leaflet.admin import LeafletGeoAdmin
 from modeltranslation.admin import TranslationAdmin
@@ -216,10 +216,15 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 admin.site.register(PaymentMethod, PaymentAdmin)
 
 
+class SidefieldAdminForm(forms.ModelForm):
+
+    sidefieldset_name = forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40}))
+
+
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     #fset_fields = {}
 
-    #multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+    # multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
     #                    'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
     #                    'keyword_mobile', 'category_sidefield', 'category_mobile',)
 
@@ -306,5 +311,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
                 }]
             )
     '''
+
 
 admin.site.register(Sidefield, SidefieldAdmin)
