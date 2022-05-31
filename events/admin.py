@@ -273,8 +273,8 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         # Modify and append the template per processed field.
         for fset_key, fset_values in self.fset_fields.items():
             # We have to re-order fset_values per sidefield & mobile languages.
-            fset_list_order = [x for i in range(3) for x in (fset_values[i], fset_values[i+3])]
-            #list_order = [[fset_values[x], fset_values[x+3]] for x in range(3)]
+            #fset_list_order = [x for i in range(3) for x in (fset_values[i], fset_values[i+3])]
+            fset_list_order = [(fset_values[x], fset_values[x+3]) for x in range(3)]
 
             self.fieldsets.append([
                 fset_key.capitalize().replace('_', ' '), {
