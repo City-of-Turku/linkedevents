@@ -261,10 +261,14 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         else:
             fset_fields.update(frmt)
 
+    fields = (('type_id', 'sidefieldset_name'))
+
     fieldsets = [
+        '''
         (None, {
             'fields': (('type_id', 'sidefieldset_name'))
         }),
+        '''
     ]
 
     # Modify and append the template per processed field.
