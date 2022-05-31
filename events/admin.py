@@ -274,7 +274,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         
         list_order = []
         for x in range(3):
-            list_order.extend([fset_value[x], fset_value[x+3]])
+            list_order.extend([self.fset_value[x], self.fset_value[x+3]])
 
         fieldsets.append([
             fset_key.capitalize().replace('_', ' '), {
