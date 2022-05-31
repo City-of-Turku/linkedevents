@@ -221,9 +221,13 @@ class SidefieldAdminForm(forms.ModelForm):
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
-    for field in multilang_fields:
-        for lang in ('fi', 'sv', 'en'):
-            setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40})))
+
+    def __init__(self, model, admin_site):
+        super().__init__(model, admin_site)
+
+        for field in multilang_fields:
+            for lang in ('fi', 'sv', 'en'):
+                setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40})))
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
