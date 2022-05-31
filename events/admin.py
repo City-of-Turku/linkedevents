@@ -256,7 +256,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         }),
     ]
 
-    def __init__(self):
+    def __init__(self, model, admin_site):
         # Generate multilanguage fields:
         for field in self.multilang_fields:
             frmt = {field: []}
