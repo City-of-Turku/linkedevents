@@ -216,46 +216,69 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 admin.site.register(PaymentMethod, PaymentAdmin)
 
 
-
-
-
-'''
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
+    #fset_fields = {}
 
-    formfield_overrides = {
-        models.CharField: {'widget': Textarea(attrs={'rows': 4, 'cols': 40})},
-    }
-
-    fields = ['type_id', 'sidefieldset_name', ]
-    list_display = ('sidefieldset_name', 'type_id')
-    multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
-                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
-                        'keyword_mobile', 'category_sidefield', 'category_mobile',)
-
-    for field in multilang_fields:
-        for lang in ('fi', 'sv', 'en'):
-            fields.append('%s_%s' % (field, lang))
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return ['id']
-        else:
-            return []
-'''
-
-class SidefieldAdmin(BaseAdmin, TranslationAdmin):
-    fset_fields = {}
-
-    multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
-                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
-                        'keyword_mobile', 'category_sidefield', 'category_mobile',)
+    #multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+    #                    'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
+    #                    'keyword_mobile', 'category_sidefield', 'category_mobile',)
 
     fieldsets = [
         (None, {
             'fields': (('type_id', 'sidefieldset_name'), )
         }),
+        ('Location sidefield', {
+            'classes': ('collapse', 'wide'),
+            'fields': (
+                ('location_sidefield_fi', 'location_mobile_fi'),
+                ('location_sidefield_sv', 'location_mobile_sv'),
+                ('location_sidefield_en', 'location_mobile_en'),
+            )
+        }),
+        ('Umbrella sidefield', {
+            'classes': ('collapse', 'wide'),
+            'fields': (
+                ('umbrella_sidefield_fi', 'umbrella_mobile_fi'),
+                ('umbrella_sidefield_sv', 'umbrella_mobile_sv'),
+                ('umbrella_sidefield_en', 'umbrella_mobile_en'),
+            )
+        }),
+        ('Times sidefield', {
+            'classes': ('collapse', 'wide'),
+            'fields': (
+                ('times_sidefield_fi', 'times_mobile_fi'),
+                ('times_sidefield_sv', 'times_mobile_sv'),
+                ('times_sidefield_en', 'times_mobile_en'),
+            )
+        }),
+        ('Offers sidefield', {
+            'classes': ('collapse', 'wide'),
+            'fields': (
+                ('location_sidefield_fi', 'location_mobile_fi'),
+                ('location_sidefield_sv', 'location_mobile_sv'),
+                ('location_sidefield_en', 'location_mobile_en'),
+            )
+        }),
+        ('Keyword sidefield', {
+            'classes': ('collapse', 'wide'),
+            'fields': (
+                ('keyword_sidefield_fi', 'keyword_mobile_fi'),
+                ('keyword_sidefield_sv', 'keyword_mobile_sv'),
+                ('keyword_sidefield_en', 'keyword_mobile_en'),
+            )
+        }),
+        ('Category sidefield', {
+            'classes': ('collapse', 'wide'),
+            'fields': (
+                ('category_sidefield_fi', 'category_mobile_fi'),
+                ('category_sidefield_sv', 'category_mobile_sv'),
+                ('category_sidefield_en', 'category_mobile_en'),
+            )
+        }),
     ]
 
+    '''
+    # Writing the main logic into the init phase to avoid race conditions.
     def __init__(self, model, admin_site):
         super().__init__(model, admin_site)
 
@@ -273,14 +296,15 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         # Modify and append the template per processed field.
         for fset_key, fset_values in self.fset_fields.items():
             # We have to re-order fset_values per sidefield & mobile languages.
-            #fset_list_order = [x for i in range(3) for x in (fset_values[i], fset_values[i+3])]
             fset_list_order = [(fset_values[x], fset_values[x+3]) for x in range(3)]
 
+            # Appends the new categories to the fieldset.
             self.fieldsets.append([
                 fset_key.capitalize().replace('_', ' '), {
                     'classes': ('collapse', 'wide'),
                     'fields': fset_list_order
                 }]
             )
+    '''
 
 admin.site.register(Sidefield, SidefieldAdmin)
