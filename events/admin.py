@@ -223,6 +223,7 @@ class SidefieldAdminForm(forms.ModelForm):
 
 
     def __init__(self, instance):
+        super().__init__(instance)
 
         for field in self.multilang_fields:
             for lang in ('fi', 'sv', 'en'):
