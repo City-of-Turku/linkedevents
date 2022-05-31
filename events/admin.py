@@ -229,7 +229,7 @@ class SidefieldAdminForm(forms.ModelForm):
         for field in self.multilang_fields:
             for lang in ('fi', 'sv', 'en'):
                 print(field, lang)
-                setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40})))
+                setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40})))
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
