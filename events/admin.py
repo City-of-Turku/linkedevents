@@ -217,7 +217,7 @@ admin.site.register(PaymentMethod, PaymentAdmin)
 
 
 class SidefieldAdminForm(forms.ModelForm):
-    location_sidefield = forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40}))
+    location_sidefield_fi = forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40}))
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
