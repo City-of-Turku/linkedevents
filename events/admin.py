@@ -254,9 +254,9 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         ('Offers sidefield', {
             'classes': ('collapse', 'wide'),
             'fields': (
-                ('location_sidefield_fi', 'location_mobile_fi'),
-                ('location_sidefield_sv', 'location_mobile_sv'),
-                ('location_sidefield_en', 'location_mobile_en'),
+                ('offers_sidefield_fi', 'offers_mobile_fi'),
+                ('offers_sidefield_sv', 'offers_mobile_sv'),
+                ('offers_sidefield_en', 'offers_mobile_en'),
             )
         }),
         ('Keyword sidefield', {
