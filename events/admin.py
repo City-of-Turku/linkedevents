@@ -222,8 +222,7 @@ class SidefieldAdminForm(forms.ModelForm):
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
 
-    def __init__(self, model, admin_site):
-        super().__init__(model, admin_site)
+    def __init__(self):
 
         for field in multilang_fields:
             for lang in ('fi', 'sv', 'en'):
