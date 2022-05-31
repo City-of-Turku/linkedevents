@@ -216,8 +216,9 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 admin.site.register(PaymentMethod, PaymentAdmin)
 
 
-class SidefieldAdminForm(forms.ModelForm):
+class SidefieldAdminForm(forms.ModelForm, SidefieldAdmin):
     location_sidefield_fi = forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40}))
+    print(SidefieldAdmin.multilang_fields)
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
