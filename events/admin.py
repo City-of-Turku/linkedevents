@@ -227,7 +227,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
     # multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
     #                    'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
     #                    'keyword_mobile', 'category_sidefield', 'category_mobile',)
-
+    form = SidefieldAdminForm
     fieldsets = [
         (None, {
             'fields': (('type_id', 'sidefieldset_name'), )
