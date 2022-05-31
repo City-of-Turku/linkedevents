@@ -223,10 +223,12 @@ class SidefieldAdminForm(forms.ModelForm):
 
 
     def __init__(self, *args, **kwargs):
+        print("Here in init state.")
         super(SidefieldAdminForm, self).__init__(*args, **kwargs)
 
         for field in self.multilang_fields:
             for lang in ('fi', 'sv', 'en'):
+                print(field, lang)
                 setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40})))
 
 
