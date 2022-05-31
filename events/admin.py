@@ -250,38 +250,34 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
                         'keyword_mobile', 'category_sidefield', 'category_mobile',)
 
-    # Generate multilanguage fields:
-    for field in multilang_fields:
-        frmt = {field: []}
-        for lang in ('fi', 'sv', 'en'):
-            frmt[field].append('%s_%s' % (field, lang))
-        # Adds multilang mobile fields to its respective sidefield:
-        if (multilang_fields.index(field) + 1) % 2 == 0:
-            fset_fields[list(fset_fields.keys())[-1]].extend(frmt[field])
-        else:
-            fset_fields.update(frmt)
-
-
-
     fieldsets = [
         (None, {
             'fields': (('type_id', 'sidefieldset_name'), )
         }),
     ]
 
-    # Modify and append the template per processed field.
-    for fset_key, fset_values in fset_fields.items():
-        # We have to re-order fset_values per sidefield & mobile languages.
-        list_order = [x for i in range(3) for x in (fset_values[i], fset_values[i+3])]
+    def __init__(self):
+        # Generate multilanguage fields:
+        for field in self.multilang_fields:
+            frmt = {field: []}
+            for lang in ('fi', 'sv', 'en'):
+                frmt[field].append('%s_%s' % (field, lang))
+            # Adds multilang mobile fields to its respective sidefield:
+            if (multilang_fields.index(field) + 1) % 2 == 0:
+                self.fset_fields[list(fset_fields.keys())[-1]].extend(frmt[field])
+            else:
+                self.fset_fields.update(frmt)
 
-        #for x in fset_values:
-        #    print(fset_values, x)
+        # Modify and append the template per processed field.
+        for fset_key, fset_values in self.fset_fields.items():
+            # We have to re-order fset_values per sidefield & mobile languages.
+            #list_order = [x for i in range(3) for x in (fset_values[i], fset_values[i+3])]
 
-        fieldsets.append([
-            fset_key.capitalize().replace('_', ' '), {
-                'classes': ('collapse', 'wide'),
-                'fields': fset_values
-            }]
-        )
+            self.fieldsets.append([
+                fset_key.capitalize().replace('_', ' '), {
+                    'classes': ('collapse', 'wide'),
+                    'fields': fset_values
+                }]
+            )
 
 admin.site.register(Sidefield, SidefieldAdmin)
