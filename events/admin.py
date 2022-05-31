@@ -263,7 +263,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
     fieldsets = [
         (None, {
-            'fields': ('type_id', 'sidefieldset_name')
+            'fields': (('type_id', 'sidefieldset_name'))
         }),
     ]
 
