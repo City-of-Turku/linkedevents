@@ -222,8 +222,8 @@ class SidefieldAdminForm(forms.ModelForm):
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
 
-    def __init__(self):
-
+    def __init__(self, instance):
+        
         for field in multilang_fields:
             for lang in ('fi', 'sv', 'en'):
                 setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40})))
