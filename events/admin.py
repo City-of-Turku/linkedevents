@@ -272,12 +272,13 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
         # We have to re-order fset_values per sidefield & mobile languages.
         #list_order = [x for i in range(3) for x in (fset_values[i], fset_values[i+3])]
         print(fset_values)
-        list_order = [[fset_values[x], fset_values[x+3]] for x in range(3)]
-        fieldsets.append([
-            fset_key.capitalize().replace('_', ' '), {
-                'classes': ('collapse', 'wide'),
-                'fields': list_order
-            }]
-        )
+        if fset_values:
+            list_order = [[fset_values[x], fset_values[x+3]] for x in range(3)]
+            fieldsets.append([
+                fset_key.capitalize().replace('_', ' '), {
+                    'classes': ('collapse', 'wide'),
+                    'fields': list_order
+                }]
+            )
 
 admin.site.register(Sidefield, SidefieldAdmin)
