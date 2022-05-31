@@ -269,9 +269,10 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
 
     # Modify and append the template per processed field.
     for fset_key, fset_values in fset_fields.items():
+        # We have to re-order fset_values per sidefield & mobile languages.
         fieldsets.append([
             fset_key.capitalize().replace('_', ' '), {
-                'classes': ('collapse', ),
+                'classes': ('collapse', 'wide'),
                 'fields': fset_values
             }]
         )
