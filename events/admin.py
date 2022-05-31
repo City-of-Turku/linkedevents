@@ -217,72 +217,24 @@ admin.site.register(PaymentMethod, PaymentAdmin)
 
 
 class SidefieldAdminForm(forms.ModelForm):
-
     sidefieldset_name = forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40}))
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin):
-    #fset_fields = {}
+    fset_fields = {}
 
-    # multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
-    #                    'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
-    #                    'keyword_mobile', 'category_sidefield', 'category_mobile',)
+    multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+                'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
+                'keyword_mobile', 'category_sidefield', 'category_mobile',)
+
     form = SidefieldAdminForm
+
     fieldsets = [
         (None, {
             'fields': (('type_id', 'sidefieldset_name'), )
         }),
-        ('Location sidefield', {
-            'classes': ('collapse', 'wide'),
-            'fields': (
-                ('location_sidefield_fi', 'location_mobile_fi'),
-                ('location_sidefield_sv', 'location_mobile_sv'),
-                ('location_sidefield_en', 'location_mobile_en'),
-            )
-        }),
-        ('Umbrella sidefield', {
-            'classes': ('collapse', 'wide'),
-            'fields': (
-                ('umbrella_sidefield_fi', 'umbrella_mobile_fi'),
-                ('umbrella_sidefield_sv', 'umbrella_mobile_sv'),
-                ('umbrella_sidefield_en', 'umbrella_mobile_en'),
-            )
-        }),
-        ('Times sidefield', {
-            'classes': ('collapse', 'wide'),
-            'fields': (
-                ('times_sidefield_fi', 'times_mobile_fi'),
-                ('times_sidefield_sv', 'times_mobile_sv'),
-                ('times_sidefield_en', 'times_mobile_en'),
-            )
-        }),
-        ('Offers sidefield', {
-            'classes': ('collapse', 'wide'),
-            'fields': (
-                ('offers_sidefield_fi', 'offers_mobile_fi'),
-                ('offers_sidefield_sv', 'offers_mobile_sv'),
-                ('offers_sidefield_en', 'offers_mobile_en'),
-            )
-        }),
-        ('Keyword sidefield', {
-            'classes': ('collapse', 'wide'),
-            'fields': (
-                ('keyword_sidefield_fi', 'keyword_mobile_fi'),
-                ('keyword_sidefield_sv', 'keyword_mobile_sv'),
-                ('keyword_sidefield_en', 'keyword_mobile_en'),
-            )
-        }),
-        ('Category sidefield', {
-            'classes': ('collapse', 'wide'),
-            'fields': (
-                ('category_sidefield_fi', 'category_mobile_fi'),
-                ('category_sidefield_sv', 'category_mobile_sv'),
-                ('category_sidefield_en', 'category_mobile_en'),
-            )
-        }),
     ]
 
-    '''
     # Writing the main logic into the init phase to avoid race conditions.
     def __init__(self, model, admin_site):
         super().__init__(model, admin_site)
@@ -310,7 +262,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin):
                     'fields': fset_list_order
                 }]
             )
-    '''
 
 
 admin.site.register(Sidefield, SidefieldAdmin)
