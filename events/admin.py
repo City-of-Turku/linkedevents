@@ -217,18 +217,18 @@ admin.site.register(PaymentMethod, PaymentAdmin)
 
 
 class SidefieldAdminForm(forms.ModelForm, SidefieldAdmin):
-    location_sidefield_fi = forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40}))
-    print(SidefieldAdmin.multilang_fields)
-
-
-class SidefieldAdmin(BaseAdmin, TranslationAdmin):
-
-    list_display = ('sidefieldset_name', 'type_id')
-    fset_fields = {}
-
     multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
-                        'keyword_mobile', 'category_sidefield', 'category_mobile',)
+                        'keyword_mobile', 'category_sidefield', 'category_mobile')
+
+    for field in multilang_fields:
+        for lang in ('fi', 'sv', 'en'):
+            setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rpws': 4, 'cols': 40})))
+
+
+class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
+    list_display = ('sidefieldset_name', 'type_id')
+    fset_fields = {}
 
     form = SidefieldAdminForm
 
