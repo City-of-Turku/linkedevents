@@ -1406,6 +1406,12 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     #orderingfields = ('')
     #ordering = ('')
 
+    def get_queryset(self):
+
+        queryset = _filter_sidefield_queryset(queryset, self.request.query_params,
+                                              srs=self.srs)
+        return queryset
+
 
 register_view(SidefieldViewSet, 'sidefield')
 
@@ -2004,6 +2010,27 @@ def parse_duration_string(duration):
         mul = 24 * 3600
 
     return int(val) * mul
+
+
+def _filter_sidefield_queryset(queryset, params, srs=None):
+
+    # Filter by event type
+    val = params.get('type_id', None)
+    if val:
+        val = val.split(',')
+        q = Q()
+        for type_id_val in val:
+            if type_id_val.lower() == 'eventgeneral':
+                q = q | Q(type_id=Event.Type_Id.GENERAL)
+            elif type_id_val.lower() == 'eventcourse':
+                q = q | Q(type_id=Event.Type_Id.COURSE)
+            elif type_id_val.lower() == 'eventvolunteering':
+                q = q | Q(type_id=Event.Type_Id.VOLUNTEERING)
+            elif type_id_val.lower() == 'eventhobbies':
+                q = q | Q(type_id=Event.Type_Id.HOBBIES)
+        queryset = queryset.filter(q)
+
+    return queryset
 
 
 def _filter_image_queryset(queryset, params, srs=None):
