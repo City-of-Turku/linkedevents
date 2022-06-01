@@ -242,7 +242,7 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
     #form = SidefieldAdminForm
 
     formfield_overrides = {
-        models.CharField: {'widget': forms.Textarea(attrs={'rows':4, 'cols':40})},
+        'keyword_mobile_fi': {'widget': forms.Textarea(attrs={'rows':4, 'cols':40})},
     } 
 
     fieldsets = [
