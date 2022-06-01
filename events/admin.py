@@ -224,6 +224,13 @@ class SidefieldAdminForm(forms.ModelForm):
 
     #keyword_mobile_fi = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40, 'title': 'Keyword Button [fi]:'}))
 
+    class Meta:
+        widgets = {
+            'location_sidefield_fi': forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40, 'title': 'Keyword Button [fi]:'})),
+        }
+        fields = '__all__'
+
+
     '''
     def __init__(self, *args, **kwargs):
         print("Here in init state.")
@@ -235,15 +242,12 @@ class SidefieldAdminForm(forms.ModelForm):
                 setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40})))
     '''
 
+
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
     list_display = ('sidefieldset_name', 'type_id')
     fset_fields = {}
 
-    #form = SidefieldAdminForm
-
-    formfield_overrides = {
-        'keyword_mobile_fi': {'widget': forms.Textarea(attrs={'rows':4, 'cols':40})},
-    } 
+    form = SidefieldAdminForm
 
     fieldsets = [
         (None, {
