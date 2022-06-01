@@ -222,6 +222,9 @@ class SidefieldAdminForm(forms.ModelForm):
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
 
+    keyword_mobile_fi = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40})
+
+    '''
     def __init__(self, *args, **kwargs):
         print("Here in init state.")
         super(SidefieldAdminForm, self).__init__(*args, **kwargs)
@@ -230,7 +233,7 @@ class SidefieldAdminForm(forms.ModelForm):
             for lang in ('fi', 'sv', 'en'):
                 print(field, lang)
                 setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40})))
-
+    '''
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
     list_display = ('sidefieldset_name', 'type_id')
