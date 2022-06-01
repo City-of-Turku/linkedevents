@@ -222,7 +222,7 @@ class SidefieldAdminForm(forms.ModelForm):
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
 
-    keyword_mobile_fi = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40})
+    keyword_mobile_fi = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40}))
 
     '''
     def __init__(self, *args, **kwargs):
