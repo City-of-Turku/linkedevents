@@ -1407,7 +1407,7 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     #ordering = ('')
 
     def get_queryset(self):
-
+        queryset = Sidefield.objects.all()
         queryset = _filter_sidefield_queryset(queryset, self.request.query_params,
                                               srs=self.srs)
         return queryset
