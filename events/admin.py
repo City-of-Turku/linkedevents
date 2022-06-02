@@ -286,6 +286,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
             )
     
         # Testing if I can add to meta widgets all these values.
-        form.Meta.widgets.update({'location_mobile_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40})})
+        self.form.Meta.widgets.update({'location_mobile_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40})})
 
 admin.site.register(Sidefield, SidefieldAdmin)
