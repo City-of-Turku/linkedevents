@@ -237,7 +237,7 @@ class SidefieldAdminForm(forms.ModelForm):
     class Meta:
         fields = ['location_sidefield_fi', 'location_mobile_fi']
         widgets = {
-            'location_sidefield_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40})),
+            'location_sidefield_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
         }
 
 
