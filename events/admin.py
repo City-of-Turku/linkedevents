@@ -222,7 +222,6 @@ class SidefieldAdminForm(forms.ModelForm):
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
     class Meta:
-        #fields = ['location_sidefield_fi', 'location_mobile_fi']
         widgets = {
             'location_sidefield_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
         }
@@ -260,6 +259,10 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
             # We have to re-order fset_values per sidefield & mobile languages.
             fset_list_order = [(fset_values[x], fset_values[x+3]) for x in range(3)]
 
+            # Add widgets to the form classes meta.
+            for form_name in fset_values:
+                self.form.Meta.widgets.update({form_name: forms.Textarea(attrs={'rows': 5, 'cols': 50})})
+
             # Appends the new categories to the fieldset.
             self.fieldsets.append([
                 fset_key.capitalize().replace('_', ' '), {
@@ -267,8 +270,6 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
                     'fields': fset_list_order
                 }]
             )
-    
-        # Testing if I can add to meta widgets all these values.
-        self.form.Meta.widgets.update({'location_mobile_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40})})
+
 
 admin.site.register(Sidefield, SidefieldAdmin)
