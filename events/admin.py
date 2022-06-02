@@ -222,9 +222,7 @@ class SidefieldAdminForm(forms.ModelForm):
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
     class Meta:
-        widgets = {
-            'location_sidefield_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
-        }
+        widgets = {}
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
