@@ -240,6 +240,10 @@ class SidefieldAdminForm(forms.ModelForm):
             'location_sidefield_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
         }
 
+        #def __init__(self, *args, **kwargs):
+        #    super().__init__(*args, **kwargs)
+        #    for x in lang
+
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
     list_display = ('sidefieldset_name', 'type_id')
@@ -280,6 +284,8 @@ class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
                     'fields': fset_list_order
                 }]
             )
-
+    
+        # Testing if I can add to meta widgets all these values.
+        form.Meta.widgets.update({'location_mobile_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40})})
 
 admin.site.register(Sidefield, SidefieldAdmin)
