@@ -221,28 +221,11 @@ class SidefieldAdminForm(forms.ModelForm):
                         'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
                         'keyword_mobile', 'category_sidefield', 'category_mobile')
 
-    #keyword_mobile_fi = forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40, 'title': 'Keyword Button [fi]:'}))
-
-    '''
-    def __init__(self, *args, **kwargs):
-        print("Here in init state.")
-        super(SidefieldAdminForm, self).__init__(*args, **kwargs)
-
-        for field in self.multilang_fields:
-            for lang in ('fi', 'sv', 'en'):
-                print(field, lang)
-                setattr(self, '%s_%s' % (field, lang), forms.CharField(widget=forms.Textarea(attrs={'rows': 4, 'cols': 40})))
-    '''
-
     class Meta:
-        fields = ['location_sidefield_fi', 'location_mobile_fi']
+        #fields = ['location_sidefield_fi', 'location_mobile_fi']
         widgets = {
             'location_sidefield_fi': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
         }
-
-        #def __init__(self, *args, **kwargs):
-        #    super().__init__(*args, **kwargs)
-        #    for x in lang
 
 
 class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
