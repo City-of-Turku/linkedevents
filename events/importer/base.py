@@ -60,11 +60,22 @@ class Importer(object):
             self.bounding_box = None
         self.gps_to_target_ct = CoordTransform(gps_srs, target_srs)
 
-        self.setup()
+        # Pre processing phase runs your importers setup.
+        # You can override this check by setting 'ignore_setup' = True into your importer.
 
-        # this has to be run after setup, as it relies on organization and data source being set
-        self._images = {obj.url: obj for obj in Image.objects.filter(publisher=self.organization,
-                                                                     data_source=self.data_source)}
+        ignore_setup_phase = getattr(self, 'ignore_setup', False)
+
+        if ignore_setup_phase == False:
+            self.setup()
+
+        # Post processing phase checks if importers have data_source & organization attributes set.
+        # You can override this check by setting 'ignore_prerequisites' = True into your importer.
+
+        prerequisites = getattr(self, 'ignore_prerequisites', False)
+
+        if prerequisites == False:
+            self._images = {obj.url: obj for obj in Image.objects.filter(publisher=self.organization,
+                                                                        data_source=self.data_source)}
 
     def setup(self):
         pass
