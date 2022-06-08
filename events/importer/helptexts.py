@@ -250,49 +250,85 @@ data = {
     'keyword': {
         'sidefield': {
             'general': {
-                'fi': '',
-                'sv': '',
-                'en': ''
+                'fi': """Valitse asiasanoja, jotka kuvaavat tapahtumaa mahdollisimman tarkasti 
+                (esimerkiksi musiikin sijaan lastenmusiikki). Usein kuvailuun riittää 1-5 asiasanaa.""",
+
+                'sv': """Välj ämnesord som beskriver evenemanget så exakt som möjligt 
+                (t.ex. barnmusik istället för musik). 1-5 ämnesord brukar räcka 
+                till för att beskriva evenemang.""",
+
+                'en': """Choose keywords to describe the event as accurately as possible 
+                (for example, children's music instead of music). Usually 1-5 keywords are enough."""
             },
             'course': {
-                'fi': '',
-                'sv': '',
-                'en': ''
+                'fi': """Valitse asiasanoja, jotka kuvaavat koulutusta mahdollisimman tarkasti 
+                (esimerkiksi musiikin sijaan lastenmusiikki). Usein kuvailuun riittää 1-5 asiasanaa.""",
+
+                'sv': """Välj ämnesord som beskriver utbildningen så exakt som möjligt 
+                (t.ex. barnmusik istället för musik). 1–5 ämnesord brukar räcka 
+                till för att beskriva hobbyn.""",
+
+                'en': """Choose keywords to describe the education as accurately as possible 
+                (for example, children's music instead of music). Usually, 1-5 keywords are enough."""
             },
             'hobbies': {
-                'fi': '',
-                'sv': '',
-                'en': ''
+                'fi': """Valitse asiasanoja, jotka kuvaavat harrastusta mahdollisimman tarkasti 
+                (esimerkiksi musiikin sijaan lastenmusiikki). Usein kuvailuun riittää 1-5 asiasanaa.""",
+
+                'sv': """Välj ämnesord som beskriver hobbyn så exakt som möjligt (t.ex. barnmusik istället för musik). 
+                1-5 ämnesord brukar räcka till för att beskriva hobbyn.""",
+
+                'en': """Choose keywords to describe the hobby as accurately as possible 
+                (for example, children's music instead of music). Usually 1-5 keywords are enough."""
             },
         },
         'mobile': {
-            'fi': '',
-            'sv': '',
-            'en': ''
+            'fi': "Ohjeet asiasanojen valintaan",
+            'sv': "Anvisning för val av ämnesord",
+            'en': "Instructions for selecting keywords"
         }
     },
     'category': {
         'sidefield': {
             'general': {
-                'fi': '',
-                'sv': '',
-                'en': ''
+                'fi': """Valitse tapahtuman sisältöä yleisellä tasolla kuvaava luokka. 
+                Useimmiten kuvaukseen riittää yksi luokka, 
+                mutta tarvittaessa voit valita useampia luokkia. 
+                Valitse myös tapahtuman järjestämistapaa kuvaava luokka.""",
+
+                'sv': """Välj kategori som övrigt beskriver evenemangets innehåll. 
+                Vanligtvis så räcker det med en kategori men vid behov så kan flera kategorier också väljas. 
+                Välj också innehållets typ som beskriver hur evenemanget ordnas.""",
+
+                'en': """Select a category to describe the content of the event at a general level. 
+                Usually one category is enough, but you can select more than one when necessary. 
+                Also choose the type of event to describe how the event is organized."""
             },
             'course': {
-                'fi': '',
-                'sv': '',
-                'en': ''
+                'fi': """Valitse koulutuksen sisältöä yleisellä tasolla kuvaava luokka. 
+                Useimmiten kuvaukseen riittää yksi luokka.""",
+
+                'sv': """Välj en kategori som beskriver innehållet i utbildningen på generell nivå. 
+                Vanligtvis så räcker det med en kategori.""",
+
+                'en': """Select a category to describe the content of the education at a general level. 
+                Usually, one category is enough."""
             },
             'hobbies': {
-                'fi': '',
-                'sv': '',
-                'en': ''
+                'fi': """Valitse harrastuksen sisältöä yleisellä tasolla kuvaava luokka. 
+                Useimmiten kuvaukseen riittää yksi luokka.""",
+
+                'sv': """Välj en kategori som beskriver innehållet i hobby på generell nivå. 
+                Vanligtvis så räcker det med en kategori.""",
+
+                'en': """Select a category to describe the content of the hobby at a general level. 
+                Usually, one category is enough."""
             },
         },
         'mobile': {
-            'fi': '',
-            'sv': '',
-            'en': ''
+            'fi': "Ohjeet luokkien valintaan",
+            'sv': "Anvisning för val av kategori",
+            'en': "Instructions for selecting categories"
         }
     },
 }
