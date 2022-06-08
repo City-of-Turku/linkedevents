@@ -339,28 +339,51 @@ class HelptextsImporter(Importer):
     # Importer class dependant attributes:
     name = 'helptexts'
     supported_languages = ('fi', 'sv', 'en')
-
     # Extra options.
     ignore_setup = True
     ignore_prerequisites = True
 
-    def _get_data(self) -> None:
-        print("HERE")
-        #for k, v in data.items():
-        #    print(k, v)
+    type_ids = ('general', 'course', 'hobbies')
+
+    def __set_attr_values(self, target: Any, attr_names: List, texts: List) -> None:
+        """Method for setting helptexts to the 3 Sidefield() objects db attributes. Passed by reference."""
+        for idx in range(2):
+            setattr(target, attr_names[idx], texts[idx])
+
+    def _process_data(self, objs: dict) -> None:
+        """The core logic, the processing phase."""
+        for prefix, inner_field_data in data.items():
+            for type_id, type_id_data in inner_field_data['sidefield'].items():
+                for lang in self.supported_languages:
+                    # The following variables are for the function arguments.
+                    sidefield_mobile = ['%s_%s_%s' % (prefix, subfix, lang) for subfix in ('sidefield', 'mobile')]
+                    texts = [type_id_data[lang], inner_field_data['mobile'][lang]]
+                    if type_id == 'multitype':
+                        for obj in objs:
+                            self.__set_attr_values(target=objs[obj], attr_names=sidefield_mobile, texts=texts)
+                    else:
+                        self.__set_attr_values(target=objs[type_id], attr_names=sidefield_mobile, texts=texts)
 
     def _save(self) -> None:
-        self._get_data()
-        #try:
-        #    sidefield_obj = Sidefield.objects.get(id=1)
-        #except Sidefield.DoesNotExist:
-        #    sidefield_obj = Sidefield()
-        #    sidefield_obj.type_id = 1
-        #    sidefield_obj.location_sidefield_fi = 'testtt'
-        #    sidefield_obj.save()
-        #    proc_time_frmt('Saved.')
+        """Saving phase is our handler for this importer. 
+        Saves / creates 3 different DB fields based on the type_ids."""
+
+        # Create 3 associative objects.
+        objs = {key: Sidefield() for key in self.type_ids}
+        self._process_data(objs=objs)
+        logger.info(objs['hobbies'].location_mobile_sv)  # Analysis.
+
+        '''
+            try:
+                sidefield_obj = Sidefield.objects.get(id=1)
+            except Sidefield.DoesNotExist:
+                sidefield_obj = Sidefield()
+                sidefield_obj.type_id = 1
+                sidefield_obj.location_sidefield_fi = 'testtt'
+                sidefield_obj.save()
+        '''
 
     def __init__(self, options):
         proc_time_frmt('Initial')
-        self._save()
+        self._save()  # Handle.
         proc_time_frmt('Importer')
