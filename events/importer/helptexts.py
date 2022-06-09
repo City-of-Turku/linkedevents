@@ -339,11 +339,12 @@ class HelptextsImporter(Importer):
     # Importer class dependant attributes:
     name = 'helptexts'
     supported_languages = ('fi', 'sv', 'en')
+
     # Extra options.
     ignore_setup = True
     ignore_prerequisites = True
 
-    type_ids = ('general', 'course', 'hobbies')
+    type_ids = {'general': 1, 'course': 2, 'hobbies': 4}
 
     def __set_attr_values(self, target: Any, attr_names: List, texts: List) -> None:
         """Method for setting helptexts to the 3 Sidefield() objects db attributes. Passed by reference."""
@@ -364,24 +365,27 @@ class HelptextsImporter(Importer):
                     else:
                         self.__set_attr_values(target=objs[type_id], attr_names=sidefield_mobile, texts=texts)
 
+
     def _save(self) -> None:
         """Saving phase is our handler for this importer. 
         Saves / creates 3 different DB fields based on the type_ids."""
 
-        # Create 3 associative objects.
+        # As a failsafe, we do not want to re-run this importer twice by accident:
+        if Sidefield.objects.all().count() > 0:
+            logger.error("Helptexts already exist, this importer is not built to be ran twice. Exiting!")
+            return None
+
+        # Create 3 associative objects and populate them with attributes in the processing phase:
         objs = {key: Sidefield() for key in self.type_ids}
         self._process_data(objs=objs)
-        logger.info(objs['hobbies'].location_mobile_sv)  # Analysis.
 
-        '''
-            try:
-                sidefield_obj = Sidefield.objects.get(id=1)
-            except Sidefield.DoesNotExist:
-                sidefield_obj = Sidefield()
-                sidefield_obj.type_id = 1
-                sidefield_obj.location_sidefield_fi = 'testtt'
-                sidefield_obj.save()
-        '''
+        # Since this importer is only meant to be ran once, this will suffice:
+        for type_name, obj in objs.items():
+            obj.type_id = self.type_ids[type_name]
+            obj.sidefieldset_name = type_name.capitalize()
+            obj.save()
+            logger.info("Helptext importer created a new sidefieldset: %s" % obj.sidefieldset_name)
+
 
     def __init__(self, options):
         proc_time_frmt('Initial')
