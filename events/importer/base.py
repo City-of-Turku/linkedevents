@@ -65,7 +65,7 @@ class Importer(object):
 
         ignore_setup_phase = getattr(self, 'ignore_setup', False)
 
-        if ignore_setup_phase == False:
+        if not ignore_setup_phase:
             self.setup()
 
         # Post processing phase checks if importers have data_source & organization attributes set.
@@ -73,7 +73,7 @@ class Importer(object):
 
         prerequisites = getattr(self, 'ignore_prerequisites', False)
 
-        if prerequisites == False:
+        if not prerequisites:
             self._images = {obj.url: obj for obj in Image.objects.filter(publisher=self.organization,
                                                                         data_source=self.data_source)}
 
