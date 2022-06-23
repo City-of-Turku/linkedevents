@@ -27,14 +27,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = [
-            'last_login', 'username', 'email', 'date_joined',
+            'pk', 'last_login', 'username', 'email', 'date_joined',
             'first_name', 'last_name', 'uuid', 'department_name',
             'is_staff', 'display_name',
         ]
         model = get_user_model()
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
