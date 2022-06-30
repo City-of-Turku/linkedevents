@@ -31,8 +31,7 @@ data = {
             'general': {
                 'fi': """Tapahtuma voi olla virtuaalinen, lähitapahtuma tai molemmat. 
                 <br><strong>Jos tapahtuma järjestetään etänä internetissä, valitse tapahtumapaikaksi 
-                Virtuaalitapahtuma ja syötä URL-osoite. Lähitapahtumassa voit antaa lisätietoja 
-                tapahtumapaikan löytämiseksi, esimerkiksi konferenssihuoneen nimen tai ohjeet sisäänkäynnille.</strong><br>
+                Virtuaalitapahtuma ja syötä URL-osoite. Lähitapahtumassa voit antaa lisätietoja tapahtumapaikan löytämiseksi, esimerkiksi konferenssihuoneen nimen tai ohjeet sisäänkäynnille.</strong><br>
                 Jos tarkkaa tapahtumapaikkaa ei löydy listasta, valitse tapahtumapaikaksi lähin katuosoite 
                 ja kirjoita paikan nimi tai muut tarkemmat saapumisohjeet tiiviisti lisätietokenttään.""",
 
@@ -365,7 +364,6 @@ class HelptextsImporter(Importer):
                     else:
                         self.__set_attr_values(target=objs[type_id], attr_names=sidefield_mobile, texts=texts)
 
-
     def _save(self) -> None:
         """Saving phase is our handler for this importer. 
         Saves / creates 3 different DB fields based on the type_ids."""
@@ -385,7 +383,6 @@ class HelptextsImporter(Importer):
             obj.sidefieldset_name = type_name.capitalize()
             obj.save()
             logger.info("Helptext importer created a new sidefieldset: %s" % obj.sidefieldset_name)
-
 
     def __init__(self, options):
         proc_time_frmt('Initial')
