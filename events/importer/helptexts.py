@@ -30,10 +30,8 @@ data = {
         'sidefield': {
             'general': {
                 'fi': """Tapahtuma voi olla virtuaalinen, lähitapahtuma tai molemmat. 
-                <br><strong>Jos tapahtuma järjestetään etänä internetissä, valitse tapahtumapaikaksi 
-                Virtuaalitapahtuma ja syötä URL-osoite. Lähitapahtumassa voit antaa lisätietoja tapahtumapaikan löytämiseksi, esimerkiksi konferenssihuoneen nimen tai ohjeet sisäänkäynnille.</strong><br>
-                Jos tarkkaa tapahtumapaikkaa ei löydy listasta, valitse tapahtumapaikaksi lähin katuosoite 
-                ja kirjoita paikan nimi tai muut tarkemmat saapumisohjeet tiiviisti lisätietokenttään.""",
+                <br><strong>Jos tapahtuma järjestetään etänä internetissä, valitse tapahtumapaikaksi Virtuaalitapahtuma ja syötä URL-osoite. Lähitapahtumassa voit antaa lisätietoja tapahtumapaikan löytämiseksi, esimerkiksi konferenssihuoneen nimen tai ohjeet sisäänkäynnille.</strong><br>
+                Jos tarkkaa tapahtumapaikkaa ei löydy listasta, valitse tapahtumapaikaksi lähin katuosoite ja kirjoita paikan nimi tai muut tarkemmat saapumisohjeet tiiviisti lisätietokenttään.""",
 
                 'sv': """Evenemanget kan vara virtuellt, fysiskt eller båda.
                 <br><strong>Om evenemanget ordnas på distans över internet, välj då Virtuellt evenemang som evenemangsplats, 
