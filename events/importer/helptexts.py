@@ -34,11 +34,8 @@ data = {
                 Jos tarkkaa tapahtumapaikkaa ei löydy listasta, valitse tapahtumapaikaksi lähin katuosoite ja kirjoita paikan nimi tai muut tarkemmat saapumisohjeet tiiviisti lisätietokenttään.""",
 
                 'sv': """Evenemanget kan vara virtuellt, fysiskt eller båda.
-                <br><strong>Om evenemanget ordnas på distans över internet, välj då Virtuellt evenemang som evenemangsplats, 
-                samt mata in en URL. Du kan ange ytterligare information för att hitta evenemangsplatsen, 
-                till exempel konferensrummets namn eller instruktioner för att hitta ingången.
-                </strong><br>Om en exakt evenemangsplats inte finns på listan, välj då närmaste gatuadress och skriv 
-                platsens namn eller ankomst instruktioner i fältet för tilläggsuppgifter.""",
+                <br><strong>Om evenemanget ordnas på distans över internet, välj då Virtuellt evenemang som evenemangsplats, samt mata in en URL. Du kan ange ytterligare information för att hitta evenemangsplatsen, till exempel konferensrummets namn eller instruktioner för att hitta ingången.
+                </strong><br>Om en exakt evenemangsplats inte finns på listan, välj då närmaste gatuadress och skriv platsens namn eller ankomst instruktioner i fältet för tilläggsuppgifter.""",
 
                 'en': """The event can be virtual, physical or both.
                 <br><strong>If the event is virtual on the Internet, select Virtual event as the location and enter a URL. 
