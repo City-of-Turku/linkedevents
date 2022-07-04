@@ -1,12 +1,14 @@
 from django.conf import settings
 from django.contrib import admin
+from django.db import models
+from django import forms
 from django.utils.translation import ugettext as _
 from leaflet.admin import LeafletGeoAdmin
 from modeltranslation.admin import TranslationAdmin
 from reversion.admin import VersionAdmin
 from admin_auto_filters.filters import AutocompleteFilter
 from events.api import generate_id
-from events.models import Place, License, DataSource, Event, Keyword, KeywordSet, Language, PaymentMethod
+from events.models import Place, License, DataSource, Event, Keyword, KeywordSet, Language, PaymentMethod, Sidefield
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -212,3 +214,60 @@ class PaymentAdmin(BaseAdmin, TranslationAdmin):
 
 
 admin.site.register(PaymentMethod, PaymentAdmin)
+
+
+class SidefieldAdminForm(forms.ModelForm):
+    multilang_fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+                        'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield',
+                        'keyword_mobile', 'category_sidefield', 'category_mobile')
+
+    class Meta:
+        widgets = {}
+
+
+class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
+    list_display = ('sidefieldset_name', 'type_id')
+    fset_fields = {}
+
+    form = SidefieldAdminForm
+
+    fieldsets = [
+        (None, {
+            'fields': (('type_id', 'sidefieldset_name'), )
+        }),
+    ]
+
+    # Writing the main logic into the init phase to avoid race conditions.
+    def __init__(self, model, admin_site):
+        super().__init__(model, admin_site)
+
+        # Generate multilanguage fields:
+        for field in self.multilang_fields:
+            frmt = {field: []}
+            for lang in ('fi', 'sv', 'en'):
+                frmt[field].append('%s_%s' % (field, lang))
+            # Adds multilang mobile fields to its respective sidefield:
+            if (self.multilang_fields.index(field) + 1) % 2 == 0:
+                self.fset_fields[list(self.fset_fields.keys())[-1]].extend(frmt[field])
+            else:
+                self.fset_fields.update(frmt)
+
+        # Modify and append the template per processed field.
+        for fset_key, fset_values in self.fset_fields.items():
+            # We have to re-order fset_values per sidefield & mobile languages.
+            fset_list_order = [(fset_values[x], fset_values[x+3]) for x in range(3)]
+
+            # Add widgets to the form classes meta.
+            for form_name in fset_values:
+                self.form.Meta.widgets.update({form_name: forms.Textarea(attrs={'rows': 5, 'cols': 50})})
+
+            # Appends the new categories to the fieldset.
+            self.fieldsets.append([
+                fset_key.capitalize().replace('_', ' '), {
+                    'classes': ('collapse', 'wide'),
+                    'fields': fset_list_order
+                }]
+            )
+
+
+admin.site.register(Sidefield, SidefieldAdmin)

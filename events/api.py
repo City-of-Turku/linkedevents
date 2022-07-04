@@ -68,7 +68,7 @@ from events.custom_elasticsearch_search_backend import (
 from events.extensions import apply_select_and_prefetch, get_extensions_from_request
 from events.models import (
     Place, Event, Keyword, KeywordSet, Language, OpeningHoursSpecification, EventLink,
-    Offer, DataSource, Image, PublicationStatus, PUBLICATION_STATUSES, License, Video, PaymentMethod
+    Offer, DataSource, Image, PublicationStatus, PUBLICATION_STATUSES, License, Sidefield, Video, PaymentMethod
 )
 from events.translation import EventTranslationOptions, ImageTranslationOptions
 from helevents.models import User
@@ -771,7 +771,7 @@ def _text_qset_by_translated_field(field, val):
     languages = utils.get_fixed_lang_codes()
     qset = Q()
     for lang in languages:
-        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})   
+        qset |= Q(**{"%s_%s__icontains" % (field, lang): val})
     return qset
 
 
@@ -1088,12 +1088,11 @@ class PlaceSerializer(LinkedEventsSerializer, GeoModelSerializer):
         model = Place
         exclude = (
             'n_events_changed',
-            'search_column_fi', 
+            'search_column_fi',
             'search_column_sv',
             'search_column_en'
         )
-  
-   
+
 
 class PlaceFilter(django_filters.rest_framework.FilterSet):
     division = django_filters.Filter(field_name='divisions', lookup_expr='in',
@@ -1145,7 +1144,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
     ordering = ('-n_events', '-data_source', 'name')
     # Default maximum value of results to be returned.
     search_query_limit = 100
-    search_configs = {'fi': 'finnish','sv': 'swedish', 'en': 'english'}
+    search_configs = {'fi': 'finnish', 'sv': 'swedish', 'en': 'english'}
 
     def get_queryset(self):
         """
@@ -1180,10 +1179,10 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # match to street as well as name, to make it easier to find units by address
         if 'text' or 'filter' in params:
             val = params.get('text') or params.get('filter', None)
-      
+
         if val:
-            # Remove single quotes from search string, they cause faulty strings in to_tsvector          
-            val = val.strip().replace("'", "")         
+            # Remove single quotes from search string, they cause faulty strings in to_tsvector
+            val = val.strip().replace("'", "")
             search_query_str = self.get_search_query_str(val)
             if 'locale' in params:
                 locale = params.get('locale')
@@ -1195,7 +1194,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 except ValueError:
                     raise ParseError("'limit' must be of type int.")
             # Use PostgreSQL Full Text Search on indexed columns populated
-            # with lexems. 
+            # with lexems.
             sql = f"""
                 SELECT id, ts_rank_cd(search_column_{locale}, search_query)
                 As RANK from events_place, 
@@ -1205,17 +1204,17 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
             """
             cursor = connection.cursor()
             cursor.execute(sql)
-            all_results = cursor.fetchall()           
+            all_results = cursor.fetchall()
             # append all Place ids into a list for filtering
             ids = [row[0] for row in all_results]
-            queryset = Place.objects.filter(id__in=ids) 
+            queryset = Place.objects.filter(id__in=ids)
         else:
-            queryset = Place.objects.none()       
-       
+            queryset = Place.objects.none()
+
         return queryset
 
     def get_search_query_str(self, val):
-        search_query_str = None  
+        search_query_str = None
         # Build conditional query string that is used in the SQL query.
         # split my "," or whitespace
         q_vals = re.split(r",\s+|\s+", val)
@@ -1229,8 +1228,9 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 else:
                     search_query_str += f"& {q}:*"
             else:
-                search_query_str = f"{q}:*"   
+                search_query_str = f"{q}:*"
         return search_query_str
+
 
 register_view(PlaceRetrieveViewSet, 'place')
 register_view(PlaceListViewSet, 'place')
@@ -1376,6 +1376,44 @@ class OfferSerializer(TranslatedModelSerializer):
     class Meta:
         model = Offer
         exclude = ['id', 'event']
+
+
+class SidefieldSerializer(TranslatedModelSerializer):
+    type_id = EnumChoiceField(Event.TYPE_IDS, required=False)
+    sidefieldset_name = serializers.CharField(required=False)
+    location_sidefield = serializers.CharField(required=False)
+    location_mobile = serializers.CharField(required=False)
+    umbrella_sidefield = serializers.CharField(required=False)
+    umbrella_mobile = serializers.CharField(required=False)
+    times_sidefield = serializers.CharField(required=False)
+    times_mobile = serializers.CharField(required=False)
+    offers_sidefield = serializers.CharField(required=False)
+    offers_mobile = serializers.CharField(required=False)
+    keyword_sidefield = serializers.CharField(required=False)
+    keyword_mobile = serializers.CharField(required=False)
+    category_sidefield = serializers.CharField(required=False)
+    category_mobile = serializers.CharField(required=False)
+
+    class Meta:
+        model = Sidefield
+        exclude = ['id']
+
+
+class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = Sidefield.objects.all()
+    serializer_class = SidefieldSerializer
+    filter_backends = (filters.OrderingFilter,)
+    #orderingfields = ('')
+    #ordering = ('')
+
+    def get_queryset(self):
+        queryset = Sidefield.objects.all()
+        queryset = _filter_sidefield_queryset(queryset, self.request.query_params,
+                                              srs=self.srs)
+        return queryset
+
+
+register_view(SidefieldViewSet, 'sidefield')
 
 
 class ImageSerializer(LinkedEventsSerializer):
@@ -1972,6 +2010,27 @@ def parse_duration_string(duration):
         mul = 24 * 3600
 
     return int(val) * mul
+
+
+def _filter_sidefield_queryset(queryset, params, srs=None):
+
+    # Filter by event type
+    val = params.get('type_id', None)
+    if val:
+        val = val.split(',')
+        q = Q()
+        for type_id_val in val:
+            if type_id_val.lower() == 'eventgeneral':
+                q = q | Q(type_id=Event.Type_Id.GENERAL)
+            elif type_id_val.lower() == 'eventcourse':
+                q = q | Q(type_id=Event.Type_Id.COURSE)
+            elif type_id_val.lower() == 'eventvolunteering':
+                q = q | Q(type_id=Event.Type_Id.VOLUNTEERING)
+            elif type_id_val.lower() == 'eventhobbies':
+                q = q | Q(type_id=Event.Type_Id.HOBBIES)
+        queryset = queryset.filter(q)
+
+    return queryset
 
 
 def _filter_image_queryset(queryset, params, srs=None):

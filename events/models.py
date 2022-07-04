@@ -470,8 +470,8 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
     search_column_fi = SearchVectorField(null=True)
     search_column_sv = SearchVectorField(null=True)
     search_column_en = SearchVectorField(null=True)
-    
-    class Meta:            
+
+    class Meta:
         verbose_name = _('place')
         verbose_name_plural = _('places')
         unique_together = (('data_source', 'origin_id'),)
@@ -494,9 +494,9 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         ,config language and weight.
         """
         if lang == "fi":
-            return [  
-                ("name_fi", "finnish", "A"),              
-            ]   
+            return [
+                ("name_fi", "finnish", "A"),
+            ]
         elif lang == "sv":
             return [
                 ("name_sv", "swedish", "A"),
@@ -936,6 +936,40 @@ class Offer(models.Model, SimpleValueMixin):
 
 
 reversion.register(Offer)
+
+
+class Sidefield(models.Model, SimpleValueMixin):
+
+    class Type_Id:
+        GENERAL = 1
+        COURSE = 2
+        VOLUNTEERING = 3
+        HOBBIES = 4
+
+    TYPE_IDS = (
+        (Type_Id.GENERAL, _("General")),
+        (Type_Id.COURSE, _("Course")),
+        (Type_Id.VOLUNTEERING, _("Volunteering")),
+        (Type_Id.HOBBIES, _("Hobbies")),
+    )
+
+    type_id = models.SmallIntegerField(blank=False, null=False, db_index=False,
+                                       default=Type_Id.GENERAL, choices=TYPE_IDS)
+
+    sidefieldset_name = models.CharField(verbose_name=_('Sidefield set name'), max_length=50, blank=True)
+
+    location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
+    location_mobile = models.CharField(verbose_name=_('Location Button'), max_length=50, blank=True)
+    umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=1000, blank=True)
+    umbrella_mobile = models.CharField(verbose_name=_('Umbrella Button'), max_length=50, blank=True)
+    times_sidefield = models.CharField(verbose_name=_('Times Sidefield'), max_length=1000, blank=True)
+    times_mobile = models.CharField(verbose_name=_('Times Button'), max_length=50, blank=True)
+    offers_sidefield = models.CharField(verbose_name=_('Offers Sidefield'), max_length=1000, blank=True)
+    offers_mobile = models.CharField(verbose_name=_('Offers Button'), max_length=50, blank=True)
+    keyword_sidefield = models.CharField(verbose_name=_('Keyword Sidefield'), max_length=1000, blank=True)
+    keyword_mobile = models.CharField(verbose_name=_('Keyword Button'), max_length=50, blank=True)
+    category_sidefield = models.CharField(verbose_name=_('Category Sidefield'), max_length=1000, blank=True)
+    category_mobile = models.CharField(verbose_name=_('Category Button'), max_length=50, blank=True)
 
 
 class EventLink(models.Model, SimpleValueMixin):
