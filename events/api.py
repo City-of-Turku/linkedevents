@@ -1808,7 +1808,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         links = validated_data.pop('external_links', None)
         videos = validated_data.pop('videos', None)
 
-        if instance.end_time and instance.end_time < timezone.now():
+        if (instance.end_time and instance.end_time < timezone.now()) and instance.publication_status != PublicationStatus.DRAFT:
             raise DRFPermissionDenied(_('Cannot edit a past event.'))
 
         # The API only allows scheduling and cancelling events.
