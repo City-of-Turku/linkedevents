@@ -73,7 +73,7 @@ from events.models import (
 from events.translation import EventTranslationOptions, ImageTranslationOptions
 from helevents.models import User
 from events.renderers import DOCXRenderer
-from events.signals import post_save, post_update
+from events.signals import post_save, post_update, post_delete
 
 
 def get_view_name(view):
@@ -1877,9 +1877,10 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             ext.post_update_event(
                 request=request, event=instance, data=original_validated_data)
 
-        post_update(instance)
         # update validated fields
         super().update(instance, validated_data)
+
+        post_update(instance)
 
         return instance
 
@@ -2662,7 +2663,10 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
     def perform_destroy(self, instance):
         if not self.request.user.can_edit_event(instance.publisher, instance.publication_status):
             raise DRFPermissionDenied()
+
         instance.soft_delete()
+
+        post_delete(instance)
 
     def retrieve(self, request, *args, **kwargs):
         try:
