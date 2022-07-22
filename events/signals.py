@@ -22,7 +22,7 @@ def place_post_save(sender, **kwargs):
     transaction.on_commit(populate_search_column(obj))
 
 
-def date_updator(instance):
+def date_updator(instance, *args, **kwargs):
     if instance.sub_event_type == 'sub_recurring':
         try:
             # Mothers values need to be updated based on the min child start_time and max end_time date.
@@ -66,10 +66,6 @@ def populate_search_column(obj):
     return on_commit
 
 
-def post_update(instance, *args, **kwargs):
-    date_updator(instance)
-
-
 def post_save(instance, *args, **kwargs):
     try:
         if instance.sub_event_type == 'sub_recurring':
@@ -80,10 +76,6 @@ def post_save(instance, *args, **kwargs):
             instance.super_event.save()
     except:
         pass
-
-
-def post_delete(instance, *args, **kwargs):
-    date_updator(instance)
 
 
 def organization_post_save(sender, instance, created, **kwargs):
