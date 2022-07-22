@@ -67,7 +67,6 @@ def populate_search_column(obj):
 
 
 def post_update(instance, *args, **kwargs):
-    #if instance.sub_event_type == 'sub_recurring':
     date_updator(instance)
 
 
@@ -84,7 +83,6 @@ def post_save(instance, *args, **kwargs):
 
 
 def post_delete(instance, *args, **kwargs):
-    #if instance.super_event_id:
     date_updator(instance)
 
 
