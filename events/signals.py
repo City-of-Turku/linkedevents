@@ -23,22 +23,23 @@ def place_post_save(sender, **kwargs):
 
 
 def date_updator(instance):
-    try:
-        # Mothers values need to be updated based on the min child start_time and max end_time date.
-        ev_objs = Event.objects.filter(super_event_id=instance.super_event.id).iterator(chunk_size=10)
-        '''
-        child_list appends both start_time and end_time values from the above returned query (mothers all children).
-        We can safely do this because logically, an end_time can never pre date a start_time. 
-        Max will always be an end_time and respectively; minimum will always be a start_time.
-        '''
-        child_list = [v for x in ev_objs if x.deleted == False and x.event_status != 2 for v in (x.start_time, x.end_time)]
-        
-        if child_list:
-            instance.super_event.start_time = min(child_list)
-            instance.super_event.end_time = max(child_list)
-            instance.super_event.save()
-    except Exception as e:
-        print(e)
+    if instance.sub_event_type == 'sub_recurring':
+        try:
+            # Mothers values need to be updated based on the min child start_time and max end_time date.
+            ev_objs = Event.objects.filter(super_event_id=instance.super_event.id).iterator(chunk_size=10)
+            '''
+            child_list appends both start_time and end_time values from the above returned query (mothers all children).
+            We can safely do this because logically, an end_time can never pre date a start_time. 
+            Max will always be an end_time and respectively; minimum will always be a start_time.
+            '''
+            child_list = [v for x in ev_objs if x.deleted == False and x.event_status != 2 for v in (x.start_time, x.end_time)]
+            
+            if child_list:
+                instance.super_event.start_time = min(child_list)
+                instance.super_event.end_time = max(child_list)
+                instance.super_event.save()
+        except Exception as e:
+            print(e)
 
 
 def populate_search_column(obj):
@@ -66,8 +67,8 @@ def populate_search_column(obj):
 
 
 def post_update(instance, *args, **kwargs):
-    if instance.sub_event_type == 'sub_recurring':
-        date_updator(instance)
+    #if instance.sub_event_type == 'sub_recurring':
+    date_updator(instance)
 
 
 def post_save(instance, *args, **kwargs):
@@ -83,8 +84,8 @@ def post_save(instance, *args, **kwargs):
 
 
 def post_delete(instance, *args, **kwargs):
-    if instance.super_event_id:
-        date_updator(instance)
+    #if instance.super_event_id:
+    date_updator(instance)
 
 
 def organization_post_save(sender, instance, created, **kwargs):
