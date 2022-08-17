@@ -1373,6 +1373,8 @@ class OrganizationUpdateSerializer(OrganizationBaseSerializer):
 
 
 class OrganizationListSerializer(LinkedEventsSerializer):
+    view_name = 'organization-detail'
+
     parent_organization = serializers.HyperlinkedRelatedField(
         queryset=Organization.objects.all(),
         source='parent',
