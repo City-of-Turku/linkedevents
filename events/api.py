@@ -1277,54 +1277,6 @@ class OrganizationBaseSerializer(LinkedEventsSerializer):
         fields = '__all__'
 
 
-class OrganizationListSerializer(LinkedEventsSerializer):
-    view_name = 'organization-detail'
-
-    parent_organization = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        source='parent',
-        view_name='organization-detail',
-    )
-    sub_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        view_name='organization-detail',
-        many=True,
-    )
-    affiliated_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        view_name='organization-detail',
-        many=True,
-    )
-    replaced_by = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        view_name='organization-detail',
-    )
-    is_affiliated = serializers.SerializerMethodField()
-    has_regular_users = serializers.SerializerMethodField()
-    created_time = DateTimeField(
-        default_timezone=pytz.UTC, required=False, allow_null=True)
-    last_modified_time = DateTimeField(
-        default_timezone=pytz.UTC, required=False, allow_null=True)
-
-    class Meta:
-        model = Organization
-        fields = (
-            'id', 'data_source', 'origin_id',
-            'classification', 'name', 'founding_date',
-            'dissolution_date', 'parent_organization',
-            'sub_organizations', 'affiliated_organizations',
-            'created_time', 'last_modified_time', 'created_by',
-            'last_modified_by', 'is_affiliated', 'replaced_by',
-            'has_regular_users'
-        )
-
-    def get_is_affiliated(self, obj):
-        return obj.internal_type == Organization.AFFILIATED
-
-    def get_has_regular_users(self, obj):
-        return obj.regular_users.count() > 0
-
-
 class OrganizationCreateSerializer(OrganizationBaseSerializer):
 
     def validate(self, data):
@@ -1418,6 +1370,52 @@ class OrganizationUpdateSerializer(OrganizationBaseSerializer):
         # self.connected_organizations('sub_organizations', org)
         # self.connected_organizations('affiliated_organizations', org)
         return org
+
+
+class OrganizationListSerializer(LinkedEventsSerializer):
+    parent_organization = serializers.HyperlinkedRelatedField(
+        queryset=Organization.objects.all(),
+        source='parent',
+        view_name='organization-detail',
+    )
+    sub_organizations = serializers.HyperlinkedRelatedField(
+        queryset=Organization.objects.all(),
+        view_name='organization-detail',
+        many=True,
+    )
+    affiliated_organizations = serializers.HyperlinkedRelatedField(
+        queryset=Organization.objects.all(),
+        view_name='organization-detail',
+        many=True,
+    )
+    replaced_by = serializers.HyperlinkedRelatedField(
+        queryset=Organization.objects.all(),
+        view_name='organization-detail',
+    )
+    is_affiliated = serializers.SerializerMethodField()
+    has_regular_users = serializers.SerializerMethodField()
+    created_time = DateTimeField(
+        default_timezone=pytz.UTC, required=False, allow_null=True)
+    last_modified_time = DateTimeField(
+        default_timezone=pytz.UTC, required=False, allow_null=True)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'id', 'data_source', 'origin_id',
+            'classification', 'name', 'founding_date',
+            'dissolution_date', 'parent_organization',
+            'sub_organizations', 'affiliated_organizations',
+            'created_time', 'last_modified_time', 'created_by',
+            'last_modified_by', 'is_affiliated', 'replaced_by',
+            'has_regular_users'
+        )
+
+    def get_is_affiliated(self, obj):
+        return obj.internal_type == Organization.AFFILIATED
+
+    def get_has_regular_users(self, obj):
+        return obj.regular_users.count() > 0
 
 
 class OrganizationDetailSerializer(OrganizationListSerializer):
