@@ -23,6 +23,9 @@ def place_post_save(sender, **kwargs):
 
 
 def date_updator(instance, *args, **kwargs):
+    #print("--------1---------date updator was called!!!-----1-------")
+    #print("--------2---------date updator was called!!!-----2-------")
+    #print("--------3---------date updator was called!!!-----3-------")
     if instance.sub_event_type == 'sub_recurring':
         try:
             # Mothers values need to be updated based on the min child start_time and max end_time date.
@@ -68,6 +71,9 @@ def populate_search_column(obj):
 
 
 def post_save(instance, *args, **kwargs):
+    #print("--------1---------POST SAVE was called!!!-----1-------")
+    #print("--------2---------POST SAVE was called!!!-----2-------")
+    #print("--------3---------POST SAVE was called!!!-----3-------")
     try:
         if instance.sub_event_type == 'sub_recurring':
             if instance.start_time < instance.super_event.start_time:
@@ -92,6 +98,7 @@ def organization_post_save(sender, instance, created, **kwargs):
 
 
 def user_post_save(sender, instance, created, **kwargs):
+    #print("---------------- USER POST SAVE IN SIGNALS CALLED -------------------")
     if created:
         User = get_user_model()
         org = Organization.objects.get(id='yksilo:2000')

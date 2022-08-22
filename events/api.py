@@ -1617,6 +1617,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
     is_owner = serializers.SerializerMethodField()
 
     def get_is_owner(self, obj):
+        #print("get is owner 1620")
         request = self.context['request']
         return obj.created_by == request.user
 
@@ -1632,6 +1633,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
                     ext.identifier)] = ext.get_extension_serializer()
 
     def parse_datetimes(self, data):
+        #print("parse datetimes 1636")
         # here, we also set has_start_time and has_end_time accordingly
         for field in ['date_published', 'start_time', 'end_time']:
             val = data.get(field, None)
@@ -1642,11 +1644,13 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         return data
 
     def to_internal_value(self, data):
+        #print("to internal value 1647")
         data = self.parse_datetimes(data)
         data = super().to_internal_value(data)
         return data
 
     def validate(self, data):
+        #print("validateee 1653")
         # clean all text fields, only description may contain any html
         data = clean_text_fields(data, allowed_html_fields=['description'])
 
@@ -1745,6 +1749,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         return data
 
     def run_extension_validations(self, data):
+        #print("run extensions validations 1752")
         for ext in self.context.get('extensions', ()):
             new_data = ext.validate_event_data(self, data)
             if new_data:
@@ -1752,6 +1757,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         return data
 
     def create(self, validated_data):
+        #print("create 1760")
         # if id was not provided, we generate it upon creation:
         if 'id' not in validated_data:
             validated_data['id'] = generate_id(self.data_source)
@@ -1804,6 +1810,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         return event
 
     def update(self, instance, validated_data):
+        #print("update 1813")
         offers = validated_data.pop('offers', None)
         links = validated_data.pop('external_links', None)
         videos = validated_data.pop('videos', None)
@@ -1885,6 +1892,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         return instance
 
     def to_representation(self, obj):
+        #print("to representation 1895")
         ret = super(EventSerializer, self).to_representation(obj)
 
         if obj.deleted:
@@ -2497,20 +2505,24 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         self.organization = None
 
     def initial(self, request, *args, **kwargs):
+        #print("get 2500")
         super().initial(request, *args, **kwargs)
         self.data_source, self.organization = get_authenticated_data_source_and_publisher(
             request)
 
     @staticmethod
     def get_serializer_class_for_version(version):
+        #print("get 2506")
         if version == 'v0.1':
             return EventSerializerV0_1
         return EventSerializer
 
     def get_serializer_class(self):
+        #print("get serializer class 2511")
         return EventViewSet.get_serializer_class_for_version(self.request.version)
 
     def get_serializer_context(self):
+        #print("get serializer context 2514")
         context = super(EventViewSet, self).get_serializer_context()
         context.setdefault('skip_fields', set()).update(set([
             'headline',
@@ -2519,6 +2531,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         return context
 
     def get_queryset(self):
+        #print("get querysetti 2522")
         queryset = super().get_queryset()
         context = self.get_serializer_context()
         # prefetch extra if the user want them included
@@ -2537,6 +2550,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         )
 
     def get_object(self):
+        #print("get object 2540")
         # Overridden to prevent queryset filtering from being applied
         # outside list views.
         try:
@@ -2556,6 +2570,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
             raise Http404("Event does not exist")
 
     def filter_queryset(self, queryset):
+        #print("filter querysetti 2559")
         """
         TODO: convert to use proper filter framework
         """
@@ -2599,6 +2614,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         return False
 
     def update(self, *args, **kwargs):
+        #print("update 2602")
         response = super().update(*args, **kwargs)
         original_event = Event.objects.get(id=response.data['id'])
         if original_event.replaced_by is not None:
@@ -2609,6 +2625,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         return response
 
     def perform_update(self, serializer):
+        #print("perform update 2612")
         # Prevent changing an event that user does not have write permissions
         # For bulk update, the editable queryset is filtered in filter_queryset
         # method
@@ -2635,13 +2652,16 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
 
     @atomic
     def bulk_update(self, request, *args, **kwargs):
+        #print("Bulk update rivi 2638")
         return super().bulk_update(request, *args, **kwargs)
 
     @atomic
     def create(self, request, *args, **kwargs):
+        #print("create 2643")
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
+        #print("perform create. 2647")
         if isinstance(serializer.validated_data, list):
             event_data_list = serializer.validated_data
         else:
@@ -2668,6 +2688,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         date_updator(instance)
 
     def retrieve(self, request, *args, **kwargs):
+        #print("retreive 2674")
         try:
             event = Event.objects.get(pk=kwargs['pk'])
         except Event.DoesNotExist:
@@ -2681,6 +2702,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         return super().retrieve(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
+        #print("list 2688")
         # docx renderer has additional requirements for listing events
         if request.accepted_renderer.format == 'docx':
             if not request.query_params.get('location'):
@@ -2696,6 +2718,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         return super().list(request, *args, **kwargs)
 
     def finalize_response(self, request, response, *args, **kwargs):
+        #print("2704 finalize resopnse")
         # Switch to normal renderer for docx errors.
         response = super().finalize_response(request, response, *args, **kwargs)
         # Prevent rendering errors as DOCX files
