@@ -37,6 +37,7 @@ def date_updator(instance, *args, **kwargs):
             if child_list:
                 instance.super_event.start_time = min(child_list)
                 instance.super_event.end_time = max(child_list)
+                instance.super_event.publication_status = instance.publication_status
                 instance.super_event.save()
         except Exception as e:
             print(e)
