@@ -134,18 +134,22 @@ class ImageBankImporter(Importer):
 
             return 'images/%s.webp' % img_file_name
 
-
         # Loop through URLs and generate the actual DB image object.
         for img_url in image_bank_images:
-            new_image = Image(data_source=getattr(self, 'data_source_image'))
-            for props in ('name', 'photographer_name', 'alt_text'):
-                setattr(new_image, props, '')
-            new_image.license = self.cc_by_license
-            new_image.publisher = getattr(self, 'organization')
             new_image_id = _request_image_url(url=img_url)
-            new_image.image = new_image_id
-            new_image.save()
-            logger.info("Saved new image ID: %s" % new_image_id)
+            queryset = Image.objects.filter(image=new_image_id)
+
+            if not queryset:
+                new_image = Image(data_source=getattr(self, 'data_source_image'))
+                for props in ('name', 'photographer_name', 'alt_text'):
+                    setattr(new_image, props, '')
+                new_image.license = self.cc_by_license
+                new_image.publisher = getattr(self, 'organization')
+                new_image.image = new_image_id
+                new_image.save()
+                logger.info("Saved new image ID: %s" % new_image_id)
+            else:
+                logger.info("The image with the ID: %s already exists. There are %s of them. Skipping..." % (new_image_id, queryset.count()))
 
     def handle(self) -> None:
         """The core handler function."""
