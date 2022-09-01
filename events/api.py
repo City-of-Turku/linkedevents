@@ -1616,6 +1616,10 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         required=False, allow_null=False)
     is_owner = serializers.SerializerMethodField()
 
+    is_private = serializers.BooleanField(
+        required=False, allow_null=False
+    )
+
     def get_is_owner(self, obj):
         request = self.context['request']
         return obj.created_by == request.user
@@ -1651,6 +1655,10 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         data = clean_text_fields(data, allowed_html_fields=['description'])
 
         data = super().validate(data)
+
+        super_event = data.get('super_event', None)
+        self.validate_private_event(super_event)
+
 
         if 'publication_status' not in data:
             data['publication_status'] = PublicationStatus.PUBLIC
@@ -1802,6 +1810,17 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         post_save(event)
 
         return event
+    
+    def validate_private_event(self, event):
+        if not event or not event.is_private:
+            return
+        request = self.context['request']
+        user = request.user
+        query = Q(admin_users__pk=user.pk) | Q(private_users__pk=user.pk)
+        organization = Organization.objects.filter(query, pk=event.publisher.pk)
+        if not organization.exists():
+            raise DRFPermissionDenied(_('Not part of this organization.'))
+
 
     def update(self, instance, validated_data):
         offers = validated_data.pop('offers', None)

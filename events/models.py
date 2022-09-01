@@ -659,6 +659,8 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
     event_status = models.SmallIntegerField(verbose_name=_('Event status'), choices=STATUSES,
                                             default=Status.SCHEDULED)
 
+    is_private = models.BooleanField(verbose_name=_('Private event'), default=False)
+
     # Whether or not this data about the event is ready to be viewed by the general public.
     # DRAFT means the data is considered incomplete or is otherwise undergoing refinement --
     # or just waiting to be published for other reasons.

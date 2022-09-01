@@ -260,3 +260,6 @@ msgstr "Vapaa pääsy"
 
 #~ msgid "Set if the event is in a given language"
 #~ msgstr "Aseta jos tapahtuma järjestetään tietyllä kielellä"
+
+msgid "Private event"
+msgstr "Yksityinen tapahtuma"
