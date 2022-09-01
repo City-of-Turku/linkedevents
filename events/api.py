@@ -1816,7 +1816,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             return
         request = self.context['request']
         user = request.user
-        query = Q(admin_users__pk=user.pk) | Q(private_users__pk=user.pk)
+        query = Q(admin_users__pk=user.pk) | Q(private_users__pk=user.pk) | Q(regular_users__pk=user.pk)
         organization = Organization.objects.filter(query, pk=event.publisher.pk)
         if not organization.exists():
             raise DRFPermissionDenied(_('Not part of this organization.'))
