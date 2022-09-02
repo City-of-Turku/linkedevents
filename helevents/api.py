@@ -38,10 +38,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser:
-            return self.queryset
+        queryset = self.queryset
+        email = self.request.query_params.get('email')
+    
+        if email is not None:
+            queryset = queryset.filter(email=email)
+
+        if user.is_superuser or (user.is_admin(user.get_default_organization()) and email):
+            return queryset
         else:
-            return self.queryset.filter(pk=user.pk)
+            return queryset.filter(pk=user.pk)
 
     def get_object(self):
         username = self.kwargs.get('username', None)
