@@ -23,6 +23,7 @@ djangorestframework
 djangorestframework-bulk
 djangorestframework-gis
 djangorestframework-jwt
+drf-yasg # Swagger
 easy_thumbnails
 elasticsearch
 httmock
