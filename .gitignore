@@ -5,7 +5,7 @@
 *.sqlite3
 *.pickle
 local_settings.py
-static/CACHE
+static/
 media/
 .vagrant/
 .idea

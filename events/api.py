@@ -559,7 +559,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # post and put methods need further authentication
         self.data_source, self.publisher = get_authenticated_data_source_and_publisher(
             self.request)
-        if not self.publisher:
+        if not self.publisher and not getattr(context['view'], 'swagger_fake_view', False):
             raise PermissionDenied(
                 _("User doesn't belong to any organization"))
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
@@ -788,6 +788,7 @@ class JSONAPIViewMixin(object):
         return ret
 
     def get_serializer_context(self):
+        self.srs = getattr(self, 'srs', srid_to_srs(None))
         context = super().get_serializer_context()
         # user admin ids must be injected to the context for nested serializers, to avoid duplicating work
         user = context['request'].user
@@ -1403,10 +1404,9 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Sidefield.objects.all()
     serializer_class = SidefieldSerializer
     filter_backends = (filters.OrderingFilter,)
-    #orderingfields = ('')
-    #ordering = ('')
 
     def get_queryset(self):
+        self.srs = getattr(self, 'srs', srid_to_srs(None))
         queryset = Sidefield.objects.all()
         queryset = _filter_sidefield_queryset(queryset, self.request.query_params,
                                               srs=self.srs)
@@ -1476,6 +1476,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
     ordering = ('-last_modified_time',)
 
     def get_queryset(self):
+        self.srs = getattr(self, 'srs', srid_to_srs(None))
         queryset = Image.objects.all()
         publisher = self.request.query_params.get('publisher', None)
         if publisher:
