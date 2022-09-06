@@ -43,7 +43,7 @@ if settings.USE_SWAGGER_OPENAPI_VIEW:
         permission_classes=(permissions.AllowAny,),
     )
     urlpatterns.extend([
-        re_path(r'api(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-        re_path(r'api/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-        re_path(r'redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+        re_path(r'^(?P<version>(v0.1|v1))/docs/api(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+        re_path(r'^(?P<version>(v0.1|v1))/docs/api/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+        re_path(r'^(?P<version>(v0.1|v1))/docs/redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     ])
