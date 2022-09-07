@@ -28,6 +28,18 @@ class UserApiTests(APITestCase):
             origin_id='org-1',
             data_source=data_source,
         )
+        self.org_1_child_1 = Organization.objects.create(
+            name='org-1-child-1',
+            origin_id='org-1-child-1',
+            data_source=data_source,
+            parent=self.org_1,
+        )
+        self.org_1_child_2 = Organization.objects.create(
+            name='org-1-child-2',
+            origin_id='org-1-child-2',
+            data_source=data_source,
+            parent=self.org_1,
+        )
         self.org_2 = Organization.objects.create(
             name='org-2',
             origin_id='org-2',
@@ -123,6 +135,45 @@ class UserApiTests(APITestCase):
         self.client.force_authenticate(self.user_2)
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_update_organization_levels_success_for_parent_organization_admin(self):
+        '''Tests that admin users of target organization parent can update org levels'''
+        url = reverse('user-detail', kwargs={'pk': self.user_1.username}) + 'update_organization_levels/'
+        data = {
+            'organization': self.org_1_child_1.id,
+            'organization_levels': {'admin': True, 'regular': False, 'private': False}
+        }
+        self.org_1.admin_users.add(self.user_2)
+        self.client.force_authenticate(self.user_2)
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+    def test_update_organization_levels_raises_403_for_child_organization_admin(self):
+        '''Tests that admin users of target organization child cannot update org levels'''
+        url = reverse('user-detail', kwargs={'pk': self.user_1.username}) + 'update_organization_levels/'
+        data = {
+            'organization': self.org_1.id,
+            'organization_levels': {'admin': True, 'regular': False, 'private': False}
+        }
+        self.org_1_child_1.admin_users.add(self.user_2)
+        self.client.force_authenticate(self.user_2)
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_update_organization_levels_raises_403_for_sibling_organization_admin(self):
+        '''Tests that admin users of target organization sibling cannot update org levels'''
+        url = reverse('user-detail', kwargs={'pk': self.user_1.username}) + 'update_organization_levels/'
+        data = {
+            'organization': self.org_1_child_2.id,
+            'organization_levels': {'admin': True, 'regular': False, 'private': False}
+        }
+        self.org_1_child_1.admin_users.add(self.user_2)
+        self.client.force_authenticate(self.user_2)
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
     def test_update_organization_levels_raises_400_when_given_org_is_invalid_or_missing(self):
@@ -284,6 +335,40 @@ class UserApiTests(APITestCase):
         self.assertEqual(len(data), 2)
         self.assertEqual(data[0].get('username'), self.user_1.username)
         self.assertEqual(data[1].get('username'), self.user_2.username)
+
+
+    def test_get_users_organization_filtered_returns_correct_user_data_for_parent_admins(self):
+        '''Tests that parent organization admins can filter users with their child organization'''
+        url = reverse('user-list') + f'?organization={self.org_1_child_1.id}'
+        self.client.force_authenticate(self.user_1)
+        self.org_1.admin_users.add(self.user_1)
+        self.org_1_child_1.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0].get('username'), self.user_2.username)
+
+
+    def test_get_users_organization_filtered_returns_empty_list_for_child_admins(self):
+        '''Tests that organization admins cannot filter users with their parent organization'''
+        url = reverse('user-list') + f'?organization={self.org_1.id}'
+        self.client.force_authenticate(self.user_1)
+        self.org_1_child_1.admin_users.add(self.user_1)
+        self.org_1.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+
+    def test_get_users_organization_filtered_returns_empty_list_for_sibling_admins(self):
+        '''Tests that organization admins cannot filter users with their sibling organization'''
+        url = reverse('user-list') + f'?organization={self.org_1_child_2.id}'
+        self.client.force_authenticate(self.user_1)
+        self.org_1_child_1.admin_users.add(self.user_1)
+        self.org_1_child_2.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
 
 
     def test_get_users_organization_filtered_returns_empty_list_for_other_admins(self):
