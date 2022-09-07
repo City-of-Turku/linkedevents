@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django_orghierarchy.models import Organization
+from django.db.models import Q
 
 
 all_views = []
@@ -123,8 +124,19 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         email = self.request.query_params.get('email')
     
-        if email is not None:
+        if email:
             queryset = queryset.filter(email=email)
+        
+        org_id = self.request.query_params.get('organization')
+        if org_id:
+            if user.is_superuser or user.is_admin(self._get_organization(org_id)):
+                return queryset.filter(
+                    Q(admin_organizations=org_id)
+                    | Q(organization_memberships=org_id)
+                    | Q(public_memberships=org_id)
+                ).distinct()
+            else:
+                return queryset.none()
 
         if user.is_superuser or (user.is_admin(user.get_default_organization()) and email):
             return queryset

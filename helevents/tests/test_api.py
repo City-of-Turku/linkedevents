@@ -231,3 +231,110 @@ class UserApiTests(APITestCase):
         data = response.data.get('data')
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0].get('username'), self.user_2.username)
+
+
+    def test_get_users_organization_filtered_returns_correct_user_data_for_superusers(self):
+        '''Tests that superusers can filter users with organization'''
+        url = reverse('user-list') + f'?organization={self.org_1.id}'
+        self.client.force_authenticate(self.superuser)
+        response = self.client.get(url, format='json')
+
+        # when org 1 has no members
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+        # when org 1 has one member
+        self.org_1.regular_users.add(self.user_1)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0].get('username'), self.user_1.username)
+
+        # when org 1 has two members
+        self.org_1.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0].get('username'), self.user_1.username)
+        self.assertEqual(data[1].get('username'), self.user_2.username)
+
+        # getting users from org 2 does not return users from org 1
+        url = reverse('user-list') + f'?organization={self.org_2.id}'
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+        # when org 2 has one member
+        self.org_2.admin_users.add(self.user_1)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0].get('username'), self.user_1.username)
+
+
+    def test_get_users_organization_filtered_returns_correct_user_data_for_own_admins(self):
+        '''Tests that organization admins can filter users with their own organization'''
+        url = reverse('user-list') + f'?organization={self.org_1.id}'
+        self.client.force_authenticate(self.user_1)
+        self.org_1.admin_users.add(self.user_1)
+        self.org_1.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0].get('username'), self.user_1.username)
+        self.assertEqual(data[1].get('username'), self.user_2.username)
+
+
+    def test_get_users_organization_filtered_returns_empty_list_for_other_admins(self):
+        '''Tests that organization admins cannot filter users with other than own organizations'''
+        url = reverse('user-list') + f'?organization={self.org_2.id}'
+        self.client.force_authenticate(self.user_1)
+        self.org_1.admin_users.add(self.user_1)
+        self.org_2.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+
+    def test_get_users_organization_filtered_returns_empty_list_for_other_than_admins(self):
+        '''Tests that users that are not superusers or admins cannot filter with organization'''
+        url = reverse('user-list') + f'?organization={self.org_1.id}'
+        self.client.force_authenticate(self.user_1)
+        self.org_1.private_users.add(self.user_2)
+
+        # no rights
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+        # private user
+        self.org_1.private_users.add(self.user_1)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+        # regular user
+        self.org_1.private_users.remove(self.user_1)
+        self.org_1.regular_users.add(self.user_1)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 0)
+
+        # admin user
+        self.org_1.regular_users.remove(self.user_1)
+        self.org_1.admin_users.add(self.user_1)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+
+    
+    def test_get_users_organization_filtered_returns_unique_users(self):
+        '''Tests that users with multiple rights are returned only once'''
+        url = reverse('user-list') + f'?organization={self.org_1.id}'
+        self.client.force_authenticate(self.superuser)
+        self.org_1.regular_users.add(self.user_2)
+        self.org_1.private_users.add(self.user_2)
+        response = self.client.get(url, format='json')
+        data = response.data.get('data')
+        self.assertEqual(len(data), 1)
