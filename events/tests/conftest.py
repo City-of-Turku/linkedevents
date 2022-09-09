@@ -100,7 +100,16 @@ def other_data_source():
 
 @pytest.mark.django_db
 @pytest.fixture
-def user():
+def yksilo_data_source():
+    return DataSource.objects.create(
+        id="yksilo",
+        api_key="yksilo"
+    )
+
+
+@pytest.mark.django_db
+@pytest.fixture
+def user(organization_yksilo):
     return get_user_model().objects.create(
         username='test_user',
         first_name='Cem',
@@ -111,7 +120,7 @@ def user():
 
 @pytest.mark.django_db
 @pytest.fixture
-def user2():
+def user2(organization_yksilo):
     return get_user_model().objects.create(
         username='test_user2',
         first_name='Brendan',
@@ -122,7 +131,7 @@ def user2():
 
 @pytest.mark.django_db
 @pytest.fixture
-def super_user():
+def super_user(organization_yksilo):
     return get_user_model().objects.create(
         username='super_user',
         first_name='Super',
@@ -170,6 +179,18 @@ def organization3(other_data_source, user2):
         data_source=other_data_source,
     )
     org.admin_users.add(user2)
+    org.save()
+    return org
+
+
+@pytest.mark.django_db
+@pytest.fixture
+def organization_yksilo(yksilo_data_source):
+    org, created = Organization.objects.get_or_create(
+        origin_id='2000',
+        name="yksilo",
+        data_source=yksilo_data_source,
+    )
     org.save()
     return org
 

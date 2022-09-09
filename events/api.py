@@ -1595,8 +1595,8 @@ class OfferSerializer(TranslatedModelSerializer):
 
 
 class SidefieldSerializer(TranslatedModelSerializer):
-    type_id = EnumChoiceField(Event.TYPE_IDS, required=False)
-    sidefieldset_name = serializers.CharField(required=False)
+    type_id = EnumChoiceField(Event.TYPE_IDS, required=False, read_only=True)
+    sidefieldset_name = serializers.CharField(required=False, read_only=True)
     location_sidefield = serializers.CharField(required=False)
     location_mobile = serializers.CharField(required=False)
     umbrella_sidefield = serializers.CharField(required=False)
@@ -1610,17 +1610,38 @@ class SidefieldSerializer(TranslatedModelSerializer):
     category_sidefield = serializers.CharField(required=False)
     category_mobile = serializers.CharField(required=False)
 
+
+    def to_representation(self, obj):
+        representation = super().to_representation(obj)
+        request = self.context['request']
+        user = request.user
+        if not user.is_superuser and not user.is_staff:
+            representation.pop('id')
+        return representation
+
+
     class Meta:
         model = Sidefield
-        exclude = ['id']
+        fields = '__all__'
 
 
-class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+class SidefieldPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if request.method == 'GET':
+            return True
+        elif request.method in ('PUT', 'PATCH'):
+            return user.is_superuser or user.is_staff
+        else:
+            return False
+
+
+class SidefieldViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
     queryset = Sidefield.objects.all()
     serializer_class = SidefieldSerializer
     filter_backends = (filters.OrderingFilter,)
-    #orderingfields = ('')
-    #ordering = ('')
+    permission_classes = (SidefieldPermission,)
+    ordering = ('id',)
 
     def get_queryset(self):
         queryset = Sidefield.objects.all()

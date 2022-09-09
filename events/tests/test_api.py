@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase
 from .utils import versioned_reverse as reverse
 from ..api import get_authenticated_data_source_and_publisher, EventSerializer, OrganizationSerializer
 from ..auth import ApiKeyAuth
-from ..models import DataSource, Image
+from ..models import DataSource, Image, Sidefield
 
 
 @pytest.mark.django_db
@@ -49,7 +49,7 @@ def test_get_authenticated_data_source_and_publisher(data_source):
 
 
 @pytest.mark.django_db
-def test_serializer_validate_publisher():
+def test_serializer_validate_publisher(organization_yksilo):
     data_source = DataSource.objects.create(
         id='ds',
         name='data-source',
@@ -84,6 +84,15 @@ class TestOrganizationSerializer(TestCase):
         data_source = DataSource.objects.create(
             id='ds',
             name='data-source',
+        )
+        data_source_yksilo = DataSource.objects.create(
+            id='yksilo',
+            name='yksilo',
+        )
+        self.org_private_users = Organization.objects.create(
+            name='yksilo',
+            origin_id='2000',
+            data_source=data_source_yksilo,
         )
         self.normal_org = Organization.objects.create(
             name='normal_org',
@@ -172,17 +181,231 @@ class TestOrganizationAPI(APITestCase):
         self.assertEqual(parent.pop('id'), self.org.id)
 
 
+class TestSideFieldAPI(APITestCase):
+    def setUp(self) -> None:
+        user_model = get_user_model()
+
+        self.sidefield_1 = Sidefield.objects.create(
+            type_id=Sidefield.Type_Id.GENERAL,
+            sidefieldset_name='sidefield 1',
+        )
+        self.sidefield_2 = Sidefield.objects.create(
+            type_id=Sidefield.Type_Id.GENERAL,
+            sidefieldset_name='sidefield 2',
+        )
+        self.data_source = DataSource.objects.create(
+            id='ds',
+            name='data-source',
+            api_key='test_api_key',
+            user_editable=True,
+        )
+        data_source_yksilo = DataSource.objects.create(
+            id='yksilo',
+            name='yksilo',
+        )
+        self.org_private_users = Organization.objects.create(
+            name='yksilo',
+            origin_id='2000',
+            data_source=data_source_yksilo,
+        )
+        self.org_1 = Organization.objects.create(
+            name='org-1',
+            origin_id='org-1',
+            data_source=self.data_source,
+        )
+        self.user_1 = user_model.objects.create(
+            username='user_1',
+            first_name='Test1',
+            last_name='Tester1',
+            email='test1@tester1.com',
+        )
+        self.staff_user = user_model.objects.create(
+            username='staff_user',
+            first_name='Staff',
+            last_name='Tester',
+            email='staff@tester.com',
+            is_staff=True,
+        )
+        self.superuser = user_model.objects.create(
+            username='super_user',
+            first_name='Super',
+            last_name='Tester',
+            email='super@tester.com',
+            is_superuser=True,
+        )
+
+
+    def test_everyone_can_get_sidefield_list(self):
+        '''Tests that all users can GET all sidefields'''
+        url = reverse('sidefield-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+
+        self.client.force_authenticate(self.user_1)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data.get('data')
+        self.assertEqual(len(data), 2)
+
+
+    def test_everyone_can_get_sidefield_detail(self):
+        '''Tests that all users can GET a single sidefield'''
+        url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sidefieldset_name'], self.sidefield_1.sidefieldset_name)
+
+        self.client.force_authenticate(self.user_1)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sidefieldset_name'], self.sidefield_1.sidefieldset_name)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sidefieldset_name'], self.sidefield_1.sidefieldset_name)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['sidefieldset_name'], self.sidefield_1.sidefieldset_name)
+
+
+    def test_superuser_and_staff_can_update_sidefields(self):
+        '''Tests that superusers and staff can make updates to sidefields'''
+        url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
+
+        self.client.force_authenticate(self.staff_user)
+        staff_update = {'fi': 'staff', 'sv': 'staff', 'en': 'staff'}
+        data = {'location_sidefield': staff_update}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['location_sidefield'], staff_update)
+
+        self.client.force_authenticate(self.superuser)
+        superuser_update = {'fi': 'super', 'sv': 'super', 'en': 'super'}
+        data = {'location_sidefield': superuser_update}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['location_sidefield'], superuser_update)
+
+
+    def test_staff_and_superusers_cannot_update_type_id_or_sidefieldset_name(self):
+        '''Tests that staff and superusers cannot update sidefield type id or name'''
+        url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
+        original_type_id = dict(Sidefield.TYPE_IDS)[self.sidefield_1.type_id]
+        original_sidefieldset_name = self.sidefield_1.sidefieldset_name
+
+        self.client.force_authenticate(self.staff_user)
+        data = {'type_id': 'staff test', 'sidefieldset_name': 'staff test'}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['type_id'], original_type_id)
+        self.assertEqual(response.data['sidefieldset_name'], original_sidefieldset_name)
+
+        self.client.force_authenticate(self.superuser)
+        data = {'type_id': 'superuser test', 'sidefieldset_name': 'superuser test'}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['type_id'], original_type_id)
+        self.assertEqual(response.data['sidefieldset_name'], original_sidefieldset_name)
+
+    
+    def test_anon_and_normal_users_cannot_update_sidefields(self):
+        '''
+        Tests that anonymous and users without staff or superuser
+        perms cannot update sidefields
+        '''
+        url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
+
+        anon_update = {'fi': 'anon', 'sv': 'anon', 'en': 'anon'}
+        data = {'location_sidefield': anon_update}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        self.client.force_authenticate(self.user_1)
+        normal_update = {'fi': 'normal', 'sv': 'normal', 'en': 'normal'}
+        data = {'location_sidefield': normal_update}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_no_one_can_post_sidefield(self):
+        '''Tests that post sidefield cannot be done by anyone'''
+        url = reverse('sidefield-list')
+        data = {
+            'type_id': Sidefield.Type_Id.COURSE,
+            'sidefieldset_name': 'test sidefield'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        self.client.force_authenticate(self.user_1)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_no_one_can_delete_sidefield(self):
+        '''Tests that delete sidefield cannot be done by anyone'''
+        url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
+
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        self.client.force_authenticate(self.user_1)
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(self.staff_user)
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(self.superuser)
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class TestImageAPI(APITestCase):
 
     def setUp(self):
         user_model = get_user_model()
-        self.user = user_model.objects.create(username='testuser')
 
         self.data_source = DataSource.objects.create(
             id='ds',
             name='data-source',
             api_key='test_api_key',
             user_editable=True,
+        )
+        data_source_yksilo = DataSource.objects.create(
+            id='yksilo',
+            name='yksilo',
+        )
+        self.org_private_users = Organization.objects.create(
+            name='yksilo',
+            origin_id='2000',
+            data_source=data_source_yksilo,
         )
         self.org_1 = Organization.objects.create(
             name='org-1',
@@ -218,6 +441,8 @@ class TestImageAPI(APITestCase):
             publisher=self.org_3,
             url='http://fake.url/image-2/',
         )
+        self.user = user_model.objects.create(username='testuser')
+
 
     def test_get_image_list_with_publisher(self):
         # test filtering with replaced organization
