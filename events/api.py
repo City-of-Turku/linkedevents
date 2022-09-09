@@ -1551,6 +1551,27 @@ class OrganizationViewSet(JSONAPIViewMixin,
 register_view(OrganizationViewSet, 'organization')
 
 
+class DataSourceSerializer(LinkedEventsSerializer):
+    view_name = 'data_source-list'
+
+    class Meta:
+        model = DataSource
+        exclude = ['api_key']
+
+
+class DataSourceViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = DataSource.objects.all()
+    serializer_class = DataSourceSerializer
+
+    def list(self, request, *args, **kwargs):
+        if isinstance(request.user, AnonymousUser) or request.user.get_default_organization() is None:
+            raise DRFPermissionDenied('Only admin users are allowed to see datasources.')
+        return super().list(request, *args, **kwargs)
+
+
+register_view(DataSourceViewSet, 'data_source')
+
+
 class EventLinkSerializer(serializers.ModelSerializer):
     def to_representation(self, obj):
         ret = super(EventLinkSerializer, self).to_representation(obj)
@@ -1610,7 +1631,6 @@ class SidefieldSerializer(TranslatedModelSerializer):
     category_sidefield = serializers.CharField(required=False)
     category_mobile = serializers.CharField(required=False)
 
-
     def to_representation(self, obj):
         representation = super().to_representation(obj)
         request = self.context['request']
@@ -1618,7 +1638,6 @@ class SidefieldSerializer(TranslatedModelSerializer):
         if not user.is_superuser and not user.is_staff:
             representation.pop('id')
         return representation
-
 
     class Meta:
         model = Sidefield
