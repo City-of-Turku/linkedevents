@@ -50,3 +50,41 @@ class TestOrganizationPostSave(TestCase):
 
         self.data_source_1.refresh_from_db()
         self.assertEqual(self.data_source_1.owner, self.org_2)
+
+
+    def test_user_post_save_auto_private_organization_addition_not_in_use(self):
+        '''
+        Tests that user is not added to private organization when settings dont allow it
+        '''
+        data_source_yksilo = DataSource.objects.create(
+            id='yksilo',
+            name='yksilo',
+        )
+        Organization.objects.create(
+            data_source=data_source_yksilo,
+            name='yksilo',
+            origin_id='2000',
+        )
+        with self.settings(ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=False):
+            new_user_1 = get_user_model().objects.create(username='new-user-1')
+            qs = new_user_1.public_memberships.all()
+            self.assertQuerysetEqual(qs, [])
+
+    
+    def test_user_post_save_auto_private_organization_addition_in_use(self):
+        '''
+        Tests that user is added to private organization when settings allow it
+        '''
+        data_source_yksilo = DataSource.objects.create(
+            id='yksilo',
+            name='yksilo',
+        )
+        private_org = Organization.objects.create(
+            data_source=data_source_yksilo,
+            name='yksilo',
+            origin_id='2000',
+        )
+        with self.settings(ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=True):
+            new_user_1 = get_user_model().objects.create(username='new-user-1')
+            qs = new_user_1.public_memberships.all()
+            self.assertQuerysetEqual(qs, [repr(private_org)])

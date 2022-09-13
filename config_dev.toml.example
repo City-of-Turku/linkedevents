@@ -180,3 +180,13 @@ SENTRY_ENVIRONMENT=local-development-unconfigured
 #   Swagger API view toggle
 #   Default: False
 #USE_SWAGGER_OPENAPI_VIEW=True
+
+# Should users be added automatically to private user organization when
+# they are first created? Note the data source and organization for private users
+# need to be created beforehand.
+# Default: False
+#ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=True
+
+# private user organization id where users are optionally added automatically.
+# Default: 'yksilo:2000'
+#PRIVATE_ORG_ID=''

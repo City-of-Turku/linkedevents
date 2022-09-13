@@ -1518,7 +1518,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
 
-                        if user_organization.id == 'yksilo:2000':
+                        if user_organization.id == settings.PRIVATE_ORG_ID:
                             if img_obj.created_by:
                                 if img_obj.created_by.id != instance.user.id:
                                     raise PermissionDenied(
