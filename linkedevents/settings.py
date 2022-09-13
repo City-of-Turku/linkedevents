@@ -79,6 +79,8 @@ env = environ.Env(
     SMBACKEND_USER=(str, ''),
     SMBACKEND_PASS=(str, ''),
     USE_SWAGGER_OPENAPI_VIEW=(bool, False),
+    ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=(bool, False),
+    PRIVATE_ORG_ID=(str, 'yksilo:2000'),
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -104,6 +106,9 @@ DATABASES = {
 }
 
 SYSTEM_DATA_SOURCE_ID = env('SYSTEM_DATA_SOURCE_ID')
+
+ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY = env('ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY')
+PRIVATE_ORG_ID = env('PRIVATE_ORG_ID')
 
 SITE_ID = 1
 
