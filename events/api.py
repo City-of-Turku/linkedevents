@@ -58,7 +58,7 @@ import pytz
 import bleach
 import django_filters
 
-from django_orghierarchy.models import Organization
+from django_orghierarchy.models import Organization, OrganizationClass
 from helevents.api import UserSerializer
 
 # events
@@ -1281,7 +1281,8 @@ class OrganizationCreateSerializer(OrganizationBaseSerializer):
 
     def validate(self, data):
         if Organization.objects.filter(id=str(self.request.data['id'])):
-            raise DRFPermissionDenied(f"Organization with id {self.request.data['id']} already exists.")
+            raise DRFPermissionDenied(
+                f"Organization with id {self.request.data['id']} already exists.")
 
         if 'parent' in data.keys():
             user = self.request.user
@@ -1289,9 +1290,11 @@ class OrganizationCreateSerializer(OrganizationBaseSerializer):
                 if user.get_default_organization().id == self.request.data['parent']:
                     pass
                 else:
-                    raise DRFPermissionDenied('User has no rights to this organization')
+                    raise DRFPermissionDenied(
+                        'User has no rights to this organization')
             else:
-                raise DRFPermissionDenied('User must be logged in to create organizations.')
+                raise DRFPermissionDenied(
+                    'User must be logged in to create organizations.')
         data = super().validate(data)
         return data
 
@@ -1300,7 +1303,8 @@ class OrganizationCreateSerializer(OrganizationBaseSerializer):
                           'affiliated_organizations': Organization.AFFILIATED}
         if org_type in self.request.data.keys():
             for conn_org_id in self.request.data[org_type]:
-                conn_org = Organization.objects.filter(id=str(conn_org_id), internal_type=internal_types[org_type])
+                conn_org = Organization.objects.filter(
+                    id=str(conn_org_id), internal_type=internal_types[org_type])
                 if conn_org:
                     org.children.add(conn_org[0])
 
@@ -1346,9 +1350,11 @@ class OrganizationUpdateSerializer(OrganizationBaseSerializer):
                 if user.get_default_organization().id == self.request.data['parent']:
                     pass
                 else:
-                    raise DRFPermissionDenied('User has no rights to this organization')
+                    raise DRFPermissionDenied(
+                        'User has no rights to this organization')
             else:
-                raise DRFPermissionDenied('User must be logged in to create organizations.')
+                raise DRFPermissionDenied(
+                    'User must be logged in to create organizations.')
         data = super().validate(data)
         return data
 
@@ -1357,7 +1363,8 @@ class OrganizationUpdateSerializer(OrganizationBaseSerializer):
                           'affiliated_organizations': Organization.AFFILIATED}
         if org_type in self.request.data.keys():
             for conn_org_id in self.request.data[org_type]:
-                conn_org = Organization.objects.filter(id=str(conn_org_id), internal_type=internal_types[org_type])
+                conn_org = Organization.objects.filter(
+                    id=str(conn_org_id), internal_type=internal_types[org_type])
                 if conn_org:
                     org.children.add(conn_org[0])
 
@@ -1532,6 +1539,11 @@ class OrganizationViewSet(JSONAPIViewMixin,
                                                          Prefetch('children',
                                                                   queryset=Organization.objects.filter(internal_type='affiliated'),  # noqa E501
                                                                   to_attr='affiliated_organizations'))
+
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
         id = self.request.query_params.get('child', None)
         if id:
             try:
@@ -1570,6 +1582,22 @@ class DataSourceViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
 
 
 register_view(DataSourceViewSet, 'data_source')
+
+
+class OrganizationClassSerializer(LinkedEventsSerializer):
+    view_name = 'organization_class-list'
+
+    class Meta:
+        model = OrganizationClass
+        fields = ['id', 'name']
+
+
+class OrganizationClassViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = OrganizationClass.objects.all()
+    serializer_class = OrganizationClassSerializer
+
+
+register_view(OrganizationClassViewSet, 'organization_class')
 
 
 class EventLinkSerializer(serializers.ModelSerializer):
@@ -1703,7 +1731,8 @@ class ImageSerializer(LinkedEventsSerializer):
             if not data.get('name'):
                 for prop in ('url', 'image'):
                     if data.get(prop):
-                        data['name'] = {'fi': str(data[prop]).rsplit('/', 1)[-1]}
+                        data['name'] = {
+                            'fi': str(data[prop]).rsplit('/', 1)[-1]}
         super().validate(data)
         return data
 
