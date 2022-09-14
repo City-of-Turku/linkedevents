@@ -1663,7 +1663,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             data = self.run_extension_validations(data)
             return data
 
-        if (data['is_virtualevent'] == True):
+        if data.get('is_virtualevent', False):
             if 'location' in self.fields_needed_to_publish:
                 self.fields_needed_to_publish = list(
                     self.fields_needed_to_publish)
