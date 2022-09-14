@@ -544,3 +544,20 @@ def test_create_super_event_with_subevents(api_client, minimal_event_dict, user)
 
     sub_event_names = set([sub_event.name_fi for sub_event in super_event.sub_events.all()])
     assert sub_event_names == {'sub event 1', 'sub event 2'}
+
+
+@pytest.mark.django_db
+def test_create_event_that_is_virtual(api_client, minimal_event_dict, user):
+    api_client.force_authenticate(user)
+    minimal_event_dict['is_virtualevent'] = True
+    response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
+    assert response.status_code == 201
+    assert response.data['is_virtualevent'] == True
+
+
+@pytest.mark.django_db
+def test_create_event_without_is_virtualevent_field(api_client, minimal_event_dict, user):
+    api_client.force_authenticate(user)
+    response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
+    assert response.status_code == 201
+    assert response.data['is_virtualevent'] == False
