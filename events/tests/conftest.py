@@ -550,7 +550,11 @@ def make_complex_event_dict(make_keyword_id):
                 {'name': TEXT_EN, 'link': URL, 'language': 'en'},
             ],
             'videos': [
-                {'name': TEXT_FI, 'url': URL, 'alt_text': TEXT_FI},
+                {
+                    'name': {'en': TEXT_EN, 'sv': TEXT_SV, 'fi': TEXT_FI},
+                    'url': URL,
+                    'alt_text': {'en': TEXT_EN, 'sv': TEXT_SV, 'fi': TEXT_FI},
+                }
             ],
             'offers': [
                 {
