@@ -39,6 +39,13 @@ class TestUserModelPermissionMixin(TestCase):
             self.org,
         )
 
+    def test_is_private_user(self):
+        self.assertRaises(
+            NotImplementedError,
+            self.instance.is_private_user,
+            self.org,
+        )
+
     def test_can_edit_event(self):
         # test for admin user
         self.instance.is_admin = MagicMock(return_value=True)
@@ -51,15 +58,27 @@ class TestUserModelPermissionMixin(TestCase):
         # test for regular user
         self.instance.is_admin = MagicMock(return_value=False)
         self.instance.is_regular_user = MagicMock(return_value=True)
+        self.instance.is_private_user = MagicMock(return_value=False)
 
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
         self.assertFalse(can_edit)
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
         self.assertTrue(can_edit)
 
+        # test for private user
+        self.instance.is_admin = MagicMock(return_value=False)
+        self.instance.is_regular_user = MagicMock(return_value=False)
+        self.instance.is_private_user = MagicMock(return_value=True)
+
+        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
+        self.assertTrue(can_edit)
+        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
+        self.assertTrue(can_edit)
+
         # test for other users
         self.instance.is_admin = MagicMock(return_value=False)
         self.instance.is_regular_user = MagicMock(return_value=False)
+        self.instance.is_private_user = MagicMock(return_value=False)
 
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
         self.assertFalse(can_edit)
@@ -129,7 +148,13 @@ class TestUserModelPermissions(TestCase):
         qs = self.instance.get_editable_events(total_qs)
         self.assertQuerysetEqual(qs, [repr(event_2)])
 
-        # test for other users
+        # test for private user
         self.instance.organization_memberships.remove(self.org)
+        self.instance.public_memberships.add(self.org)
+        qs = self.instance.get_editable_events(total_qs)
+        self.assertQuerysetEqual(qs, [repr(event_1)])
+
+        # test for other users
+        self.instance.public_memberships.remove(self.org)
         qs = self.instance.get_editable_events(total_qs)
         self.assertQuerysetEqual(qs, [])

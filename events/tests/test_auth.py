@@ -42,3 +42,10 @@ class TestApiKeyUser(TestCase):
 
         is_regular_user = self.user.is_regular_user(self.org_2)
         self.assertFalse(is_regular_user)
+
+    def test_is_private_user(self):
+        is_private_user = self.user.is_private_user(self.org_1)
+        self.assertFalse(is_private_user)
+
+        is_private_user = self.user.is_private_user(self.org_2)
+        self.assertFalse(is_private_user)
