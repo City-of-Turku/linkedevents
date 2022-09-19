@@ -510,6 +510,12 @@ def keywordlabel(kw_name, languages):
 
 
 @pytest.mark.django_db
+@pytest.fixture
+def keywordlabel2(languages):
+    return KeywordLabel.objects.create(name='toinen', language=languages[0])
+
+
+@pytest.mark.django_db
 @pytest.fixture(scope="class")
 def languages_class(request):
     lang_objs = [
