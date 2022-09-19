@@ -271,7 +271,8 @@ def place(data_source, organization, administrative_division):
         data_source=data_source,
         publisher=organization,
         position=Point(50, 50),
-        name_fi='Paikka 1'
+        name_fi='Paikka 1',
+        search_column_fi='paikka 1',
     )
 
 
@@ -322,7 +323,8 @@ def place2(other_data_source, organization2):
         data_source=other_data_source,
         publisher=organization2,
         position=Point(0, 0),
-        name_en='Place 2'
+        name_en='Place 2',
+        search_column_en='place 2',
     )
 
 
@@ -332,7 +334,19 @@ def place3(data_source, organization):
         id=data_source.id + ':test_location_3',
         data_source=data_source,
         publisher=organization,
-        name_sv='Plats 3'
+        name_sv='Plats 3',
+        search_column_sv='plats 3',
+    )
+
+
+@pytest.fixture
+def place4(data_source, organization):
+    return Place.objects.create(
+        id=data_source.id + ':test_location_4',
+        data_source=data_source,
+        publisher=organization,
+        name_fi='Paikka 4',
+        search_column_fi='paikka 4',
     )
 
 
