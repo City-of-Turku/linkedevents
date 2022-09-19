@@ -876,5 +876,5 @@ class TestEventAPI(APITestCase):
         response = self.client.put(url, [data_1], format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.event_3.refresh_from_db()
-        self.assertEqual(self.event_3.name, 'event-3-changed')
+        self.assertEqual(self.event_3.name_fi, 'event-3-changed')
         self.assertEqual(self.event_3.publication_status, PublicationStatus.DRAFT)
