@@ -1382,15 +1382,13 @@ class OrganizationUpdateSerializer(OrganizationBaseSerializer):
 class OrganizationListSerializer(LinkedEventsSerializer):
     view_name = 'organization-detail'
 
-    parent_organization = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        source='parent',
-        view_name='organization-detail',
+    parent_organization = JSONLDRelatedField(
+        serializer=OrganizationBaseSerializer, source='parent', required=False, allow_null=True,
+        view_name='organization-detail', queryset=Organization.objects.all(),
     )
-    sub_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        view_name='organization-detail',
-        many=True,
+    sub_organizations = JSONLDRelatedField(
+        serializer=OrganizationBaseSerializer, many=True, required=False, allow_empty=True,
+        view_name='organization-detail', queryset=Organization.objects.all()
     )
     affiliated_organizations = serializers.HyperlinkedRelatedField(
         queryset=Organization.objects.all(),
@@ -1595,6 +1593,8 @@ class OrganizationClassSerializer(LinkedEventsSerializer):
 class OrganizationClassViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = OrganizationClass.objects.all()
     serializer_class = OrganizationClassSerializer
+    filter_backends = (filters.OrderingFilter,)
+    ordering = ('id',)
 
 
 register_view(OrganizationClassViewSet, 'organization_class')
