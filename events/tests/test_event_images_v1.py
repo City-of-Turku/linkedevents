@@ -235,8 +235,11 @@ def test__image_cannot_be_edited_outside_organization(
     # other users cannot edit or delete the image
     organization2.admin_users.add(user2)
     api_client.force_authenticate(user2)
-    detail_url = reverse('image-detail', kwargs={'pk': response.data['id']})
-    response2 = api_client.put(detail_url, {'name': 'this is needed'})
+    id = response.data['id']
+    detail_url = reverse('image-detail', kwargs={'pk': id})
+    response2 = api_client.put(
+        detail_url, {'name': {'fi': 'this is needed'}, 'id': id}, format='json'
+    )
     assert response2.status_code == 403
     response3 = api_client.delete(detail_url)
     assert response3.status_code == 403
@@ -267,7 +270,11 @@ def test__image_from_another_data_source_can_be_edited_by_admin(api_client, list
 
     # user can still edit or delete the image
     detail_url = reverse('image-detail', kwargs={'pk': response.data['id']})
-    response2 = api_client.put(detail_url, {'id': response.data['id'], 'name': 'this is needed'})
+    response2 = api_client.put(
+        detail_url,
+        {'id': response.data['id'], 'name': {'fi': 'this is needed'}},
+        format='json'
+    )
     assert response2.status_code == 200
     response3 = api_client.delete(detail_url)
     assert response3.status_code == 204
@@ -294,8 +301,11 @@ def test__image_cannot_be_edited_outside_organization_with_apikey(
     api_client.force_authenticate(user=None)
     api_client.credentials(apikey=other_data_source.api_key)
 
-    detail_url = reverse('image-detail', kwargs={'pk': response.data['id']})
-    response2 = api_client.put(detail_url, {'name': 'this is needed'})
+    id = response.data['id']
+    detail_url = reverse('image-detail', kwargs={'pk': id})
+    response2 = api_client.put(
+        detail_url, {'name': {'fi': 'this is needed'}, 'id': id}, format='json'
+    )
     assert response2.status_code == 403
     response3 = api_client.delete(detail_url)
     assert response3.status_code == 403
@@ -482,10 +492,23 @@ def test__upload_a_non_valid_image(api_client, list_url, user, organization):
 def test__upload_an_invalid_dict(api_client, list_url, user, organization):
     organization.admin_users.add(user)
     api_client.force_authenticate(user)
-    response = api_client.post(list_url, {'name': 'right', 'key': 'wrong'})
+    response = api_client.post(
+        list_url, {'name': {'en': 'right'}, 'key': 'wrong'}, format='json'
+    )
     assert response.status_code == 400
     for line in response.data:
         assert 'You must provide either image or url' in line
+
+
+@pytest.mark.django_db
+def test__upload_an_image_without_localized_name(api_client, list_url, user, organization):
+    organization.admin_users.add(user)
+    api_client.force_authenticate(user)
+    response = api_client.post(
+        list_url, {'name': 'not-localized'}, format='json'
+    )
+    assert response.status_code == 400
+    assert 'This field is a translated field. Instead of a string' in response.data['name']
 
 
 @pytest.mark.django_db
@@ -507,13 +530,21 @@ def test_set_image_license(api_client, list_url, image_data, image_url, user, or
     assert new_image.license_id == 'event_only'
 
     # the same image is put without a license, expect event_only license not changed
-    response = api_client.put('%s%s/' % (list_url, new_image.id), {'name': 'this is needed'})
+    response = api_client.put(
+        '%s%s/' % (list_url, new_image.id),
+        {'name': {'fi': 'this is needed'}, 'id': new_image.id},
+        format='json'
+    )
     assert response.status_code == 200
     new_image.refresh_from_db()
     assert new_image.license_id == 'event_only'
 
     # the same image is put with cc_by license, expect change
-    response = api_client.put('%s%s/' % (list_url, new_image.id), {'name': 'this is needed', 'license': 'cc_by'})
+    response = api_client.put(
+        '%s%s/' % (list_url, new_image.id),
+        {'name': {'fi': 'this is needed'}, 'license': 'cc_by', 'id': new_image.id},
+        format='json'
+    )
     assert response.status_code == 200
     new_image.refresh_from_db()
     assert new_image.license_id == 'cc_by'

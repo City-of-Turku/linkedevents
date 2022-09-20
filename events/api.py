@@ -1440,13 +1440,13 @@ class ImageSerializer(LinkedEventsSerializer):
 
     def validate(self, data):
         # Name the image after the file, if name was not provided.
-        if data:
-            if not data.get('name'):
-                for prop in ('url', 'image'):
-                    if data.get(prop):
-                        data['name'] = {'fi': str(data[prop]).rsplit('/', 1)[-1]}
-        super().validate(data)
-        return data
+        if data and not data.get('name'):
+            for prop in ('url', 'image'):
+                if data.get(prop):
+                    name = str(data[prop]).rsplit('/', 1)[-1]
+                    data['name'] = name
+                    data['name_fi'] = name
+        return super().validate(data)
 
     def to_internal_value(self, data):
         if 'image' in data and isinstance(data['image'], str) and ';base64,' in data['image']:
