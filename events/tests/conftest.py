@@ -292,7 +292,8 @@ def place(data_source, organization, administrative_division):
         data_source=data_source,
         publisher=organization,
         position=Point(50, 50),
-        name_fi='Paikka 1'
+        name_fi='Paikka 1',
+        search_column_fi='paikka 1',
     )
 
 
@@ -343,7 +344,8 @@ def place2(other_data_source, organization2):
         data_source=other_data_source,
         publisher=organization2,
         position=Point(0, 0),
-        name_en='Place 2'
+        name_en='Place 2',
+        search_column_en='place 2',
     )
 
 
@@ -353,7 +355,19 @@ def place3(data_source, organization):
         id=data_source.id + ':test_location_3',
         data_source=data_source,
         publisher=organization,
-        name_sv='Plats 3'
+        name_sv='Plats 3',
+        search_column_sv='plats 3',
+    )
+
+
+@pytest.fixture
+def place4(data_source, organization):
+    return Place.objects.create(
+        id=data_source.id + ':test_location_4',
+        data_source=data_source,
+        publisher=organization,
+        name_fi='Paikka 4',
+        search_column_fi='paikka 4',
     )
 
 
@@ -531,6 +545,12 @@ def keywordlabel(kw_name, languages):
 
 
 @pytest.mark.django_db
+@pytest.fixture
+def keywordlabel2(languages):
+    return KeywordLabel.objects.create(name='toinen', language=languages[0])
+
+
+@pytest.mark.django_db
 @pytest.fixture(scope="class")
 def languages_class(request):
     lang_objs = [
@@ -571,7 +591,11 @@ def make_complex_event_dict(make_keyword_id):
                 {'name': TEXT_EN, 'link': URL, 'language': 'en'},
             ],
             'videos': [
-                {'name': TEXT_FI, 'url': URL, 'alt_text': TEXT_FI},
+                {
+                    'name': {'en': TEXT_EN, 'sv': TEXT_SV, 'fi': TEXT_FI},
+                    'url': URL,
+                    'alt_text': {'en': TEXT_EN, 'sv': TEXT_SV, 'fi': TEXT_FI},
+                }
             ],
             'offers': [
                 {

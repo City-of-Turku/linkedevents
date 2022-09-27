@@ -70,12 +70,13 @@ def test_get_place_detail_redirect_to_end_of_replace_chain(api_client, place, pl
 
 
 @pytest.mark.django_db
-def test_get_place_list_verify_text_filter(api_client, place, place2, place3):
+def test_get_place_list_verify_text_filter(api_client, place, place2, place3, place4):
     response = api_client.get(reverse('place-list'), data={'text': 'Paikka',
                                                            'show_all_places': True})
     assert place.id in [entry['id'] for entry in response.data['data']]
     assert place2.id not in [entry['id'] for entry in response.data['data']]
     assert place3.id not in [entry['id'] for entry in response.data['data']]
+    assert place4.id in [entry['id'] for entry in response.data['data']]
 
 
 @pytest.mark.django_db

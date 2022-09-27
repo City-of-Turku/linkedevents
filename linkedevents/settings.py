@@ -78,6 +78,9 @@ env = environ.Env(
         str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
     SMBACKEND_USER=(str, ''),
     SMBACKEND_PASS=(str, ''),
+    USE_SWAGGER_OPENAPI_VIEW=(bool, False),
+    ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=(bool, False),
+    PRIVATE_ORG_ID=(str, 'yksilo:2000'),
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -103,6 +106,9 @@ DATABASES = {
 }
 
 SYSTEM_DATA_SOURCE_ID = env('SYSTEM_DATA_SOURCE_ID')
+
+ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY = env('ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY')
+PRIVATE_ORG_ID = env('PRIVATE_ORG_ID')
 
 SITE_ID = 1
 
@@ -174,6 +180,7 @@ INSTALLED_APPS = [
     'leaflet',
     'django_orghierarchy',
     'admin_auto_filters',
+    'drf_yasg',
 ] + env('EXTRA_INSTALLED_APPS')
 
 if env('SENTRY_DSN'):
@@ -327,6 +334,24 @@ JWT_AUTH = {
 CORS_ORIGIN_ALLOW_ALL = True
 CSRF_COOKIE_NAME = '%s-csrftoken' % env('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env('COOKIE_PREFIX')
+
+# Swagger settings
+USE_SWAGGER_OPENAPI_VIEW = env('USE_SWAGGER_OPENAPI_VIEW')
+if USE_SWAGGER_OPENAPI_VIEW:
+    SWAGGER_SETTINGS = {
+        'USE_SESSION_AUTH': False,
+        'SECURITY_DEFINITIONS': {
+            'Bearer Token': {
+                'type': 'apiKey',
+                'name': 'Authorization',
+                'in': 'header',
+                'description': ('Token based authorization. '
+                                'Use Bearer as prefix i.e. `Bearer <my-token>`')
+            },
+        },
+        'DEFAULT_INFO': 'linkedevents.urls.openapi'
+    }
+
 
 from django_jinja.builtins import DEFAULT_EXTENSIONS  # noqa
 

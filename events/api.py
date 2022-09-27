@@ -562,7 +562,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # post and put methods need further authentication
         self.data_source, self.publisher = get_authenticated_data_source_and_publisher(
             self.request)
-        if not self.publisher:
+        if not self.publisher and not getattr(context['view'], 'swagger_fake_view', False):
             raise PermissionDenied(
                 _("User doesn't belong to any organization"))
         # in case of bulk operations, the instance may be a huge queryset, already filtered by permission
@@ -791,6 +791,7 @@ class JSONAPIViewMixin(object):
         return ret
 
     def get_serializer_context(self):
+        self.srs = getattr(self, 'srs', srid_to_srs(None))
         context = super().get_serializer_context()
         # user admin ids must be injected to the context for nested serializers, to avoid duplicating work
         user = context['request'].user
@@ -1180,8 +1181,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
         # Optionally filter places by filter parameter,
         # can be used e.g. with typeahead.js
         # match to street as well as name, to make it easier to find units by address
-        if 'text' or 'filter' in params:
-            val = params.get('text') or params.get('filter', None)
+        val = params.get('text', None) or params.get('filter', None)
 
         if val:
             # Remove single quotes from search string, they cause faulty strings in to_tsvector
@@ -1210,9 +1210,7 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
             all_results = cursor.fetchall()
             # append all Place ids into a list for filtering
             ids = [row[0] for row in all_results]
-            queryset = Place.objects.filter(id__in=ids)
-        else:
-            queryset = Place.objects.none()
+            queryset = queryset.filter(id__in=ids)
 
         return queryset
 
@@ -1691,6 +1689,7 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
     ordering = ('id',)
 
     def get_queryset(self):
+        self.srs = getattr(self, 'srs', srid_to_srs(None))
         queryset = Sidefield.objects.all()
         queryset = _filter_sidefield_queryset(queryset, self.request.query_params,
                                               srs=self.srs)
@@ -1727,14 +1726,13 @@ class ImageSerializer(LinkedEventsSerializer):
 
     def validate(self, data):
         # Name the image after the file, if name was not provided.
-        if data:
-            if not data.get('name'):
-                for prop in ('url', 'image'):
-                    if data.get(prop):
-                        data['name'] = {
-                            'fi': str(data[prop]).rsplit('/', 1)[-1]}
-        super().validate(data)
-        return data
+        if data and not data.get('name'):
+            for prop in ('url', 'image'):
+                if data.get(prop):
+                    name = str(data[prop]).rsplit('/', 1)[-1]
+                    data['name'] = name
+                    data['name_fi'] = name
+        return super().validate(data)
 
     def to_internal_value(self, data):
         if 'image' in data and isinstance(data['image'], str) and ';base64,' in data['image']:
@@ -1761,6 +1759,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
     ordering = ('-last_modified_time',)
 
     def get_queryset(self):
+        self.srs = getattr(self, 'srs', srid_to_srs(None))
         queryset = Image.objects.all()
         publisher = self.request.query_params.get('publisher', None)
         if publisher:
@@ -1802,7 +1801,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
 
-                        if user_organization.id == 'yksilo:2000':
+                        if user_organization.id == settings.PRIVATE_ORG_ID:
                             if img_obj.created_by:
                                 if img_obj.created_by.id != instance.user.id:
                                     raise PermissionDenied(
@@ -1947,7 +1946,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
             data = self.run_extension_validations(data)
             return data
 
-        if (data['is_virtualevent'] == True):
+        if data.get('is_virtualevent', False):
             if 'location' in self.fields_needed_to_publish:
                 self.fields_needed_to_publish = list(
                     self.fields_needed_to_publish)
@@ -2093,7 +2092,7 @@ class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIVi
         links = validated_data.pop('external_links', None)
         videos = validated_data.pop('videos', None)
 
-        if instance.end_time and instance.end_time < timezone.now():
+        if (instance.end_time and instance.end_time < timezone.now()) and instance.publication_status != PublicationStatus.DRAFT:
             raise DRFPermissionDenied(_('Cannot edit a past event.'))
 
         # The API only allows scheduling and cancelling events.

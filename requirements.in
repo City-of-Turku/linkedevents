@@ -18,11 +18,12 @@ django-mptt
 django-munigeo-turku>=0.2.31
 django-orghierarchy-turku
 django-reversion
-django==2.2.27
+django==2.2.28
 djangorestframework
 djangorestframework-bulk
 djangorestframework-gis
 djangorestframework-jwt
+drf-yasg # Swagger
 easy_thumbnails
 elasticsearch
 httmock
