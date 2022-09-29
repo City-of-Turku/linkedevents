@@ -1294,13 +1294,15 @@ class OrganizationListSerializer(OrganizationBaseSerializer):
         view_name='organization-detail', queryset=Organization.objects.all()
     )
     affiliated_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
         view_name='organization-detail',
         many=True,
+        required=False,
+        read_only=True
     )
     replaced_by = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
         view_name='organization-detail',
+        required=False,
+        read_only=True
     )
     is_affiliated = serializers.SerializerMethodField()
     has_regular_users = serializers.SerializerMethodField()
@@ -1449,60 +1451,6 @@ class OrganizationUpdateSerializer(OrganizationListSerializer):
     class Meta:
         model = Organization
         fields = '__all__'
-
-
-class OrganizationSerializer(LinkedEventsSerializer):
-    view_name = 'organization-detail'
-
-    parent_organization = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        source='parent',
-        view_name='organization-detail',
-        required=False,
-        allow_null=True,
-    )
-    sub_organizations = serializers.HyperlinkedRelatedField(
-        # queryset=Organization.objects.all(),
-        view_name='organization-detail',
-        many=True,
-        read_only=True,
-    )
-    affiliated_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        view_name='organization-detail',
-        many=True,
-    )
-    replaced_by = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
-        view_name='organization-detail',
-        required=False,
-        allow_null=True,
-    )
-    is_affiliated = serializers.SerializerMethodField()
-    has_regular_users = serializers.SerializerMethodField()
-    created_time = DateTimeField(
-        default_timezone=pytz.UTC, required=False, allow_null=True)
-    last_modified_time = DateTimeField(
-        default_timezone=pytz.UTC, required=False, allow_null=True)
-
-    class Meta:
-        model = Organization
-        fields = (
-            'id', 'data_source', 'origin_id',
-            'classification', 'name', 'founding_date',
-            'dissolution_date', 'parent_organization',
-            'sub_organizations', 'affiliated_organizations',
-            'created_time', 'last_modified_time', 'created_by',
-            'last_modified_by', 'is_affiliated', 'replaced_by',
-            'has_regular_users'
-        )
-        read_only_fields = ['origin_id']
-
-    def get_is_affiliated(self, obj):
-        return obj.internal_type == Organization.AFFILIATED
-
-    def get_has_regular_users(self, obj):
-        return obj.regular_users.count() > 0
 
 
 class OrganizationViewSet(JSONAPIViewMixin,
