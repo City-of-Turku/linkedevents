@@ -261,6 +261,13 @@ def parse_digit(val, param):
         raise ParseError(f'{param} must be an integer, you passed "{val}"')
 
 
+def organization_can_be_edited_by(instance, user):
+    if instance in user.admin_organizations.all():
+        return True
+    else:
+        return False
+
+
 class JSONLDRelatedField(relations.HyperlinkedRelatedField):
     """
     Support of showing and saving of expanded JSON nesting or just a resource
@@ -1275,109 +1282,7 @@ class OrganizationBaseSerializer(LinkedEventsSerializer):
         fields = '__all__'
 
 
-class OrganizationCreateSerializer(OrganizationBaseSerializer):
-
-    def validate(self, data):
-        if Organization.objects.filter(id=str(self.request.data['id'])):
-            raise DRFPermissionDenied(
-                f"Organization with id {self.request.data['id']} already exists.")
-
-        if 'parent' in data.keys():
-            user = self.request.user
-            if user and user.get_default_organization():
-                if user.get_default_organization().id == self.request.data['parent']:
-                    pass
-                else:
-                    raise DRFPermissionDenied(
-                        'User has no rights to this organization')
-            else:
-                raise DRFPermissionDenied(
-                    'User must be logged in to create organizations.')
-        data = super().validate(data)
-        return data
-
-    def connected_organizations(self, org_type, org):
-        internal_types = {'sub_organizations': Organization.NORMAL,
-                          'affiliated_organizations': Organization.AFFILIATED}
-        if org_type in self.request.data.keys():
-            for conn_org_id in self.request.data[org_type]:
-                conn_org = Organization.objects.filter(
-                    id=str(conn_org_id), internal_type=internal_types[org_type])
-                if conn_org:
-                    org.children.add(conn_org[0])
-
-    def create(self, validated_data):
-        org = super().create(validated_data)
-        self.connected_organizations('sub_organizations', org)
-        self.connected_organizations('affiliated_organizations', org)
-        return org
-
-    class Meta:
-        model = Organization
-        fields = '__all__'
-
-
-class OrganizationUpdateSerializer(OrganizationBaseSerializer):
-    # admin_users = UserSerializer(many=True)
-    # regular_users = UserSerializer(many=True)
-
-    class Meta:
-        model = Organization
-        fields = [
-            # Organization
-            'internal_type',
-            'classification',
-            'name',
-            'founding_date',
-            'dissolution_date',
-            'parent',
-            'admin_users',
-            'private_users',
-            'regular_users',
-            'created_by',
-            'last_modified_by',
-            'replaced_by',
-            # DataModel
-            'last_modified_time',
-        ]
-
-    def validate(self, data):
-        if 'parent' in data.keys():
-            user = self.request.user
-            if user and user.get_default_organization():
-                if user.get_default_organization().id == self.request.data['parent']:
-                    pass
-                else:
-                    raise DRFPermissionDenied(
-                        'User has no rights to this organization')
-            else:
-                raise DRFPermissionDenied(
-                    'User must be logged in to create organizations.')
-        data = super().validate(data)
-        return data
-
-    def connected_organizations(self, org_type, org):
-        internal_types = {'sub_organizations': Organization.NORMAL,
-                          'affiliated_organizations': Organization.AFFILIATED}
-        if org_type in self.request.data.keys():
-            for conn_org_id in self.request.data[org_type]:
-                conn_org = Organization.objects.filter(
-                    id=str(conn_org_id), internal_type=internal_types[org_type])
-                if conn_org:
-                    org.children.add(conn_org[0])
-
-    def update(self, instance, validated_data):
-        # admin_users = validated_data.pop('admin_users', None)
-        # regular_users = validated_data.pop('regular_users', None)
-        print(validated_data)
-        print(instance.__dict__)
-        org = super().update(instance, validated_data)
-        # self.connected_organizations('sub_organizations', org)
-        # self.connected_organizations('affiliated_organizations', org)
-        return org
-
-
-class OrganizationListSerializer(LinkedEventsSerializer):
+class OrganizationListSerializer(OrganizationBaseSerializer):
     view_name = 'organization-detail'
 
     parent_organization = JSONLDRelatedField(
@@ -1427,6 +1332,46 @@ class OrganizationDetailSerializer(OrganizationListSerializer):
     regular_users = serializers.SerializerMethodField()
     admin_users = serializers.SerializerMethodField()
 
+    def validate(self, data):
+        if Organization.objects.filter(id=str(self.request.data['id'])):
+            raise DRFPermissionDenied(f"Organization with id {self.request.data['id']} already exists.")
+        return super().validate(data)
+
+    def connected_organizations(self, connected_orgs, created_org):
+        internal_types = {'sub_organizations': Organization.NORMAL,
+                          'affiliated_organizations': Organization.AFFILIATED}
+        for org_type in connected_orgs.keys():
+            conn_org = Organization.objects.filter(id__in=connected_orgs[org_type],
+                                                   internal_type=internal_types[org_type])
+            created_org.children.add(*conn_org)
+
+    def create(self, validated_data):
+        connected_organizations = ['sub_organizations', 'affiliated_organizations']
+        conn_orgs_in_request = {}
+        for org_type in connected_organizations:
+            if org_type in self.request.data.keys():
+                if isinstance(self.request.data[org_type], list):
+                    conn_orgs_in_request[org_type] = [i.rstrip('/').split('/')[-1]
+                                                      for i in self.request.data.pop(org_type)]
+                else:
+                    raise ParseError(f'{org_type} should be a list, you provided {type(self.request.data[org_type])}')
+        if 'parent_organization' in self.request.data.keys():
+            user = self.request.user
+            parent_id = self.request.data['parent_organization'].rstrip('/').split('/')[-1]
+            potential_parent = Organization.objects.filter(id=parent_id)
+            if potential_parent.count() == 0:
+                raise ParseError(f"{self.request.data['parent_organization']} does not exist.")
+            if user:
+                if organization_can_be_edited_by(potential_parent[0], user):
+                    pass
+                else:
+                    raise DRFPermissionDenied('User has no rights to this organization')
+            else:
+                raise DRFPermissionDenied('User must be logged in to create organizations.')
+        org = super().create(validated_data)
+        self.connected_organizations(conn_orgs_in_request, org)
+        return org
+
     def get_regular_users(self, obj):
         user = self.context['user']
         if not isinstance(user, AnonymousUser) and user.is_admin(obj):
@@ -1452,6 +1397,58 @@ class OrganizationDetailSerializer(OrganizationListSerializer):
             'last_modified_by', 'is_affiliated', 'replaced_by',
             'has_regular_users', 'regular_users', 'admin_users'
         )
+
+
+class OrganizationUpdateSerializer(OrganizationListSerializer):
+    regular_users = serializers.SerializerMethodField()
+    admin_users = serializers.SerializerMethodField()
+
+    def __init__(self, instance=None, context=None, *args, **kwargs):
+        instance.can_be_edited_by = organization_can_be_edited_by
+        if not instance.can_be_edited_by(instance, context['request'].user):
+            raise DRFPermissionDenied(f"User {context['request'].user} can't modify {instance}")
+        self.method = 'PUT'
+        self.hide_ld_context = True
+        self.skip_fields = ''
+        self.user = context['request'].user
+        if 'data_source' not in context['request'].data.keys():
+            context['request'].data['data_source'] = instance.data_source
+        if 'origin_id' not in context['request'].data.keys():
+            context['request'].data['origin_id'] = instance.origin_id
+        if 'name' not in context['request'].data.keys():
+            context['request'].data['name'] = instance.name
+        super(LinkedEventsSerializer, self).__init__(
+            instance=instance, context=context, **kwargs)
+        self.admin_users = context['request'].data.pop('admin_users', {'username': ''})
+        self.regular_users = context['request'].data.pop('regular_users', {'username': ''})
+
+    def update(self, instance, validated_data):
+        if isinstance(self.admin_users, dict) and isinstance(self.regular_users, dict):
+            pass
+        else:
+            raise ParseError('Dictionaries expected for admin and regular_users.')
+        if ('username' not in self.admin_users.keys()) or ('username' not in self.regular_users.keys()):
+            raise ParseError('Username field should be used to pass admin_users and regular_users')
+
+        admin_users = User.objects.filter(username__in=self.admin_users['username'])
+        regular_users = User.objects.filter(username__in=self.regular_users['username'])
+        instance.admin_users.clear()
+        instance.admin_users.add(*admin_users)
+        instance.admin_users.add(self.user)  # so that the user does not accidentally remove himself from admin
+        instance.regular_users.clear()
+        instance.regular_users.add(*regular_users)
+        super().update(instance, validated_data)
+        return instance
+
+    def get_regular_users(self, obj):
+        return UserSerializer(obj.regular_users.all(), read_only=True, many=True).data
+
+    def get_admin_users(self, obj):
+        return UserSerializer(obj.admin_users.all(), read_only=True, many=True).data
+
+    class Meta:
+        model = Organization
+        fields = '__all__'
 
 
 class OrganizationSerializer(LinkedEventsSerializer):
@@ -1521,7 +1518,7 @@ class OrganizationViewSet(JSONAPIViewMixin,
         if self.action == 'retrieve':
             return OrganizationDetailSerializer
         elif self.action == 'create':
-            return OrganizationCreateSerializer
+            return OrganizationDetailSerializer
         elif self.action == 'update':
             return OrganizationUpdateSerializer
         else:
@@ -1554,6 +1551,17 @@ class OrganizationViewSet(JSONAPIViewMixin,
             except Organization.DoesNotExist:
                 queryset = queryset.none()
         return queryset
+
+    def destroy(self, request, *args, **kwargs):
+        qset = Organization.objects.filter(id=kwargs['pk'])
+        if qset.count == 0:
+            raise ParseError(f"Organization {kwargs['pk']} not found.")
+        else:
+            instance = qset[0]
+        if organization_can_be_edited_by(instance, request.user):
+            return super().destroy(request, *args, **kwargs)
+        else:
+            raise DRFPermissionDenied(f'User {request.user} has no right to delete {instance}')
 
 
 register_view(OrganizationViewSet, 'organization')
