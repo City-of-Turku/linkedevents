@@ -1292,14 +1292,26 @@ class OrganizationBaseSerializer(LinkedEventsSerializer):
 class OrganizationListSerializer(OrganizationBaseSerializer):
     view_name = 'organization-detail'
 
-    parent_organization = JSONLDRelatedField(
-        serializer=OrganizationBaseSerializer, source='parent', required=False, allow_null=True,
-        view_name='organization-detail', queryset=Organization.objects.all(),
+    parent_organization = serializers.HyperlinkedRelatedField(
+        queryset=Organization.objects.all(),
+        source='parent',
+        view_name='organization-detail',
+        required=False,
     )
-    sub_organizations = JSONLDRelatedField(
-        serializer=OrganizationBaseSerializer, many=True, required=False, allow_empty=True,
-        view_name='organization-detail', queryset=Organization.objects.all()
+    sub_organizations = serializers.HyperlinkedRelatedField(
+        view_name='organization-detail',
+        many=True,
+        required=False,
+        read_only=True
     )
+    # parent_organization = JSONLDRelatedField(
+    #    serializer=OrganizationBaseSerializer, source='parent', required=False, allow_null=True,
+    #    view_name='organization-detail', queryset=Organization.objects.all(),
+    # )
+    # sub_organizations = JSONLDRelatedField(
+    #    serializer=OrganizationBaseSerializer, many=True, required=False, allow_empty=True,
+    #    view_name='organization-detail', queryset=Organization.objects.all()
+    # )
     affiliated_organizations = serializers.HyperlinkedRelatedField(
         view_name='organization-detail',
         many=True,
