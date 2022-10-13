@@ -235,6 +235,7 @@ class OsoiteImporter(Importer):
         position.transform(self.coord_transform)
         return position
 
+
     @transaction.atomic
     def save_page(self, results, municipality):
         municipality_id = municipality[0]
@@ -242,17 +243,16 @@ class OsoiteImporter(Importer):
         municipality_name["sv"] = municipality[2]
         municipality_name["en"] = municipality[1]
 
-        for result in results:                      
-            full_name =  {"fi": result["full_name_fi"]}
-            full_name["sv"] = result["full_name_sv"]
-            full_name["en"] = result["full_name_en"]
+        for result in results:
+            full_name = {lang:result["full_name"][lang] for lang in self.supported_languages}
+
             origin_id = f"{full_name['fi'].replace(' ','_')}_{municipality_id}".lower() 
             id = f"osoite:{origin_id}"                   
             entry = {"id":id}
             for lang in self.supported_languages:
                 entry["name_" + lang] = f"{full_name[lang]}, {municipality_name[lang]}"
                 entry["street_address_" + lang] = full_name[lang]
-                entry["address_locality_" + lang] = municipality_name[lang]            
+                entry["address_locality_" + lang] = municipality_name[lang]
             
             entry["origin_id"] = origin_id
             entry["created_time"] = BaseModel.now()
