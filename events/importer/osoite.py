@@ -231,7 +231,7 @@ class OsoiteImporter(Importer):
         except KeyError:
             return None
 
-        position = Point(lat, lon, srid=SOURCE_DATA_SRID)
+        position = Point(lon, lat, srid=SOURCE_DATA_SRID)
         position.transform(self.coord_transform)
         return position
 
