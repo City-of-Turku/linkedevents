@@ -243,6 +243,14 @@ class OsoiteImporter(Importer):
         municipality_name["sv"] = municipality[2]
         municipality_name["en"] = municipality[1]
 
+        # Create a list of events with osoite.
+        modified_events = {}
+        for event in Event.objects.filter(location_id.address_locality=municipality_name, location_id.data_source='osoite'):
+            logger.info("------------------------------ DEBUGGING!!!!!")
+            #modified_events[event.id] = address_full
+
+        Place.objects.filter(id__endswith=municipality_id, data_source_id="osoite").delete()
+
         for result in results:
             full_name = {lang:result["full_name"][lang] for lang in self.supported_languages}
 
@@ -317,7 +325,7 @@ class OsoiteImporter(Importer):
             # Check if municipality exist in the source data.
             if self.get_is_municipality_in_source_data(municipality[0]):
                 # Delete only if data_source_id is "osoite", leave "ptv" and "osm" places.
-                Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
+                # Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
                 self.import_municipality(municipality)   
             else:
                 logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
