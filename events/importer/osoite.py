@@ -245,7 +245,8 @@ class OsoiteImporter(Importer):
 
         # Create a list of events with osoite.
         modified_events = {}
-        logger.info(Event.objects.filter(location_id__address_locality=municipality_name, location_id__data_source='osoite').count())
+        logger.info(municipality_name)
+        logger.info(Event.objects.filter(location_id__address_locality=municipality_name, location_id__data_source_id='osoite').count())
         for event in Event.objects.filter(location_id__address_locality=municipality_name, location_id__data_source='osoite'):
             logger.info("------------------------------ DEBUGGING!!!!!")
             #modified_events[event.id] = address_full
