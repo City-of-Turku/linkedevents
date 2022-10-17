@@ -248,8 +248,12 @@ class OsoiteImporter(Importer):
         logger.info(municipality_name)
         logger.info(Event.objects.filter(location_id__address_locality=municipality_name['fi'], location_id__data_source_id='osoite').count())
         for event in Event.objects.filter(location_id__address_locality=municipality_name['fi'], location_id__data_source_id='osoite'):
-            logger.info("------------------------------ DEBUGGING!!!!!")
-            #modified_events[event.id] = address_full
+            if event.location != None:
+                modified_events[event.id] = event.location.origin_id
+                event.location = None
+                event.save()
+
+        logger.info(modified_events)
 
         Place.objects.filter(id__endswith=municipality_id, data_source_id="osoite").delete()
 
