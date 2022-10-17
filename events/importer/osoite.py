@@ -20,7 +20,7 @@ from threading import Thread
 
 # Django:
 from django_orghierarchy.models import Organization, OrganizationClass
-from events.models import DataSource, BaseModel, Place
+from events.models import DataSource, BaseModel, Place, Event
 from events.importer.util import get_search_column
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
