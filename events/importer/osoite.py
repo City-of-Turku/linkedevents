@@ -49,33 +49,33 @@ THREAD_POOL_SIZE = 8
 
 MUNICIPALITIES = { 
     # Code, municipality_id, name_fi, name_sv
-    # 19: ("aura","Aura", "Aura"),
-    # 202: ("kaarina","Kaarina", "S:t Karins"),
-    # 284: ("koski_tl", "Koski Tl", "Koskis"),
-    # 304: ("kustavi", "Kustavi", "Gustavs"),
-    # 322: ("kemiönsaari", "Kemiönsaari", "Kimitoön"),
-    # 400: ("laitila", "Laitila", "Letala"),
-    # 423: ("lieto", "Lieto", "Lundo"),
-    # 430: ("loimaa", "Loimaa", "Loimaa"),
-    # 445: ("parainen", "Parainen", "Pargas"),
-    # 480: ("marttila", "Marttila", "S:t Mårtens"),
-    # 481: ("masku", "Masku", "Masko"),
-    # 503: ("mynämäki", "Mynämäki", "Virmo"),
-    # 529: ("naantali", "Naantali", "Nådendal"),
-    # 538: ("nousiainen", "Nousiainen", "Nousis"),
-    # 561: ("oripää", "Oripää", "Oripää"),
-    # 577: ("paimio", "Paimio", "Pemar"),
-    # 631: ("pyhäranta", "Pyhäranta", "Pyhäranta"),
-    # 636: ("pöytyä", "Pöytyä", "Pöytis"),
-    # 680: ("raisio", "Raisio", "Reso"),
-    # 704: ("rusko", "Rusko", "Rusko"),
-    # 734: ("salo", "Salo", "Salo"),
-    # 738: ("sauvo", "Sauvo", "Sagu"),
-    # 761: ("somero", "Somero", "Somero"),
-    # 833: ("taivassalo", "Taivassalo", "Tövsala"),
+    19: ("aura","Aura", "Aura"),
+    202: ("kaarina","Kaarina", "S:t Karins"),
+    284: ("koski_tl", "Koski Tl", "Koskis"),
+    304: ("kustavi", "Kustavi", "Gustavs"),
+    322: ("kemiönsaari", "Kemiönsaari", "Kimitoön"),
+    400: ("laitila", "Laitila", "Letala"),
+    423: ("lieto", "Lieto", "Lundo"),
+    430: ("loimaa", "Loimaa", "Loimaa"),
+    445: ("parainen", "Parainen", "Pargas"),
+    480: ("marttila", "Marttila", "S:t Mårtens"),
+    481: ("masku", "Masku", "Masko"),
+    503: ("mynämäki", "Mynämäki", "Virmo"),
+    529: ("naantali", "Naantali", "Nådendal"),
+    538: ("nousiainen", "Nousiainen", "Nousis"),
+    561: ("oripää", "Oripää", "Oripää"),
+    577: ("paimio", "Paimio", "Pemar"),
+    631: ("pyhäranta", "Pyhäranta", "Pyhäranta"),
+    636: ("pöytyä", "Pöytyä", "Pöytis"),
+    680: ("raisio", "Raisio", "Reso"),
+    704: ("rusko", "Rusko", "Rusko"),
+    734: ("salo", "Salo", "Salo"),
+    738: ("sauvo", "Sauvo", "Sagu"),
+    761: ("somero", "Somero", "Somero"),
+    833: ("taivassalo", "Taivassalo", "Tövsala"),
     853: ("turku", "Turku", "Åbo"),
-    # 895: ("uusikaupunki", "Uusikaupunki", "Nystad"),
-    # 918: ("vehmaa", "Vehmaa", "Vemo"),   
+    895: ("uusikaupunki", "Uusikaupunki", "Nystad"),
+    918: ("vehmaa", "Vehmaa", "Vemo"),   
 }
 # Per module logger
 logger = logging.getLogger(__name__)
@@ -320,7 +320,7 @@ class OsoiteImporter(Importer):
                 # Memorize all event to osoite relations due to upcoming deletion.
                 cached_event_osoite = {}
                 for event in Event.objects.filter(location_id__address_locality=municipality[1], location_id__data_source_id='osoite'):
-                    logger.info("Found an event %s with the current municipality... saving it for later." % event.id)
+                    logger.info("Found an event %s with the current municipality: %s. Saving it for later." % (event.id, municipality[1]))
                     cached_event_osoite[event.id] = event.location.origin_id
                     event.location = None
                     event.save()
@@ -328,7 +328,7 @@ class OsoiteImporter(Importer):
                 Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
                 logger.info("Deleted all osoite with the current municipality: %s" % municipality[0])
                 self.import_municipality(municipality)
-
+                # Re-establish cashed osoite relations to events.
                 for event_id, event_osoite in cached_event_osoite.items():
                     logger.info("Re-adding cached osoite for %s with %s" % (event_id, event_osoite))
                     got_event = Event.objects.filter(id=event_id).first() # Just to be safe & optimized.
