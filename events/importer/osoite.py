@@ -328,7 +328,7 @@ class OsoiteImporter(Importer):
                 Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
                 logger.info("Deleted all osoite with the current municipality: %s" % municipality[0])
                 self.import_municipality(municipality)
-                # Re-establish cashed osoite relations to events.
+                # Re-establish cached osoite relations to events.
                 for event_id, event_osoite in cached_event_osoite.items():
                     logger.info("Re-adding cached osoite for %s with %s" % (event_id, event_osoite))
                     got_event = Event.objects.filter(id=event_id).first() # Just to be safe & optimized.
