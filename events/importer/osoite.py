@@ -243,20 +243,6 @@ class OsoiteImporter(Importer):
         municipality_name["sv"] = municipality[2]
         municipality_name["en"] = municipality[1]
 
-        # Create a list of events with osoite.
-        modified_events = {}
-        logger.info(municipality_name)
-        logger.info(Event.objects.filter(location_id__address_locality=municipality_name['fi'], location_id__data_source_id='osoite').count())
-        for event in Event.objects.filter(location_id__address_locality=municipality_name['fi'], location_id__data_source_id='osoite'):
-            if event.location != None:
-                modified_events[event.id] = event.location.origin_id
-                event.location = None
-                event.save()
-
-        logger.info(modified_events)
-
-        Place.objects.filter(id__endswith=municipality_id, data_source_id="osoite").delete()
-
         for result in results:
             full_name = {lang:result["full_name"][lang] for lang in self.supported_languages}
 
@@ -322,6 +308,7 @@ class OsoiteImporter(Importer):
             logger.info(f"Duration: {str(duration)[:7]}, Places imported {self.places_imported} ")
             logger.info(f"Output rate(places/second): {round(output_rate,2)}")
  
+    @transaction.atomic
     def import_places(self):
         # Disable sending signals for the model, as it would cause too much overhead.
         # Instead populate the search columns after the import is finished.
@@ -330,13 +317,26 @@ class OsoiteImporter(Importer):
         for municipality in MUNICIPALITIES.values():
             # Check if municipality exist in the source data.
             if self.get_is_municipality_in_source_data(municipality[0]):
+                # Memorize all event to osoite relations due to upcoming deletion.
+                cached_event_osoite = {}
+                for event in Event.objects.filter(location_id__address_locality=municipality[1], location_id__data_source_id='osoite'):
+                    cached_event_osoite[event.id] = event.location.origin_id
+                    event.location = None
+                    event.save()
                 # Delete only if data_source_id is "osoite", leave "ptv" and "osm" places.
-                # Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
-                self.import_municipality(municipality)   
+                Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
+                self.import_municipality(municipality)
+
+                for event_id, event_osoite in cached_event_osoite.items():
+                    got_event = Event.objects.filter(id=event_id).first() # Just to be safe & optimized.
+                    updated_location = Place.objects.filter(origin_id=event_osoite).first() # Just to be safe & optimized.
+                    if got_event and updated_location:
+                        got_event.location = updated_location
+                        got_event.save()
             else:
-                logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
+                logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")
         logger.info("Indexing search columns...")
-        self.index_search_columns()        
+        self.index_search_columns()
         # Enable sending signals for the model
         Place._meta.auto_created = True
      
