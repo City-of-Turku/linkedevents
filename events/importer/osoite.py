@@ -20,7 +20,7 @@ from threading import Thread
 
 # Django:
 from django_orghierarchy.models import Organization, OrganizationClass
-from events.models import DataSource, BaseModel, Place
+from events.models import DataSource, BaseModel, Place, Event
 from events.importer.util import get_search_column
 from .base import Importer, register_importer
 from django.utils.html import strip_tags
@@ -308,6 +308,7 @@ class OsoiteImporter(Importer):
             logger.info(f"Duration: {str(duration)[:7]}, Places imported {self.places_imported} ")
             logger.info(f"Output rate(places/second): {round(output_rate,2)}")
  
+    @transaction.atomic
     def import_places(self):
         # Disable sending signals for the model, as it would cause too much overhead.
         # Instead populate the search columns after the import is finished.
@@ -316,13 +317,30 @@ class OsoiteImporter(Importer):
         for municipality in MUNICIPALITIES.values():
             # Check if municipality exist in the source data.
             if self.get_is_municipality_in_source_data(municipality[0]):
+                # Memorize all event to osoite relations due to upcoming deletion.
+                cached_event_osoite = {}
+                for event in Event.objects.filter(location_id__address_locality=municipality[1], location_id__data_source_id='osoite'):
+                    logger.info("Found an event %s with the current municipality: %s. Saving it for later." % (event.id, municipality[1]))
+                    cached_event_osoite[event.id] = event.location.origin_id
+                    event.location = None
+                    event.save()
                 # Delete only if data_source_id is "osoite", leave "ptv" and "osm" places.
                 Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
-                self.import_municipality(municipality)   
+                logger.info("Deleted all osoite with the current municipality: %s" % municipality[0])
+                self.import_municipality(municipality)
+                # Re-establish cached osoite relations to events.
+                for event_id, event_osoite in cached_event_osoite.items():
+                    logger.info("Re-adding cached osoite for %s with %s" % (event_id, event_osoite))
+                    got_event = Event.objects.filter(id=event_id).first() # Just to be safe & optimized.
+                    updated_location = Place.objects.filter(origin_id=event_osoite).first() # Just to be safe & optimized.
+                    if got_event and updated_location:
+                        got_event.location = updated_location
+                        got_event.save()
+                        logger.info("Saved cached osoite for: %s" % event_id)
             else:
-                logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")         
+                logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")
         logger.info("Indexing search columns...")
-        self.index_search_columns()        
+        self.index_search_columns()
         # Enable sending signals for the model
         Place._meta.auto_created = True
      
