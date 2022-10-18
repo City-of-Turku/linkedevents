@@ -320,19 +320,23 @@ class OsoiteImporter(Importer):
                 # Memorize all event to osoite relations due to upcoming deletion.
                 cached_event_osoite = {}
                 for event in Event.objects.filter(location_id__address_locality=municipality[1], location_id__data_source_id='osoite'):
+                    logger.info("Found an event %s with the current municipality... saving it for later." % event.id)
                     cached_event_osoite[event.id] = event.location.origin_id
                     event.location = None
                     event.save()
                 # Delete only if data_source_id is "osoite", leave "ptv" and "osm" places.
                 Place.objects.filter(id__endswith=municipality[0], data_source_id="osoite").delete()
+                logger.info("Deleted all osoite with the current municipality: %s" % municipality[0])
                 self.import_municipality(municipality)
 
                 for event_id, event_osoite in cached_event_osoite.items():
+                    logger.info("Re-adding cached osoite for %s with %s" % (event_id, event_osoite))
                     got_event = Event.objects.filter(id=event_id).first() # Just to be safe & optimized.
                     updated_location = Place.objects.filter(origin_id=event_osoite).first() # Just to be safe & optimized.
                     if got_event and updated_location:
                         got_event.location = updated_location
                         got_event.save()
+                        logger.info("Saved cached osoite for: %s" % event_id)
             else:
                 logger.warning(f"municipality_id {municipality[0]} not found in source data, skipping.")
         logger.info("Indexing search columns...")
