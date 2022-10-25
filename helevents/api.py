@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django_orghierarchy.models import Organization
 from django.db.models import Q
-
+from events.api_pagination import LargeResultsSetPagination
 
 all_views = []
 
@@ -26,9 +26,12 @@ class UserSerializer(serializers.ModelSerializer):
         default_org = obj.get_default_organization()
         if default_org:
             rep['organization'] = default_org.id
-        rep['admin_organizations'] = [org.id for org in obj.admin_organizations.all()]
-        rep['organization_memberships'] = [org.id for org in obj.organization_memberships.all()]
-        rep['public_memberships'] = [org.id for org in obj.public_memberships.all()]
+        rep['admin_organizations'] = [
+            org.id for org in obj.admin_organizations.all()]
+        rep['organization_memberships'] = [
+            org.id for org in obj.organization_memberships.all()]
+        rep['public_memberships'] = [
+            org.id for org in obj.public_memberships.all()]
         return rep
 
     class Meta:
@@ -45,6 +48,7 @@ REGULAR = 'regular'
 PRIVATE = 'private'
 ORGANIZATION_LEVELS = (ADMIN, REGULAR, PRIVATE)
 
+
 class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['put'])
@@ -52,7 +56,8 @@ class UserViewSet(viewsets.ModelViewSet):
         organization = self._get_organization(request.data.get('organization'))
         user = self.get_object()
         if not user.is_superuser and not user.is_admin(organization):
-            raise PermissionDenied('You do not have rights to this organization')
+            raise PermissionDenied(
+                'You do not have rights to this organization')
 
         user_to_update = self._get_user(pk)
         org_levels = request.data.get('organization_levels')
@@ -72,20 +77,19 @@ class UserViewSet(viewsets.ModelViewSet):
             organization.private_users.add(user_to_update)
         else:
             organization.private_users.remove(user_to_update)
-        
+
         user_data = UserSerializer(user_to_update).data
         return Response(user_data, status=status.HTTP_200_OK)
 
-
     def _get_organization(self, org_id):
         if not org_id:
-            raise serializers.ValidationError({'organization': 'must be given'})
+            raise serializers.ValidationError(
+                {'organization': 'must be given'})
         try:
             organization = Organization.objects.get(id=org_id)
         except ObjectDoesNotExist:
             raise serializers.ValidationError({'organization': 'not found'})
         return organization
-
 
     def _get_user(self, username):
         try:
@@ -94,14 +98,15 @@ class UserViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError({'user': 'not found'})
         return user
 
-
     def _validate_organization_levels(self, levels):
         if not levels:
-            raise serializers.ValidationError({'organization_levels': 'must be included'})
+            raise serializers.ValidationError(
+                {'organization_levels': 'must be included'})
 
         if not isinstance(levels, dict):
-            raise serializers.ValidationError({'organization_levels': 'must be type object'})
-        
+            raise serializers.ValidationError(
+                {'organization_levels': 'must be type object'})
+
         org_level_keys = levels.keys()
         if len(org_level_keys) != len(ORGANIZATION_LEVELS):
             raise serializers.ValidationError(
@@ -118,15 +123,20 @@ class UserViewSet(viewsets.ModelViewSet):
                     {'organization_levels': 'each level value must be type boolean'}
                 )
 
-
     def get_queryset(self):
         user = self.request.user
         queryset = self.queryset
         email = self.request.query_params.get('email')
-    
+
         if email:
             queryset = queryset.filter(email=email)
-        
+
+        full_name = self.request.query_params.get('full_name')
+        if full_name:
+            for name in full_name.split():
+                queryset = queryset.filter(
+                    Q(first_name__icontains=name) | Q(last_name__icontains=name))
+
         org_id = self.request.query_params.get('organization')
         if org_id:
             if user.is_superuser or user.is_admin(self._get_organization(org_id)):
@@ -155,6 +165,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
+    pagination_class = LargeResultsSetPagination
 
 
 register_view(UserViewSet, 'user')
