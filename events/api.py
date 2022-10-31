@@ -2141,6 +2141,12 @@ def _filter_event_queryset(queryset, params, srs=None):
         val = val.split(',')
         queryset = queryset.filter(location_id__in=val)
 
+    # Filter by post code.
+    val = params.get('postal_code', None)
+    if val:
+        val = val.split(',')
+        queryset = queryset.filter(location_id__postal_code__in=val)
+
     # Filter by keyword id, multiple ids separated by comma
     val = params.get('keyword', None)
     if val:
