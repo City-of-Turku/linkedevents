@@ -245,7 +245,6 @@ class OsoiteImporter(Importer):
 
         for result in results:
             full_name = {lang:result["full_name"][lang] for lang in self.supported_languages}
-            entry['postal_code'] = result['postal_code_area']['postal_code']
 
             origin_id = f"{full_name['fi'].replace(' ','_')}_{municipality_id}".lower() 
             id = f"osoite:{origin_id}"                   
@@ -254,8 +253,9 @@ class OsoiteImporter(Importer):
                 entry["name_" + lang] = f"{full_name[lang]}, {municipality_name[lang]}"
                 entry["street_address_" + lang] = full_name[lang]
                 entry["address_locality_" + lang] = municipality_name[lang]
-            
+
             entry["origin_id"] = origin_id
+            entry['postal_code'] = result['postal_code_area']['postal_code']
             entry["created_time"] = BaseModel.now()
             entry["position"] = self.get_position(result)
             entry["data_source_id"] = getattr(self, "data_source")
