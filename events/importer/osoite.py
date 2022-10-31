@@ -245,6 +245,7 @@ class OsoiteImporter(Importer):
 
         for result in results:
             full_name = {lang:result["full_name"][lang] for lang in self.supported_languages}
+            entry['postal_code'] = result['postal_code_area']['postal_code']
 
             origin_id = f"{full_name['fi'].replace(' ','_')}_{municipality_id}".lower() 
             id = f"osoite:{origin_id}"                   
