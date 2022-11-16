@@ -2581,7 +2581,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
                 # displays all editable events, including drafts, and public non-editable events
                 queryset = editable_queryset | public_queryset
             admin_user = self.request.query_params.get('admin_user')
-            if admin_user:
+            if admin_user or self.request.user.is_superuser:
                 # displays all editable events, including drafts, but no other public events
                 queryset = editable_queryset
             created_by = self.request.query_params.get('created_by')

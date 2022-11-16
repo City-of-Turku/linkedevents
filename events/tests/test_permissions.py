@@ -108,6 +108,11 @@ class TestUserModelPermissions(TestCase):
             data_source=self.data_source,
             parent=self.org
         )
+        self.org3 = Organization.objects.create(
+            name='org3',
+            origin_id='org3',
+            data_source=self.data_source,
+        )
 
     def test_get_editable_events(self):
         # this test requires the whole User model, as admin organizations are dependent on org hierarchy
@@ -135,6 +140,15 @@ class TestUserModelPermissions(TestCase):
             publication_status=PublicationStatus.DRAFT
         )
 
+        # superusers should be allowed to see events from all organizations
+        event_4 = Event.objects.create(
+            id='event-4',
+            name='event-4',
+            data_source=self.data_source,
+            publisher=self.org3,
+            publication_status=PublicationStatus.DRAFT
+        )
+
         total_qs = Event.objects.all()
         # test for admin user
         # magicmock cannot be used for object properties
@@ -158,3 +172,12 @@ class TestUserModelPermissions(TestCase):
         self.instance.public_memberships.remove(self.org)
         qs = self.instance.get_editable_events(total_qs)
         self.assertQuerysetEqual(qs, [])
+
+        # test for superusers
+        self.instance.is_superuser = True
+        qs = self.instance.get_editable_events(total_qs)
+        self.assertQuerysetEqual(
+            qs,
+            [repr(event_1), repr(event_2), repr(event_3), repr(event_4)],
+            ordered=False,
+        )
