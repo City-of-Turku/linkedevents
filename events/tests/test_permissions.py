@@ -181,3 +181,10 @@ class TestUserModelPermissions(TestCase):
             [repr(event_1), repr(event_2), repr(event_3), repr(event_4)],
             ordered=False,
         )
+
+    def test_superuser_can_edit_events(self):
+        self.instance.is_superuser = True
+        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
+        self.assertTrue(can_edit)
+        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
+        self.assertTrue(can_edit)

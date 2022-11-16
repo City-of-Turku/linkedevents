@@ -36,6 +36,8 @@ class UserModelPermissionMixin:
     def can_edit_event(self, publisher, publication_status):
         """Check if current user can edit (create, change, modify)
         event with the given publisher and publication_status"""
+        if hasattr(self, "is_superuser") and self.is_superuser:
+            return True
         if self.is_admin(publisher):
             return True
         if self.is_private_user(publisher):
