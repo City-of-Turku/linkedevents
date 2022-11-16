@@ -748,6 +748,10 @@ definitions:
         title: Ylläpitäjä
         description: Määrittää, pääseekö käyttäjä tähän sivuston ylläpito-osioon.
         type: boolean
+      is_superuser:
+        title: Pääkäyttäjä
+        description: Määrittää, onko käyttäjällä pääkäyttäjän oikeudet.
+        type: boolean
       display_name:
         title: Display name
         type: string
