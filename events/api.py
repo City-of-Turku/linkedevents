@@ -1519,6 +1519,10 @@ class OrganizationViewSet(JSONAPIViewMixin,
         if name:
             queryset = queryset.filter(name__icontains=name)
 
+        exact_name = self.request.query_params.get('exact_name')
+        if exact_name:
+            queryset = queryset.filter(name__exact=exact_name)
+
         id = self.request.query_params.get('child', None)
         if id:
             try:
@@ -1633,7 +1637,9 @@ class OfferSerializer(TranslatedModelSerializer):
         exclude = ['id', 'event']
 
 
-class SidefieldSerializer(TranslatedModelSerializer):
+class SidefieldSerializer(LinkedEventsSerializer):
+    view_name = 'sidefield-detail'
+
     type_id = EnumChoiceField(Event.TYPE_IDS, required=False, read_only=True)
     sidefieldset_name = serializers.CharField(required=False, read_only=True)
     location_sidefield = serializers.CharField(required=False)
@@ -1650,12 +1656,32 @@ class SidefieldSerializer(TranslatedModelSerializer):
     category_mobile = serializers.CharField(required=False)
 
     def to_representation(self, obj):
+        print('REPRESENTATION')
         representation = super().to_representation(obj)
         request = self.context['request']
         user = request.user
         if not user.is_superuser and not user.is_staff:
             representation.pop('id')
         return representation
+
+    def validate(self, data):
+
+        print('VALIDATE')
+
+        return super().validate(data)
+
+    def update(self, instance, validated_data):
+
+        print('UPDATE')
+
+        return instance
+
+    def create(self, validated_data):
+
+        instance = super().create(validated_data)
+        print('CREATE')
+
+        return instance
 
     class Meta:
         model = Sidefield
@@ -1665,6 +1691,7 @@ class SidefieldSerializer(TranslatedModelSerializer):
 class SidefieldPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
+        print(user)
         if request.method == 'GET':
             return True
         elif request.method in ('PUT', 'PATCH'):
