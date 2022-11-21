@@ -1504,6 +1504,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         """Handles thorough PUT method /image/ endpoint validation."""
         data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
+        is_superuser = self.request.user.is_superuser
 
         if isinstance(self.request.data, dict):
             if 'id' in self.request.data:
@@ -1511,11 +1512,11 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 if img_obj:
                     if img_obj.publisher:
                         # Validate that we can only modify images within our own organization.
-                        if img_obj.publisher.id != user_organization.id:
+                        if not is_superuser and img_obj.publisher.id != user_organization.id:
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
 
-                        if user_organization.id == settings.PRIVATE_ORG_ID:
+                        if not is_superuser and user_organization.id == settings.PRIVATE_ORG_ID:
                             if img_obj.created_by:
                                 if img_obj.created_by.id != instance.user.id:
                                     raise PermissionDenied(
@@ -1543,7 +1544,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         # ensure image can only be deleted within the organization
         data_source, organization = get_authenticated_data_source_and_publisher(
             self.request)
-        if not organization == instance.publisher:
+        if not self.request.user.is_superuser and not organization == instance.publisher:
             raise PermissionDenied()
         super().perform_destroy(instance)
 
