@@ -662,7 +662,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
     def validate_publisher(self, value):
         # a single POST always comes from a single source
         if value and self.method == 'POST':
-            if value not in (set(self.user.get_admin_organizations_and_descendants())
+            if not self.user.is_superuser and value not in (set(self.user.get_admin_organizations_and_descendants())
                              | set(map(lambda x: getattr(x, 'replaced_by'),
                                    self.user.get_admin_organizations_and_descendants()))
                              | set(self.user.organization_memberships.all())
@@ -2581,7 +2581,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
                 # displays all editable events, including drafts, and public non-editable events
                 queryset = editable_queryset | public_queryset
             admin_user = self.request.query_params.get('admin_user')
-            if admin_user:
+            if admin_user or self.request.user.is_superuser:
                 # displays all editable events, including drafts, but no other public events
                 queryset = editable_queryset
             created_by = self.request.query_params.get('created_by')

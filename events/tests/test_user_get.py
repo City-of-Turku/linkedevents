@@ -29,6 +29,7 @@ def assert_user_fields_exist(data, version='v1'):
         'department_name',
         'organization',
         'is_staff',
+        'is_superuser',
         'display_name',
         'admin_organizations',
         'organization_memberships',

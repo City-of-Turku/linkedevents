@@ -506,6 +506,17 @@ def test_admin_user_filter(api_client, event, event2, user):
 
 
 @pytest.mark.django_db
+def test_get_events_as_superuser(api_client, event, event2, user):
+    """Superusers should get events from all organizations"""
+    api_client.force_authenticate(user=user)
+
+    response = get_list(api_client)
+    ids = {e['id'] for e in response.data['data']}
+    assert event.id in ids
+    assert event2.id in ids
+
+
+@pytest.mark.django_db
 def test_redirect_if_replaced(api_client, event, event2, user):
     api_client.force_authenticate(user=user)
 
