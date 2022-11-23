@@ -246,6 +246,40 @@ def test__image_cannot_be_edited_outside_organization(
 
 
 @pytest.mark.django_db
+def test__any_image_can_be_edited_by_superuser(
+    api_client, list_url, image_url, user, user2, super_user, organization, organization2, organization3):
+
+    # create image as organization 1
+    organization.admin_users.add(user)
+    api_client.force_authenticate(user=user)
+    response = api_client.post(list_url, image_url)
+    assert response.status_code == 201
+    img1 = Image.objects.last()
+
+    # create image as organization 2
+    organization2.admin_users.add(user2)
+    api_client.force_authenticate(user=user2)
+    response = api_client.post(list_url, image_url)
+    assert response.status_code == 201
+    img2 = Image.objects.last()
+
+    # edit both images as super user
+    organization3.admin_users.add(super_user)
+    api_client.force_authenticate(user=super_user)
+    detail_url = reverse('image-detail', kwargs={'pk': img1.id})
+    response = api_client.put(
+        detail_url, {'name': {'fi': 'Edited'}, 'id': img1.id}, format='json'
+    )
+    assert response.status_code == 200
+
+    detail_url = reverse('image-detail', kwargs={'pk': img2.id})
+    response = api_client.put(
+        detail_url, {'name': {'fi': 'Edited'}, 'id': img2.id}, format='json'
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
 def test__image_from_another_data_source_can_be_edited_by_admin(api_client, list_url, image_data, data_source, user,
                                                                 organization, other_data_source):
     organization.admin_users.add(user)
@@ -473,6 +507,36 @@ def test__delete_an_image_with_api_key(api_client, settings, organization, data_
 
     # check that the image file is deleted
     assert not os.path.isfile(image_path)
+
+
+@pytest.mark.django_db
+def test__any_image_can_be_deleted_by_superuser(
+    api_client, list_url, image_url, user, user2, super_user, organization, organization2, organization3):
+
+    # create image as organization 1
+    organization.admin_users.add(user)
+    api_client.force_authenticate(user=user)
+    response = api_client.post(list_url, image_url)
+    assert response.status_code == 201
+    img1 = Image.objects.last()
+
+    # create image as organization 2
+    organization2.admin_users.add(user2)
+    api_client.force_authenticate(user=user2)
+    response = api_client.post(list_url, image_url)
+    assert response.status_code == 201
+    img2 = Image.objects.last()
+
+    # delete both images as superuser
+    organization3.admin_users.add(super_user)
+    api_client.force_authenticate(user=super_user)
+    detail_url = reverse('image-detail', kwargs={'pk': img1.id})
+    response = api_client.delete(detail_url)
+    assert response.status_code == 204
+
+    detail_url = reverse('image-detail', kwargs={'pk': img2.id})
+    response = api_client.delete(detail_url)
+    assert response.status_code == 204
 
 
 @override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL='')
