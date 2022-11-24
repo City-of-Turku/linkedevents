@@ -672,7 +672,7 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
     def validate_publisher(self, value):
         # a single POST always comes from a single source
         if value and self.method == 'POST':
-            if value not in (set(self.user.get_admin_organizations_and_descendants())
+            if not self.user.is_superuser and value not in (set(self.user.get_admin_organizations_and_descendants())
                              | set(map(lambda x: getattr(x, 'replaced_by'),
                                    self.user.get_admin_organizations_and_descendants()))
                              | set(self.user.organization_memberships.all())
@@ -1809,6 +1809,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         """Handles thorough PUT method /image/ endpoint validation."""
         data_source, user_organization = get_authenticated_data_source_and_publisher(
             self.request)
+        is_superuser = self.request.user.is_superuser
 
         if isinstance(self.request.data, dict):
             if 'id' in self.request.data:
@@ -1816,11 +1817,11 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 if img_obj:
                     if img_obj.publisher:
                         # Validate that we can only modify images within our own organization.
-                        if img_obj.publisher.id != user_organization.id:
+                        if not is_superuser and img_obj.publisher.id != user_organization.id:
                             raise PermissionDenied(
                                 _("You can't modify an image outside your own organization."))
 
-                        if user_organization.id == settings.PRIVATE_ORG_ID:
+                        if not is_superuser and user_organization.id == settings.PRIVATE_ORG_ID:
                             if img_obj.created_by:
                                 if img_obj.created_by.id != instance.user.id:
                                     raise PermissionDenied(
@@ -1848,7 +1849,7 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         # ensure image can only be deleted within the organization
         data_source, organization = get_authenticated_data_source_and_publisher(
             self.request)
-        if not organization == instance.publisher:
+        if not self.request.user.is_superuser and not organization == instance.publisher:
             raise PermissionDenied()
         super().perform_destroy(instance)
 
@@ -2446,6 +2447,12 @@ def _filter_event_queryset(queryset, params, srs=None):
         val = val.split(',')
         queryset = queryset.filter(location_id__in=val)
 
+    # Filter by post code.
+    val = params.get('postal_code', None)
+    if val:
+        val = val.split(',')
+        queryset = queryset.filter(location_id__postal_code__in=val)
+
     # Filter by keyword id, multiple ids separated by comma
     val = params.get('keyword', None)
     if val:
@@ -2880,7 +2887,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
                 # displays all editable events, including drafts, and public non-editable events
                 queryset = editable_queryset | public_queryset
             admin_user = self.request.query_params.get('admin_user')
-            if admin_user:
+            if admin_user or self.request.user.is_superuser:
                 # displays all editable events, including drafts, but no other public events
                 queryset = editable_queryset
             created_by = self.request.query_params.get('created_by')

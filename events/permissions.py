@@ -36,6 +36,8 @@ class UserModelPermissionMixin:
     def can_edit_event(self, publisher, publication_status):
         """Check if current user can edit (create, change, modify)
         event with the given publisher and publication_status"""
+        if hasattr(self, "is_superuser") and self.is_superuser:
+            return True
         if self.is_admin(publisher):
             return True
         if self.is_private_user(publisher):
@@ -46,6 +48,9 @@ class UserModelPermissionMixin:
 
     def get_editable_events(self, queryset):
         """Get editable events queryset from given queryset for current user"""
+        if hasattr(self, "is_superuser") and self.is_superuser:
+            return queryset
+
         # distinct is not needed here, as admin_orgs and memberships should not overlap
         return queryset.filter(
             publisher__in=self.get_admin_organizations_and_descendants()

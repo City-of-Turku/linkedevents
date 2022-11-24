@@ -36,9 +36,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = [
-            'last_login', 'username', 'email', 'date_joined',
-            'pk', 'first_name', 'last_name', 'uuid', 'department_name',
-            'is_staff', 'display_name',
+            'pk', 'last_login', 'username', 'email', 'date_joined',
+            'first_name', 'last_name', 'uuid', 'department_name',
+            'is_staff', 'is_superuser', 'display_name',
         ]
         model = get_user_model()
 

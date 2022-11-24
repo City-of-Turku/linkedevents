@@ -462,3 +462,12 @@ class TestImageAPI(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['data']), 1)
+
+    def test_get_image_list_as_superuser(self):
+        # test that superusers get images from all organizations
+        url = reverse('image-list')
+        self.user.is_superuser = True
+        self.user.save()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['data']), 3)
