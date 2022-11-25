@@ -290,7 +290,7 @@ class HelptextsImporter(Importer):
             return None
 
         sidefield_data_source, _ = DataSource.objects.update_or_create(
-            defaults=dict(name='Järjestelmän ohjetekstit'), **dict(id='sidefield' user_editable=True))
+            defaults=dict(name='Järjestelmän ohjetekstit'), **dict(id='sidefield', user_editable=True))
 
         # Create 3 associative objects and populate them with attributes in the processing phase:
         objs = {key: Sidefield() for key in self.type_ids}
