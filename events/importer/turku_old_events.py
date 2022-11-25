@@ -292,7 +292,7 @@ class TurkuOriginalImporter(Importer):
         resp.raise_for_status()
         resp.raw.decode_content = True
 
-        with Image.open(resp.raw) as img:
+        with pil_image.open(resp.raw) as img:
             min_scale = min((1280 / img.width, 720 / img.height))
             img = img.resize((int(img.width * min_scale), int(img.height * min_scale)))
             img.save(f"{image_save_path}/{uid}.webp", format='webp')
