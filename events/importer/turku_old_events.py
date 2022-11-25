@@ -690,12 +690,15 @@ class TurkuOriginalImporter(Importer):
                 except (Language.DoesNotExist, Event.DoesNotExist):
                     return
 
-                EventLink.objects.update_or_create(
-                    name=f'extlink_{ft}',
-                    event_id=eventObj.id,
-                    language_id=myLang.id,
-                    link=json_event.get(f'{ft}_url', '')
-                )
+                ft_link = json_event.get(f'{ft}_url', '')
+
+                if len(ft_link) <= 200: 
+                    EventLink.objects.update_or_create(
+                        name=f'extlink_{ft}',
+                        event_id=eventObj.id,
+                        language_id=myLang.id,
+                        link=json_event.get(f'{ft}_url', '')
+                    )
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
