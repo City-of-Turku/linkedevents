@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 VIRTUAL_LOCATION_ID = "virtual:public"
 
+image_save_path = Path('%s/images' % settings.MEDIA_ROOT)
+
 TURKU_LUOKITUS_KEYWORD_IDS = {
     # Hobby content target:
     'Ajanvietepelit': 'tsl:p1',  # Ajanvietepelit
@@ -286,21 +288,17 @@ class TurkuOriginalImporter(Importer):
 
     def _request_image_url(self, img_url: str, uid: str) -> str:
         """Fetches, processes, converts and saves the image into webp format."""
-        img = requests.get(img_url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True).raw
-        img_file_name = uid
-        paths = Path('%s/images' % settings.MEDIA_ROOT)
+        resp = requests.get(img_url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True)
+        resp.raise_for_status()
+        resp.raw.decode_content = True
 
-        try:
-            img = pil_image.open(img)
-            # Scales the image so that it fits within the bounding box of a certain resolution.
-            min_scale = min((1280 / img.width, 720 / img.height)) # Get the scaling factor of the longest distance.
-            img = img.resize((int(img.width * min_scale), int(img.height * min_scale))) # Resize by multiplying scale by dimensions.
-            img.save('%s/%s.%s' % (paths, img_file_name, 'webp'), format='webp') # Convert and save the image to the path in webp format.
-        except Exception as e:
-            logger.error("Unable to process image due to: %s" % e)
-            return None
+        with pil_image.open(resp.raw) as img:
+            min_scale = min((1280 / img.width, 720 / img.height))
+            img = img.resize((int(img.width * min_scale), int(img.height * min_scale)))
+            img.save(f"{image_save_path}/{uid}.webp", format='webp')
 
-        return 'images/%s.webp' % img_file_name
+        resp.close()
+        return f"images/{uid}.webp"
 
 
     def _import_event(self, lang, event_el, events, event_type):
@@ -692,12 +690,15 @@ class TurkuOriginalImporter(Importer):
                 except (Language.DoesNotExist, Event.DoesNotExist):
                     return
 
-                EventLink.objects.update_or_create(
-                    name=f'extlink_{ft}',
-                    event_id=eventObj.id,
-                    language_id=myLang.id,
-                    link=json_event.get(f'{ft}_url', '')
-                )
+                ft_link = json_event.get(f'{ft}_url', '')
+
+                if len(ft_link) <= 200: 
+                    EventLink.objects.update_or_create(
+                        name=f'extlink_{ft}',
+                        event_id=eventObj.id,
+                        language_id=myLang.id,
+                        link=ft_link
+                    )
 
             if json_event['facebook_url']:
                 fb_tw('facebook')
