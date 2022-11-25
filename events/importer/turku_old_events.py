@@ -288,7 +288,7 @@ class TurkuOriginalImporter(Importer):
 
     def _request_image_url(self, img_url: str, uid: str) -> str:
         """Fetches, processes, converts and saves the image into webp format."""
-        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True)
+        resp = requests.get(img_url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True)
         resp.raise_for_status()
         resp.raw.decode_content = True
 
