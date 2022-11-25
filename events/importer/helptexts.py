@@ -8,7 +8,7 @@ import logging
 # Django:
 from .base import Importer, register_importer
 from django.core.management import call_command
-from events.models import Sidefield
+from events.models import Sidefield, DataSource
 
 # Type checking:
 from typing import TYPE_CHECKING, Any, Tuple, List
