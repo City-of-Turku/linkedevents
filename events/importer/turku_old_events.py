@@ -697,7 +697,7 @@ class TurkuOriginalImporter(Importer):
                         name=f'extlink_{ft}',
                         event_id=eventObj.id,
                         language_id=myLang.id,
-                        link=json_event.get(f'{ft}_url', '')
+                        link=ft_link
                     )
 
             if json_event['facebook_url']:
