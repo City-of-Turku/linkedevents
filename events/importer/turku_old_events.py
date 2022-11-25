@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 VIRTUAL_LOCATION_ID = "virtual:public"
 
+image_save_path = Path('%s/images' % settings.MEDIA_ROOT)
+
 TURKU_LUOKITUS_KEYWORD_IDS = {
     # Hobby content target:
     'Ajanvietepelit': 'tsl:p1',  # Ajanvietepelit
@@ -291,12 +293,12 @@ class TurkuOriginalImporter(Importer):
         resp.raw.decode_content = True
 
         with Image.open(resp.raw) as img:
-            min_scale = min((1280*.2 / img.width, 720*.2 / img.height))
+            min_scale = min((1280 / img.width, 720 / img.height))
             img = img.resize((int(img.width * min_scale), int(img.height * min_scale)))
-            img.save('%s/%s.%s' % (Path('%s/images' % settings.MEDIA_ROOT), uid, 'webp'), format='webp')
+            img.save(f"{image_save_path}/{uid}.webp", format='webp')
 
         resp.close()
-        return 'images/%s.webp' % uid
+        return f"images/{uid}.webp"
 
 
     def _import_event(self, lang, event_el, events, event_type):
