@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+
 from .utils import versioned_reverse as reverse
 import pytest
 from .utils import get, assert_fields_exist
 from events.models import (
-    Event, PublicationStatus, Language
+    Event, PublicationStatus, Language, Place
 )
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.geos import Point
 from django.conf import settings
+from django.utils import timezone
 import dateutil.parser
 from freezegun import freeze_time
 
@@ -129,6 +132,78 @@ def test_get_event_list_verify_text_filter(api_client, event, event2):
     response = get_list(api_client, data={'text': 'event'})
     assert event.id not in [entry['id'] for entry in response.data['data']]
     assert event2.id in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
+def test_get_event_list_verify_text_filter_by_place(api_client, user, data_source, organization, event, event2):
+    place1 = Place.objects.create(
+        id=data_source.id + ':test_location1',
+        data_source=data_source,
+        publisher=organization,
+        position=Point(50, 50),
+        name_fi='Test Place XXXX',
+        street_address_fi="Address 1",
+        address_locality_fi="Test Place 1",
+    )
+    place2 = Place.objects.create(
+        id=data_source.id + ':test_location2',
+        data_source=data_source,
+        publisher=organization,
+        position=Point(50, 50),
+        name_fi='Test Place 2',
+        street_address_fi="XXXX",
+        address_locality_fi="Test Place 2",
+    )
+    place3 = Place.objects.create(
+        id=data_source.id + ':test_location3',
+        data_source=data_source,
+        publisher=organization,
+        position=Point(50, 50),
+        name_fi='Test Place 3',
+        street_address_fi="Address 3",
+        address_locality_fi="XXXX",
+    )
+    event3 = Event.objects.create(
+        id=data_source.id + ':test_event3',
+        location=place1,
+        data_source=data_source,
+        publisher=organization,
+        last_modified_by=user,
+        start_time=timezone.now() + timedelta(minutes=30),
+        end_time=timezone.now() + timedelta(hours=1),
+        short_description='short desc',
+        description='desc',
+        name='tapahtuma'
+    )
+    event4 = Event.objects.create(
+        id=data_source.id + ':test_event4',
+        location=place2,
+        data_source=data_source,
+        publisher=organization,
+        last_modified_by=user,
+        start_time=timezone.now() + timedelta(minutes=30),
+        end_time=timezone.now() + timedelta(hours=1),
+        short_description='short desc',
+        description='desc',
+        name='tapahtuma'
+    )
+    event5 = Event.objects.create(
+        id=data_source.id + ':test_event5',
+        location=place3,
+        data_source=data_source,
+        publisher=organization,
+        last_modified_by=user,
+        start_time=timezone.now() + timedelta(minutes=30),
+        end_time=timezone.now() + timedelta(hours=1),
+        short_description='short desc',
+        description='desc',
+        name='tapahtuma'
+    )
+
+    response = get_list(api_client, data={'text': 'XXX'})
+
+    ids = {e['id'] for e in response.data['data']}
+    assert ids == {event3.id, event4.id, event5.id}
 
 
 @pytest.mark.django_db

@@ -2063,9 +2063,14 @@ def _filter_event_queryset(queryset, params, srs=None):
     if val:
         val = val.lower()
         # Free string search from all translated fields
-        fields = EventTranslationOptions.fields
+        event_fields = EventTranslationOptions.fields
+        place_fields = [
+            "location__name",
+            "location__street_address",
+            "location__address_locality"
+        ]
         qset = Q()
-        for field in fields:
+        for field in list(event_fields) + place_fields:
             # check all languages for each field
             qset |= _text_qset_by_translated_field(field, val)
         queryset = queryset.filter(qset)
