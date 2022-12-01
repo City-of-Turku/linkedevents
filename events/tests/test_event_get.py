@@ -135,6 +135,22 @@ def test_get_event_list_verify_text_filter(api_client, event, event2):
 
 
 @pytest.mark.django_db
+def test_get_event_list_verify_locality_filter(api_client, event, event2):
+    event.location.address_locality = 'Turku'
+    event.location.save()
+    event2.location.address_locality = 'Raisio'
+    event2.location.save()
+
+    response = get_list(api_client, data={'locality': 'turku'})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id not in [entry['id'] for entry in response.data['data']]
+
+    response = get_list(api_client, data={'locality': 'turku,raisio'})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
 def test_get_event_list_verify_text_filter_by_place(api_client, user, data_source, organization, event, event2):
     place1 = Place.objects.create(
         id=data_source.id + ':test_location1',
