@@ -130,7 +130,7 @@ class ImageBankImporter(Importer):
         except License.DoesNotExist:
             self.cc_by_license = None
 
-        images = glob_open(f"{Path.cwd()}/storage/images/*.webp")
+        images = glob_open(f"{Path.cwd()}/events/importer/storage/images/*.webp")
         main_path = Path(f"{settings.MEDIA_ROOT}/images")
 
         for image in images:
