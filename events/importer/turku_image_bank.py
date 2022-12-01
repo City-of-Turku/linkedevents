@@ -104,10 +104,9 @@ class ImageBankImporter(Importer):
         proc_time_frmt('Setup')
         self.handle()
 
-    def save_image(self, img_path) -> None:
+    def save_image(self, new_image_id) -> None:
         """Generate the actual DB image object."""
 
-        new_image_id = img_path
         queryset = Image.objects.filter(image=new_image_id)
 
         if not queryset:
@@ -136,9 +135,9 @@ class ImageBankImporter(Importer):
         for image in images:
             with open(image, 'rb') as img_file:
                 img = pil_image.open(img_file)
-                img_name = img.filename
-                img.save(f"{main_path}/{img_name}")
-                self.save_image(img_path=f"images/{img_name}")
+                img_name = re.split('/|\.\s*', image)[-2]
+                img.save(f"{main_path}/{img_name}.webp")
+                self.save_image(new_image_id=f"images/{img_name}.webp")
 
     def handle(self) -> None:
         """The core handler function."""
