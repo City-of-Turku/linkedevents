@@ -131,12 +131,13 @@ class ImageBankImporter(Importer):
             self.cc_by_license = None
 
         images = glob_open(f"{Path.cwd()}/storage/images/*.webp")
+        main_path = Path(f"{settings.MEDIA_ROOT}/images")
 
         for image in images:
             with open(image, 'rb') as img_file:
                 img = Image.open(img_file)
                 img_name = img.filename
-                img.save(f"{Path(f"{settings.MEDIA_ROOT}/images")}/{img_name}")
+                img.save(f"{main_path}/{img_name}")
                 save_image(img_path=f"images/{img_name}")
 
     def handle(self) -> None:
