@@ -129,11 +129,9 @@ class ImageBankImporter(Importer):
             self.cc_by_license = License.objects.get(id='cc_by')
         except License.DoesNotExist:
             self.cc_by_license = None
-        Path('%s/images' % settings.MEDIA_ROOT)
-
-        Path
 
         images = glob_open(f"{Path.cwd()}/storage/images/*.webp")
+
         for image in images:
             with open(image, 'rb') as img_file:
                 img = Image.open(img_file)
