@@ -122,7 +122,7 @@ class ImageBankImporter(Importer):
         else:
             logger.info(f"The image with the ID: {new_image_id} already exists. There are {queryset.count()} of them. Skipping...")
 
-    def main(self) -> str:
+    def main(self) -> None:
         """Main processing phase."""
 
         try:
