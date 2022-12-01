@@ -135,7 +135,7 @@ class ImageBankImporter(Importer):
 
         for image in images:
             with open(image, 'rb') as img_file:
-                img = Image.open(img_file)
+                img = pil_image.open(img_file)
                 img_name = img.filename
                 img.save(f"{main_path}/{img_name}")
                 self.save_image(img_path=f"images/{img_name}")
