@@ -138,7 +138,7 @@ class ImageBankImporter(Importer):
                 img = Image.open(img_file)
                 img_name = img.filename
                 img.save(f"{main_path}/{img_name}")
-                save_image(img_path=f"images/{img_name}")
+                self.save_image(img_path=f"images/{img_name}")
 
     def handle(self) -> None:
         """The core handler function."""
