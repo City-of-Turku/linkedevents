@@ -1358,7 +1358,7 @@ class OrganizationDetailSerializer(OrganizationListSerializer):
         data['origin_id'] = gen_org_id
         data['id'] = gen_org_id.split(':')[1]
 
-        if Organization.objects.filter(id=str(self.request.data['id'])):
+        if Organization.objects.filter(id=data['id'][1]):
             raise DRFPermissionDenied(
                 f"Organization with id {self.request.data['id']} already exists.")
         return super().validate(data)
