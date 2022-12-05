@@ -1354,13 +1354,18 @@ class OrganizationDetailSerializer(OrganizationListSerializer):
     admin_users = serializers.SerializerMethodField()
 
     def validate(self, data):
-        gen_org_id = generate_id(namespace=settings.SYSTEM_DATA_SOURCE_ID)
-        data['origin_id'] = gen_org_id
-        data['id'] = gen_org_id.split(':')[1]
 
-        if Organization.objects.filter(id=data['id'][1]):
-            raise DRFPermissionDenied(
-                f"Organization with id {self.request.data['id']} already exists.")
+        def _org_generate_id() -> None:
+            gen_org_id = generate_id(namespace=settings.SYSTEM_DATA_SOURCE_ID)
+            data['id'] = gen_org_id
+            data['origin_id'] = gen_org_id.split(':')[1]
+
+        _org_generate_id()
+
+        while Organization.objects.filter(id=data['id'][1]):
+            # In case we ever get duplicate IDs...
+            _org_generate_id()
+
         return super().validate(data)
 
     def connected_organizations(self, connected_orgs, created_org):
