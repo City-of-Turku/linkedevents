@@ -2049,7 +2049,7 @@ def _filter_image_queryset(queryset, params, srs=None):
         # work as the photographer name. (We wanted diff params but this is
         # what was asked for).
         queryset = queryset.filter(
-            qset | Q(photographer_name__icontains=image_text))
+            qset | Q(photographer_name__icontains=image_text) | Q(publisher__name__icontains=image_text))
 
     return queryset
 
