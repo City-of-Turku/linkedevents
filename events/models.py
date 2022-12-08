@@ -496,14 +496,20 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         if lang == "fi":
             return [
                 ("name_fi", "finnish", "A"),
+                ("street_address_fi", "finnish", "B"),
+                ("address_locality_fi", "finnish", "C"),
             ]
         elif lang == "sv":
             return [
                 ("name_sv", "swedish", "A"),
+                ("street_address_sv", "swedish", "B"),
+                ("address_locality_sv", "swedish", "C"),
             ]
         elif lang == "en":
             return [
                 ("name_en", "english", "A"),
+                ("street_address_en", "english", "B"),
+                ("address_locality_en", "english", "C"),
             ]
         else:
             return []

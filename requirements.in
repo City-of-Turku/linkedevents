@@ -26,6 +26,7 @@ djangorestframework-jwt
 drf-yasg # Swagger
 easy_thumbnails
 elasticsearch
+geopy==2.2.0
 httmock
 icalendar
 isodate

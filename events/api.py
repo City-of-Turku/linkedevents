@@ -26,6 +26,7 @@ from django.db.utils import IntegrityError
 from django.conf import settings
 from django.urls import NoReverseMatch
 from django.db.models import Q, QuerySet, When, Case, CharField
+from django.db.models.functions import Lower
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.utils.encoding import force_text
@@ -2063,9 +2064,14 @@ def _filter_event_queryset(queryset, params, srs=None):
     if val:
         val = val.lower()
         # Free string search from all translated fields
-        fields = EventTranslationOptions.fields
+        event_fields = EventTranslationOptions.fields
+        place_fields = [
+            "location__name",
+            "location__street_address",
+            "location__address_locality"
+        ]
         qset = Q()
-        for field in fields:
+        for field in list(event_fields) + place_fields:
             # check all languages for each field
             qset |= _text_qset_by_translated_field(field, val)
         queryset = queryset.filter(qset)
@@ -2147,6 +2153,14 @@ def _filter_event_queryset(queryset, params, srs=None):
     if val:
         val = val.split(',')
         queryset = queryset.filter(location_id__postal_code__in=val)
+
+    # Filter by locality (municipality / city).
+    val = params.get('locality', None)
+    if val:
+        val = val.lower().split(',')
+        queryset = queryset.annotate(
+            address_locality=Lower("location__address_locality")
+        ).filter(address_locality__in=val)
 
     # Filter by keyword id, multiple ids separated by comma
     val = params.get('keyword', None)

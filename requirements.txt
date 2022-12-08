@@ -134,6 +134,10 @@ elasticsearch==7.6.0
     # via -r requirements.in
 future==0.18.2
     # via pyjwkest
+geographiclib==1.52
+    # via geopy
+geopy==2.2.0
+    # via -r requirements.in
 httmock==1.3.0
     # via -r requirements.in
 icalendar==4.0.5
