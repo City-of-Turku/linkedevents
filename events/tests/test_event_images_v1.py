@@ -58,6 +58,7 @@ def assert_image_fields_exist(data, version='v1'):
         '@type',
         'name',
         'publisher',
+        'publisher_name',
         'created_time',
         'cropping',
         'id',

@@ -1426,6 +1426,7 @@ class ImageSerializer(LinkedEventsSerializer):
         required=False, allow_null=True)
     last_modified_by = serializers.StringRelatedField(
         required=False, allow_null=True)
+    publisher_name = serializers.StringRelatedField(source="publisher")
 
     class Meta:
         model = Image
