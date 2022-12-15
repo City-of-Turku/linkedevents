@@ -673,14 +673,14 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # a single POST always comes from a single source
         if value and self.method == 'POST':
             if not self.user.is_superuser and value not in (set(self.user.get_admin_organizations_and_descendants())
-                             | set(map(lambda x: getattr(x, 'replaced_by'),
-                                   self.user.get_admin_organizations_and_descendants()))
-                             | set(self.user.organization_memberships.all())
-                             | set(map(lambda x: getattr(x, 'replaced_by'),
-                                   self.user.organization_memberships.all()))
-                             | set(self.user.public_memberships.all())
-                             | set(map(lambda x: getattr(x, 'replaced_by'),
-                                   self.user.public_memberships.all()))):
+                                                            | set(map(lambda x: getattr(x, 'replaced_by'),
+                                                                      self.user.get_admin_organizations_and_descendants()))
+                                                            | set(self.user.organization_memberships.all())
+                                                            | set(map(lambda x: getattr(x, 'replaced_by'),
+                                                                      self.user.organization_memberships.all()))
+                                                            | set(self.user.public_memberships.all())
+                                                            | set(map(lambda x: getattr(x, 'replaced_by'),
+                                                                      self.user.public_memberships.all()))):
                 raise serializers.ValidationError(
                     {'publisher': _(
                         "Setting publisher to %(given)s " +
@@ -1665,32 +1665,12 @@ class SidefieldSerializer(LinkedEventsSerializer):
     category_mobile = serializers.CharField(required=False)
 
     def to_representation(self, obj):
-        print('REPRESENTATION')
         representation = super().to_representation(obj)
         request = self.context['request']
         user = request.user
         if not user.is_superuser and not user.is_staff:
             representation.pop('id')
         return representation
-
-    def validate(self, data):
-
-        print('VALIDATE')
-
-        return super().validate(data)
-
-    def update(self, instance, validated_data):
-
-        print('UPDATE')
-
-        return instance
-
-    def create(self, validated_data):
-
-        instance = super().create(validated_data)
-        print('CREATE')
-
-        return instance
 
     class Meta:
         model = Sidefield
@@ -1700,10 +1680,9 @@ class SidefieldSerializer(LinkedEventsSerializer):
 class SidefieldPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        print(user)
         if request.method == 'GET':
             return True
-        elif request.method in ('PUT', 'PATCH'):
+        elif request.method in ('PUT', 'PATCH', 'POST'):
             return user.is_superuser or user.is_staff
         else:
             return False

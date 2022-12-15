@@ -938,7 +938,7 @@ class Offer(models.Model, SimpleValueMixin):
 reversion.register(Offer)
 
 
-class Sidefield(models.Model, SimpleValueMixin):
+class Sidefield(BaseModel, models.Model, SimpleValueMixin):
 
     class Type_Id:
         GENERAL = 1
@@ -970,6 +970,20 @@ class Sidefield(models.Model, SimpleValueMixin):
     keyword_mobile = models.CharField(verbose_name=_('Keyword Button'), max_length=50, blank=True)
     category_sidefield = models.CharField(verbose_name=_('Category Sidefield'), max_length=1000, blank=True)
     category_mobile = models.CharField(verbose_name=_('Category Button'), max_length=50, blank=True)
+
+    def can_be_edited_by(self, user):
+        """Check if sidefield can be edited by the given user"""
+        return user.is_superuser
+
+    def save(self, *args, **kwargs):
+        db_obj = Sidefield.objects.filter(id=self.id).first()
+        self.last_modified_time = BaseModel.now()
+        if db_obj:
+            prev_db = db_obj.data_source
+            if prev_db.id == 'sidefield':
+                self.data_source = DataSource.objects.get(id='sidefield')
+
+        super(Sidefield, self).save(*args, **kwargs)
 
 
 class EventLink(models.Model, SimpleValueMixin):
