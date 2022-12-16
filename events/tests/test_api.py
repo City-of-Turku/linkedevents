@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .utils import versioned_reverse as reverse
-from ..api import get_authenticated_data_source_and_publisher, EventSerializer, OrganizationSerializer
+from ..api import get_authenticated_data_source_and_publisher, EventSerializer, OrganizationListSerializer
 from ..auth import ApiKeyAuth
 from ..models import DataSource, Image, Sidefield
 
@@ -80,7 +80,7 @@ def test_serializer_validate_publisher(organization_yksilo):
 class TestOrganizationSerializer(TestCase):
 
     def setUp(self):
-        self.serializer = OrganizationSerializer()
+        self.serializer = OrganizationListSerializer()
         data_source = DataSource.objects.create(
             id='ds',
             name='data-source',
@@ -134,7 +134,7 @@ class TestOrganizationSerializer(TestCase):
 class TestOrganizationAPI(APITestCase):
 
     def setUp(self):
-        self.serializer = OrganizationSerializer()
+        self.serializer = OrganizationListSerializer()
         data_source = DataSource.objects.create(
             id='ds',
             name='data-source',
@@ -185,13 +185,11 @@ class TestSideFieldAPI(APITestCase):
     def setUp(self) -> None:
         user_model = get_user_model()
 
-        self.sidefield_1 = Sidefield.objects.create(
-            type_id=Sidefield.Type_Id.GENERAL,
-            sidefieldset_name='sidefield 1',
-        )
-        self.sidefield_2 = Sidefield.objects.create(
-            type_id=Sidefield.Type_Id.GENERAL,
-            sidefieldset_name='sidefield 2',
+        self.sidefield_data_source = DataSource.objects.create(
+            id='sidefield',
+            name='sidefield-data-source',
+            api_key='sidefield_test_api_key',
+            user_editable=True,
         )
         self.data_source = DataSource.objects.create(
             id='ds',
@@ -202,6 +200,16 @@ class TestSideFieldAPI(APITestCase):
         data_source_yksilo = DataSource.objects.create(
             id='yksilo',
             name='yksilo',
+        )
+        self.sidefield_1 = Sidefield.objects.create(
+            type_id=Sidefield.Type_Id.GENERAL,
+            sidefieldset_name='sidefield 1',
+            data_source_id='sidefield',
+        )
+        self.sidefield_2 = Sidefield.objects.create(
+            type_id=Sidefield.Type_Id.GENERAL,
+            sidefieldset_name='sidefield 2',
+            data_source_id='sidefield',
         )
         self.org_private_users = Organization.objects.create(
             name='yksilo',
@@ -234,7 +242,6 @@ class TestSideFieldAPI(APITestCase):
             is_superuser=True,
         )
 
-
     def test_everyone_can_get_sidefield_list(self):
         '''Tests that all users can GET all sidefields'''
         url = reverse('sidefield-list')
@@ -261,7 +268,6 @@ class TestSideFieldAPI(APITestCase):
         data = response.data.get('data')
         self.assertEqual(len(data), 2)
 
-
     def test_everyone_can_get_sidefield_detail(self):
         '''Tests that all users can GET a single sidefield'''
         url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
@@ -284,7 +290,6 @@ class TestSideFieldAPI(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['sidefieldset_name'], self.sidefield_1.sidefieldset_name)
 
-
     def test_superuser_and_staff_can_update_sidefields(self):
         '''Tests that superusers and staff can make updates to sidefields'''
         url = reverse('sidefield-detail', kwargs={'pk': self.sidefield_1.id})
@@ -302,7 +307,6 @@ class TestSideFieldAPI(APITestCase):
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['location_sidefield'], superuser_update)
-
 
     def test_staff_and_superusers_cannot_update_type_id_or_sidefieldset_name(self):
         '''Tests that staff and superusers cannot update sidefield type id or name'''
@@ -324,7 +328,6 @@ class TestSideFieldAPI(APITestCase):
         self.assertEqual(response.data['type_id'], original_type_id)
         self.assertEqual(response.data['sidefieldset_name'], original_sidefieldset_name)
 
-    
     def test_anon_and_normal_users_cannot_update_sidefields(self):
         '''
         Tests that anonymous and users without staff or superuser
@@ -342,7 +345,6 @@ class TestSideFieldAPI(APITestCase):
         data = {'location_sidefield': normal_update}
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
 
     def test_no_one_can_post_sidefield(self):
         '''Tests that post sidefield cannot be done by anyone'''
@@ -365,7 +367,6 @@ class TestSideFieldAPI(APITestCase):
         self.client.force_authenticate(self.superuser)
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
 
     def test_no_one_can_delete_sidefield(self):
         '''Tests that delete sidefield cannot be done by anyone'''
@@ -442,7 +443,6 @@ class TestImageAPI(APITestCase):
             url='http://fake.url/image-2/',
         )
         self.user = user_model.objects.create(username='testuser')
-
 
     def test_get_image_list_with_publisher(self):
         # test filtering with replaced organization
