@@ -81,6 +81,7 @@ env = environ.Env(
     USE_SWAGGER_OPENAPI_VIEW=(bool, False),
     ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=(bool, False),
     PRIVATE_ORG_ID=(str, 'yksilo:2000'),
+    EVENT_RADIUS_DISTANCE=(int,5000) # distance in meters
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -109,7 +110,7 @@ SYSTEM_DATA_SOURCE_ID = env('SYSTEM_DATA_SOURCE_ID')
 
 ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY = env('ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY')
 PRIVATE_ORG_ID = env('PRIVATE_ORG_ID')
-
+EVENT_RADIUS_DISTANCE = env('EVENT_RADIUS_DISTANCE')
 SITE_ID = 1
 
 LOGGING = {
@@ -540,7 +541,7 @@ if env('MAIL_MAILGUN_KEY'):
         'MAILGUN_SENDER_DOMAIN': env('MAIL_MAILGUN_DOMAIN'),
         'MAILGUN_API_URL': env('MAIL_MAILGUN_API'),
     }
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Palvelukartta import 'might' need these if API authentications are set in place. Consult if need be.
 SMBACKEND_USER = env('SMBACKEND_USER')
