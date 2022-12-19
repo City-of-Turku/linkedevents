@@ -1646,7 +1646,7 @@ class OfferSerializer(TranslatedModelSerializer):
         exclude = ['id', 'event']
 
 
-class SidefieldSerializer(LinkedEventsSerializer):
+class SidefieldSerializer(TranslatedModelSerializer):
     view_name = 'sidefield-detail'
 
     type_id = EnumChoiceField(Event.TYPE_IDS, required=False, read_only=True)
@@ -1682,7 +1682,7 @@ class SidefieldPermission(permissions.BasePermission):
         user = request.user
         if request.method == 'GET':
             return True
-        elif request.method in ('PUT', 'PATCH', 'POST'):
+        elif request.method in ('PUT', 'PATCH'):
             return user.is_superuser or user.is_staff
         else:
             return False

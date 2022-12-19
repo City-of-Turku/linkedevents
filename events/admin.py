@@ -225,15 +225,15 @@ class SidefieldAdminForm(forms.ModelForm):
         widgets = {}
 
 
-class SidefieldAdmin(BaseAdmin, TranslationAdmin, SidefieldAdminForm):
-    list_display = ('sidefieldset_name', 'type_id')
+class SidefieldAdmin(AutoIdBaseAdmin, TranslationAdmin, SidefieldAdminForm):
+    list_display = ('sidefieldset_name', 'type_id', 'data_source')
     fset_fields = {}
 
     form = SidefieldAdminForm
 
     fieldsets = [
         (None, {
-            'fields': (('type_id', 'sidefieldset_name'), )
+            'fields': (('type_id', 'sidefieldset_name', 'data_source'), )
         }),
     ]
 

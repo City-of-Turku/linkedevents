@@ -202,14 +202,18 @@ class TestSideFieldAPI(APITestCase):
             name='yksilo',
         )
         self.sidefield_1 = Sidefield.objects.create(
+            id='sidefield-1',
+            name='sidefield 1',
             type_id=Sidefield.Type_Id.GENERAL,
-            sidefieldset_name='sidefield 1',
-            data_source_id='sidefield',
+            sidefieldset_name='sidefieldset 1',
+            data_source=self.sidefield_data_source,
         )
         self.sidefield_2 = Sidefield.objects.create(
+            id='sidefield-2',
+            name='sidefield 2',
             type_id=Sidefield.Type_Id.GENERAL,
-            sidefieldset_name='sidefield 2',
-            data_source_id='sidefield',
+            sidefieldset_name='sidefieldset 2',
+            data_source=self.sidefield_data_source,
         )
         self.org_private_users = Organization.objects.create(
             name='yksilo',
@@ -315,14 +319,17 @@ class TestSideFieldAPI(APITestCase):
         original_sidefieldset_name = self.sidefield_1.sidefieldset_name
 
         self.client.force_authenticate(self.staff_user)
-        data = {'type_id': 'staff test', 'sidefieldset_name': 'staff test'}
+        data = {'name': 'staff test', 'id': 'staff test', 'type_id': 'staff test',
+                'sidefieldset_name': 'staff test', 'data_source': 'sidefield'}
         response = self.client.put(url, data, format='json')
+        print(f'RESPONSE: {response.data}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['type_id'], original_type_id)
         self.assertEqual(response.data['sidefieldset_name'], original_sidefieldset_name)
 
         self.client.force_authenticate(self.superuser)
-        data = {'type_id': 'superuser test', 'sidefieldset_name': 'superuser test'}
+        data = {'name': 'staff test', 'id': 'staff test', 'type_id': 'staff test',
+                'sidefieldset_name': 'staff test', 'data_source': 'sidefield'}
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['type_id'], original_type_id)
