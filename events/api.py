@@ -20,6 +20,8 @@ from django.db import connection
 from django.db.transaction import atomic
 from django.http import Http404, HttpResponsePermanentRedirect
 from django.utils import translation
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.db.utils import IntegrityError
@@ -2606,6 +2608,17 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
                     queryset = queryset.filter(created_by=self.request.user)
                 else:
                     queryset = queryset.none()
+            lat = self.request.query_params.get("lat")
+            lon = self.request.query_params.get("lon")
+            if lat and lon:
+                # only display event near my location
+                user_position = Point(float(lon), float(lat), srid=4326)
+                user_position.transform(3067)
+                locations = Place.objects.filter(
+                    position__distance_lte=(user_position, Distance(m=settings.EVENT_RADIUS_DISTANCE))
+                )
+                location_ids = locations.values_list('id',flat=True)
+                queryset = queryset.filter(location__in=location_ids)
         else:
             # prevent changing events user does not have write permissions (for bulk operations)
             queryset = self.request.user.get_editable_events(original_queryset)
