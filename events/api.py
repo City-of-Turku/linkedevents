@@ -1428,6 +1428,7 @@ class ImageSerializer(LinkedEventsSerializer):
         required=False, allow_null=True)
     last_modified_by = serializers.StringRelatedField(
         required=False, allow_null=True)
+    publisher_name = serializers.StringRelatedField(source="publisher")
 
     class Meta:
         model = Image
@@ -2050,7 +2051,7 @@ def _filter_image_queryset(queryset, params, srs=None):
         # work as the photographer name. (We wanted diff params but this is
         # what was asked for).
         queryset = queryset.filter(
-            qset | Q(photographer_name__icontains=image_text))
+            qset | Q(photographer_name__icontains=image_text) | Q(publisher__name__icontains=image_text))
 
     return queryset
 
