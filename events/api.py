@@ -265,7 +265,7 @@ def parse_digit(val, param):
 
 
 def organization_can_be_edited_by(instance, user):
-    if instance in user.admin_organizations.all():
+    if instance in user.admin_organizations.all() or user.is_superuser:
         return True
     else:
         return False
