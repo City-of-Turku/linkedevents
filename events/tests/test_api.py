@@ -319,17 +319,14 @@ class TestSideFieldAPI(APITestCase):
         original_sidefieldset_name = self.sidefield_1.sidefieldset_name
 
         self.client.force_authenticate(self.staff_user)
-        data = {'name': 'staff test', 'id': 'staff test', 'type_id': 'staff test',
-                'sidefieldset_name': 'staff test', 'data_source': 'sidefield'}
+        data = {'type_id': 'staff test', 'sidefieldset_name': 'staff test'}
         response = self.client.put(url, data, format='json')
-        print(f'RESPONSE: {response.data}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['type_id'], original_type_id)
         self.assertEqual(response.data['sidefieldset_name'], original_sidefieldset_name)
 
         self.client.force_authenticate(self.superuser)
-        data = {'name': 'staff test', 'id': 'staff test', 'type_id': 'staff test',
-                'sidefieldset_name': 'staff test', 'data_source': 'sidefield'}
+        data = {'type_id': 'superuser test', 'sidefieldset_name': 'superuser test'}
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['type_id'], original_type_id)

@@ -1649,6 +1649,7 @@ class OfferSerializer(TranslatedModelSerializer):
 class SidefieldSerializer(TranslatedModelSerializer):
     view_name = 'sidefield-detail'
 
+    id = serializers.CharField(required=False, read_only=True)
     type_id = EnumChoiceField(Event.TYPE_IDS, required=False, read_only=True)
     sidefieldset_name = serializers.CharField(required=False, read_only=True)
     location_sidefield = serializers.CharField(required=False)
@@ -1669,12 +1670,14 @@ class SidefieldSerializer(TranslatedModelSerializer):
         request = self.context['request']
         user = request.user
         if not user.is_superuser and not user.is_staff:
-            representation.pop('id')
+            representation.pop('created_by')
+            representation.pop('last_modified_by')
+            representation.pop('origin_id')
         return representation
 
     class Meta:
         model = Sidefield
-        fields = '__all__'
+        exclude = ('name', 'data_source')
 
 
 class SidefieldPermission(permissions.BasePermission):
