@@ -8,7 +8,7 @@ import logging
 # Django:
 from .base import Importer, register_importer
 from django.core.management import call_command
-from events.models import Sidefield
+from events.models import Sidefield, DataSource
 
 # Type checking:
 from typing import TYPE_CHECKING, Any, Tuple, List
@@ -289,16 +289,26 @@ class HelptextsImporter(Importer):
             logger.error("Helptexts already exist, this importer is not built to be ran twice. Exiting!")
             return None
 
+        sidefield_data_source, _ = DataSource.objects.update_or_create(
+            defaults=dict(name='Järjestelmän ohjetekstit'), **dict(id='sidefield', user_editable=True))
+
         # Create 3 associative objects and populate them with attributes in the processing phase:
         objs = {key: Sidefield() for key in self.type_ids}
         self._process_data(objs=objs)
 
         # Since this importer is only meant to be ran once, this will suffice:
-        for type_name, obj in objs.items():
+
+        for count, type_name in enumerate(objs, start=1):
+            obj = objs[type_name]
+            obj.id = f"sidefield:{count}"
+            obj.origin_id = count
             obj.type_id = self.type_ids[type_name]
-            obj.sidefieldset_name = type_name.capitalize()
+            obj.name = type_name.capitalize()
+            obj.sidefieldset_name = obj.name
+            obj.data_source = sidefield_data_source
             obj.save()
-            logger.info("Helptext importer created a new sidefieldset: %s" % obj.sidefieldset_name)
+            logger.info(f"Helptext importer created a new sidefieldset: {obj.sidefieldset_name}")       
+
 
     def __init__(self, options):
         proc_time_frmt('Initial')

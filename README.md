@@ -143,6 +143,9 @@ python manage.py event_import turku_image_bank
 		
 #Import event data from the old Turku events calendar.
 python manage.py event_import turku_old_events --events
+
+#Import default frontend sidefield help texts in three languages: Finnish, Swedish, English".
+python manage.py event_import helptexts
 ```
 
 Populating Search Columns

@@ -44,6 +44,8 @@ from rest_framework.exceptions import ParseError, PermissionDenied as DRFPermiss
 from rest_framework.views import get_view_name as original_get_view_name
 from rest_framework.routers import APIRootView
 from rest_framework.fields import DateTimeField
+from django.db.models import Prefetch, Q, QuerySet
+from django.contrib.auth.models import AnonymousUser
 
 
 # 3rd party
@@ -59,7 +61,8 @@ import pytz
 import bleach
 import django_filters
 
-from django_orghierarchy.models import Organization
+from django_orghierarchy.models import Organization, OrganizationClass
+from helevents.api import UserSerializer
 
 # events
 from events import utils
@@ -259,6 +262,13 @@ def parse_digit(val, param):
         return int(val)
     except ValueError:
         raise ParseError(f'{param} must be an integer, you passed "{val}"')
+
+
+def organization_can_be_edited_by(instance, user):
+    if instance in user.admin_organizations.all():
+        return True
+    else:
+        return False
 
 
 class JSONLDRelatedField(relations.HyperlinkedRelatedField):
@@ -666,14 +676,14 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
         # a single POST always comes from a single source
         if value and self.method == 'POST':
             if not self.user.is_superuser and value not in (set(self.user.get_admin_organizations_and_descendants())
-                             | set(map(lambda x: getattr(x, 'replaced_by'),
-                                   self.user.get_admin_organizations_and_descendants()))
-                             | set(self.user.organization_memberships.all())
-                             | set(map(lambda x: getattr(x, 'replaced_by'),
-                                   self.user.organization_memberships.all()))
-                             | set(self.user.public_memberships.all())
-                             | set(map(lambda x: getattr(x, 'replaced_by'),
-                                   self.user.public_memberships.all()))):
+                                                            | set(map(lambda x: getattr(x, 'replaced_by'),
+                                                                      self.user.get_admin_organizations_and_descendants()))
+                                                            | set(self.user.organization_memberships.all())
+                                                            | set(map(lambda x: getattr(x, 'replaced_by'),
+                                                                      self.user.organization_memberships.all()))
+                                                            | set(self.user.public_memberships.all())
+                                                            | set(map(lambda x: getattr(x, 'replaced_by'),
+                                                                      self.user.public_memberships.all()))):
                 raise serializers.ValidationError(
                     {'publisher': _(
                         "Setting publisher to %(given)s " +
@@ -707,47 +717,6 @@ class LinkedEventsSerializer(TranslatedModelSerializer, MPTTModelSerializer):
                 {'name': _('The name must be specified.')})
         super().validate(data)
         return data
-
-    def create(self, validated_data):
-        if 'data_source' not in validated_data:
-            validated_data['data_source'] = self.data_source
-        # data source has already been validated
-        if 'publisher' not in validated_data:
-            validated_data['publisher'] = self.publisher
-        # publisher has already been validated
-        validated_data['created_by'] = self.user
-        validated_data['last_modified_by'] = self.user
-        try:
-            instance = super().create(validated_data)
-        except IntegrityError as error:
-            if 'duplicate' and 'pkey' in str(error):
-                raise serializers.ValidationError(
-                    {'id': _("An object with given id already exists.")})
-            else:
-                raise error
-        return instance
-
-    def update(self, instance, validated_data):
-        validated_data['last_modified_by'] = self.user
-
-        if 'id' in validated_data:
-            if instance.id != validated_data['id']:
-                raise serializers.ValidationError(
-                    {'id': _("You may not change the id of an existing object.")})
-        if 'publisher' in validated_data:
-            if validated_data['publisher'] not in (instance.publisher, instance.publisher.replaced_by):
-                raise serializers.ValidationError(
-                    {'publisher': _(
-                        "You may not change the publisher of an existing object.")}
-                )
-        if 'data_source' in validated_data:
-            if instance.data_source != validated_data['data_source']:
-                raise serializers.ValidationError(
-                    {'data_source': _(
-                        "You may not change the data source of an existing object.")}
-                )
-        super().update(instance, validated_data)
-        return instance
 
 
 def _clean_qp(query_params):
@@ -807,6 +776,54 @@ class JSONAPIViewMixin(object):
         return context
 
 
+class EditableLinkedEventsObjectSerializer(LinkedEventsSerializer):
+
+    def create(self, validated_data):
+        if 'data_source' not in validated_data:
+            validated_data['data_source'] = self.data_source
+        # data source has already been validated
+        if 'publisher' not in validated_data:
+            validated_data['publisher'] = self.publisher
+        # publisher has already been validated
+        validated_data['created_by'] = self.user
+        validated_data['last_modified_by'] = self.user
+
+        if not isinstance(self.user, ApiKeyUser) and not validated_data['data_source'].user_editable:
+            raise PermissionDenied()
+
+        try:
+            instance = super().create(validated_data)
+        except IntegrityError as error:
+            if 'duplicate' and 'pkey' in str(error):
+                raise serializers.ValidationError(
+                    {'id': _("An object with given id already exists.")})
+            else:
+                raise error
+        return instance
+
+    def update(self, instance, validated_data):
+        validated_data['last_modified_by'] = self.user
+
+        if 'id' in validated_data:
+            if instance.id != validated_data['id']:
+                raise serializers.ValidationError(
+                    {'id': _("You may not change the id of an existing object.")})
+        if 'publisher' in validated_data:
+            if validated_data['publisher'] not in (instance.publisher, instance.publisher.replaced_by):
+                raise serializers.ValidationError(
+                    {'publisher': _(
+                        "You may not change the publisher of an existing object.")}
+                )
+        if 'data_source' in validated_data:
+            if instance.data_source != validated_data['data_source']:
+                raise serializers.ValidationError(
+                    {'data_source': _(
+                        "You may not change the data source of an existing object.")}
+                )
+        super().update(instance, validated_data)
+        return instance
+
+
 class KeywordFilterSerializer(TranslatedModelSerializer):
     ontology_type = EnumChoiceField(Keyword.ONTOLOGY_TYPES, required=False)
     id = serializers.CharField(required=False)
@@ -823,7 +840,7 @@ class KeywordFilterSerializer(TranslatedModelSerializer):
         return ret
 
 
-class KeywordSerializer(LinkedEventsSerializer):
+class KeywordSerializer(EditableLinkedEventsObjectSerializer):
     view_name = 'keyword-detail'
     alt_labels = serializers.SlugRelatedField(
         slug_field='name', read_only=True, many=True)
@@ -1080,7 +1097,7 @@ def filter_division(queryset, name, value):
             return queryset.filter(**{name + '__name__in': names})
 
 
-class PlaceSerializer(LinkedEventsSerializer, GeoModelSerializer):
+class PlaceSerializer(EditableLinkedEventsObjectSerializer, GeoModelSerializer):
     view_name = 'place-detail'
     divisions = DivisionSerializer(many=True, read_only=True)
     created_time = DateTimeField(
@@ -1267,27 +1284,47 @@ register_view(LanguageViewSet, 'language')
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
-class OrganizationSerializer(LinkedEventsSerializer):
+class OrganizationBaseSerializer(LinkedEventsSerializer):
+    view_name = 'organization-detail'
+
+    class Meta:
+        model = Organization
+        fields = '__all__'
+
+
+class OrganizationListSerializer(OrganizationBaseSerializer):
     view_name = 'organization-detail'
 
     parent_organization = serializers.HyperlinkedRelatedField(
         queryset=Organization.objects.all(),
         source='parent',
         view_name='organization-detail',
+        required=False,
     )
     sub_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
         view_name='organization-detail',
         many=True,
+        required=False,
+        read_only=True
     )
+    # parent_organization = JSONLDRelatedField(
+    #    serializer=OrganizationBaseSerializer, source='parent', required=False, allow_null=True,
+    #    view_name='organization-detail', queryset=Organization.objects.all(),
+    # )
+    # sub_organizations = JSONLDRelatedField(
+    #    serializer=OrganizationBaseSerializer, many=True, required=False, allow_empty=True,
+    #    view_name='organization-detail', queryset=Organization.objects.all()
+    # )
     affiliated_organizations = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
         view_name='organization-detail',
         many=True,
+        required=False,
+        read_only=True
     )
     replaced_by = serializers.HyperlinkedRelatedField(
-        queryset=Organization.objects.all(),
         view_name='organization-detail',
+        required=False,
+        read_only=True
     )
     is_affiliated = serializers.SerializerMethodField()
     has_regular_users = serializers.SerializerMethodField()
@@ -1315,25 +1352,258 @@ class OrganizationSerializer(LinkedEventsSerializer):
         return obj.regular_users.count() > 0
 
 
-class OrganizationViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+class OrganizationDetailSerializer(OrganizationListSerializer):
+    regular_users = serializers.SerializerMethodField()
+    admin_users = serializers.SerializerMethodField()
+
+    def validate(self, data):
+
+        def _org_generate_id() -> None:
+            gen_org_id = generate_id(namespace=settings.SYSTEM_DATA_SOURCE_ID)
+            data['id'] = gen_org_id
+            data['origin_id'] = gen_org_id.split(':')[1]
+
+        _org_generate_id()
+
+        while Organization.objects.filter(id=data['id'][1]):
+            # In case we ever get duplicate IDs...
+            _org_generate_id()
+
+        return super().validate(data)
+
+    def connected_organizations(self, connected_orgs, created_org):
+        internal_types = {'sub_organizations': Organization.NORMAL,
+                          'affiliated_organizations': Organization.AFFILIATED}
+        for org_type in connected_orgs.keys():
+            conn_org = Organization.objects.filter(id__in=connected_orgs[org_type],
+                                                   internal_type=internal_types[org_type])
+            created_org.children.add(*conn_org)
+
+    def create(self, validated_data):
+        connected_organizations = [
+            'sub_organizations', 'affiliated_organizations']
+        conn_orgs_in_request = {}
+        for org_type in connected_organizations:
+            if org_type in self.request.data.keys():
+                if isinstance(self.request.data[org_type], list):
+                    conn_orgs_in_request[org_type] = [i.rstrip('/').split('/')[-1]
+                                                      for i in self.request.data.pop(org_type)]
+                else:
+                    raise ParseError(
+                        f'{org_type} should be a list, you provided {type(self.request.data[org_type])}')
+        if 'parent_organization' in self.request.data.keys():
+            user = self.request.user
+            parent_id = self.request.data['parent_organization'].rstrip(
+                '/').split('/')[-1]
+            potential_parent = Organization.objects.filter(id=parent_id)
+            if potential_parent.count() == 0:
+                raise ParseError(
+                    f"{self.request.data['parent_organization']} does not exist.")
+            if user:
+                if organization_can_be_edited_by(potential_parent[0], user):
+                    pass
+                else:
+                    raise DRFPermissionDenied(
+                        'User has no rights to this organization')
+            else:
+                raise DRFPermissionDenied(
+                    'User must be logged in to create organizations.')
+        org = super().create(validated_data)
+        self.connected_organizations(conn_orgs_in_request, org)
+        return org
+
+    def get_regular_users(self, obj):
+        user = self.context['user']
+        if not isinstance(user, AnonymousUser) and user.is_admin(obj):
+            return UserSerializer(obj.regular_users.all(), read_only=True, many=True).data
+        else:
+            return ''
+
+    def get_admin_users(self, obj):
+        user = self.context['user']
+        if not isinstance(user, AnonymousUser) and user.is_admin(obj):
+            return UserSerializer(obj.admin_users.all(), read_only=True, many=True).data
+        else:
+            return ''
+
+    class Meta:
+        model = Organization
+        fields = (
+            'id', 'data_source', 'origin_id',
+            'classification', 'name', 'founding_date',
+            'dissolution_date', 'parent_organization',
+            'sub_organizations', 'affiliated_organizations',
+            'created_time', 'last_modified_time', 'created_by',
+            'last_modified_by', 'is_affiliated', 'replaced_by',
+            'has_regular_users', 'regular_users', 'admin_users'
+        )
+
+
+class OrganizationUpdateSerializer(OrganizationListSerializer):
+    regular_users = serializers.SerializerMethodField()
+    admin_users = serializers.SerializerMethodField()
+
+    def __init__(self, instance=None, context=None, *args, **kwargs):
+        instance.can_be_edited_by = organization_can_be_edited_by
+        if not instance.can_be_edited_by(instance, context['request'].user):
+            raise DRFPermissionDenied(
+                f"User {context['request'].user} can't modify {instance}")
+        self.method = 'PUT'
+        self.hide_ld_context = True
+        self.skip_fields = ''
+        self.user = context['request'].user
+        if 'data_source' not in context['request'].data.keys():
+            context['request'].data['data_source'] = instance.data_source
+        if 'origin_id' not in context['request'].data.keys():
+            context['request'].data['origin_id'] = instance.origin_id
+        if 'name' not in context['request'].data.keys():
+            context['request'].data['name'] = instance.name
+        super(LinkedEventsSerializer, self).__init__(
+            instance=instance, context=context, **kwargs)
+        self.admin_users = context['request'].data.pop(
+            'admin_users', {'username': ''})
+        self.regular_users = context['request'].data.pop(
+            'regular_users', {'username': ''})
+
+    def update(self, instance, validated_data):
+        if isinstance(self.admin_users, dict) and isinstance(self.regular_users, dict):
+            pass
+        else:
+            raise ParseError(
+                'Dictionaries expected for admin and regular_users.')
+        if ('username' not in self.admin_users.keys()) or ('username' not in self.regular_users.keys()):
+            raise ParseError(
+                'Username field should be used to pass admin_users and regular_users')
+
+        admin_users = User.objects.filter(
+            username__in=self.admin_users['username'])
+        regular_users = User.objects.filter(
+            username__in=self.regular_users['username'])
+        instance.admin_users.clear()
+        instance.admin_users.add(*admin_users)
+        # so that the user does not accidentally remove himself from admin
+        instance.admin_users.add(self.user)
+        instance.regular_users.clear()
+        instance.regular_users.add(*regular_users)
+        super().update(instance, validated_data)
+        return instance
+
+    def get_regular_users(self, obj):
+        return UserSerializer(obj.regular_users.all(), read_only=True, many=True).data
+
+    def get_admin_users(self, obj):
+        return UserSerializer(obj.admin_users.all(), read_only=True, many=True).data
+
+    class Meta:
+        model = Organization
+        fields = '__all__'
+
+
+class OrganizationViewSet(JSONAPIViewMixin,
+                          mixins.RetrieveModelMixin,
+                          mixins.UpdateModelMixin,
+                          mixins.DestroyModelMixin,
+                          mixins.ListModelMixin,
+                          mixins.CreateModelMixin,
+                          viewsets.GenericViewSet):
     queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
+
+    def get_serializer_class(self, *args, **kwargs):
+        if self.action == 'retrieve':
+            return OrganizationDetailSerializer
+        elif self.action == 'create':
+            return OrganizationDetailSerializer
+        elif self.action == 'update':
+            return OrganizationUpdateSerializer
+        else:
+            return OrganizationListSerializer
 
     def get_queryset(self):
-        queryset = Organization.objects.all()
+        queryset = Organization.objects.prefetch_related('regular_users', 'admin_users')\
+                                       .prefetch_related(Prefetch('children',
+                                                                  queryset=Organization.objects.filter(internal_type='normal'),  # noqa E501
+                                                                  to_attr='sub_organizations'),
+                                                         Prefetch('children',
+                                                                  queryset=Organization.objects.filter(internal_type='affiliated'),  # noqa E501
+                                                                  to_attr='affiliated_organizations'))
+
+        name = self.request.query_params.get('name')
+        if name:
+            queryset = queryset.filter(name__icontains=name)
+
+        exact_name = self.request.query_params.get('exact_name')
+        if exact_name:
+            queryset = queryset.filter(name__exact=exact_name)
 
         id = self.request.query_params.get('child', None)
         if id:
-            queryset = queryset.get(id=id).get_ancestors()
+            try:
+                queryset = queryset.get(id=id).get_ancestors()
+            except Organization.DoesNotExist:
+                queryset = queryset.none()
 
         id = self.request.query_params.get('parent', None)
         if id:
-            queryset = queryset.get(id=id).get_descendants()
-
+            try:
+                queryset = queryset.get(id=id).get_descendants()
+            except Organization.DoesNotExist:
+                queryset = queryset.none()
         return queryset
+
+    def destroy(self, request, *args, **kwargs):
+        qset = Organization.objects.filter(id=kwargs['pk'])
+        if qset.count == 0:
+            raise ParseError(f"Organization {kwargs['pk']} not found.")
+        else:
+            instance = qset[0]
+        if organization_can_be_edited_by(instance, request.user):
+            return super().destroy(request, *args, **kwargs)
+        else:
+            raise DRFPermissionDenied(
+                f'User {request.user} has no right to delete {instance}')
 
 
 register_view(OrganizationViewSet, 'organization')
+
+
+class DataSourceSerializer(LinkedEventsSerializer):
+    view_name = 'data_source-list'
+
+    class Meta:
+        model = DataSource
+        exclude = ['api_key']
+
+
+class DataSourceViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = DataSource.objects.all()
+    serializer_class = DataSourceSerializer
+
+    def list(self, request, *args, **kwargs):
+        if isinstance(request.user, AnonymousUser) or request.user.get_default_organization() is None:
+            raise DRFPermissionDenied(
+                'Only admin users are allowed to see datasources.')
+        return super().list(request, *args, **kwargs)
+
+
+register_view(DataSourceViewSet, 'data_source')
+
+
+class OrganizationClassSerializer(LinkedEventsSerializer):
+    view_name = 'organization_class-list'
+
+    class Meta:
+        model = OrganizationClass
+        fields = ['id', 'name']
+
+
+class OrganizationClassViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = OrganizationClass.objects.all()
+    serializer_class = OrganizationClassSerializer
+    filter_backends = (filters.OrderingFilter,)
+    ordering = ('id',)
+
+
+register_view(OrganizationClassViewSet, 'organization_class')
 
 
 class EventLinkSerializer(serializers.ModelSerializer):
@@ -1380,8 +1650,11 @@ class OfferSerializer(TranslatedModelSerializer):
 
 
 class SidefieldSerializer(TranslatedModelSerializer):
-    type_id = EnumChoiceField(Event.TYPE_IDS, required=False)
-    sidefieldset_name = serializers.CharField(required=False)
+    view_name = 'sidefield-detail'
+
+    id = serializers.CharField(required=False, read_only=True)
+    type_id = EnumChoiceField(Event.TYPE_IDS, required=False, read_only=True)
+    sidefieldset_name = serializers.CharField(required=False, read_only=True)
     location_sidefield = serializers.CharField(required=False)
     location_mobile = serializers.CharField(required=False)
     umbrella_sidefield = serializers.CharField(required=False)
@@ -1395,15 +1668,38 @@ class SidefieldSerializer(TranslatedModelSerializer):
     category_sidefield = serializers.CharField(required=False)
     category_mobile = serializers.CharField(required=False)
 
+    def to_representation(self, obj):
+        representation = super().to_representation(obj)
+        request = self.context['request']
+        user = request.user
+        if not user.is_superuser and not user.is_staff:
+            representation.pop('created_by')
+            representation.pop('last_modified_by')
+            representation.pop('origin_id')
+        return representation
+
     class Meta:
         model = Sidefield
-        exclude = ['id']
+        exclude = ('name', 'data_source')
 
 
-class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
+class SidefieldPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if request.method == 'GET':
+            return True
+        elif request.method in ('PUT', 'PATCH'):
+            return user.is_superuser or user.is_staff
+        else:
+            return False
+
+
+class SidefieldViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
     queryset = Sidefield.objects.all()
     serializer_class = SidefieldSerializer
     filter_backends = (filters.OrderingFilter,)
+    permission_classes = (SidefieldPermission,)
+    ordering = ('id',)
 
     def get_queryset(self):
         self.srs = getattr(self, 'srs', srid_to_srs(None))
@@ -1416,7 +1712,7 @@ class SidefieldViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
 register_view(SidefieldViewSet, 'sidefield')
 
 
-class ImageSerializer(LinkedEventsSerializer):
+class ImageSerializer(EditableLinkedEventsObjectSerializer):
     view_name = 'image-detail'
     license = serializers.PrimaryKeyRelatedField(
         queryset=License.objects.all(), required=False)
@@ -1568,7 +1864,7 @@ class VideoSerializer(TranslatedModelSerializer, serializers.ModelSerializer):
         exclude = ['id', 'event']
 
 
-class EventSerializer(BulkSerializerMixin, LinkedEventsSerializer, GeoModelAPIView):
+class EventSerializer(BulkSerializerMixin, EditableLinkedEventsObjectSerializer, GeoModelAPIView):
     id = serializers.CharField(required=False)
     location = JSONLDRelatedField(serializer=PlaceSerializer, required=False, allow_null=True,
                                   view_name='place-detail', queryset=Place.objects.all())
