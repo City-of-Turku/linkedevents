@@ -1507,7 +1507,8 @@ class OrganizationViewSet(JSONAPIViewMixin,
                           mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
     queryset = Organization.objects.all()
-
+    pagination_class = LargeResultsSetPagination
+    
     def get_serializer_class(self, *args, **kwargs):
         if self.action == 'retrieve':
             return OrganizationDetailSerializer
