@@ -1598,7 +1598,9 @@ class OrganizationClassSerializer(LinkedEventsSerializer):
 
 
 class OrganizationClassViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
-    queryset = OrganizationClass.objects.all()
+    # organization classes that are not in use
+    unused_org_class_ids = ['org:12','org:13','org:14','org:15']
+    queryset = OrganizationClass.objects.exclude(id__in=unused_org_class_ids)
     serializer_class = OrganizationClassSerializer
     filter_backends = (filters.OrderingFilter,)
     ordering = ('id',)
