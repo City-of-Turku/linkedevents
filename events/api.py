@@ -1534,7 +1534,7 @@ class OrganizationViewSet(JSONAPIViewMixin,
 
         exact_name = self.request.query_params.get('exact_name')
         if exact_name:
-            queryset = queryset.filter(name__exact=exact_name)
+            queryset = queryset.filter(name__iexact=exact_name)
 
         id = self.request.query_params.get('child', None)
         if id:
