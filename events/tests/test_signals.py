@@ -43,10 +43,10 @@ class TestOrganizationPostSave(TestCase):
         self.org_1.save()
 
         qs = self.org_2.admin_users.all()
-        self.assertQuerysetEqual(qs, [repr(self.user_1), repr(self.user_2)], ordered=False)
+        self.assertQuerysetEqual(qs, values=[repr(self.user_1), repr(self.user_2)], transform=repr, ordered=False)
 
         qs = self.org_2.regular_users.all()
-        self.assertQuerysetEqual(qs, [repr(self.user_1), repr(self.user_2)], ordered=False)
+        self.assertQuerysetEqual(qs, values=[repr(self.user_1), repr(self.user_2)], transform=repr, ordered=False)
 
         self.data_source_1.refresh_from_db()
         self.assertEqual(self.data_source_1.owner, self.org_2)
@@ -87,4 +87,4 @@ class TestOrganizationPostSave(TestCase):
         with self.settings(ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=True):
             new_user_1 = get_user_model().objects.create(username='new-user-1')
             qs = new_user_1.public_memberships.all()
-            self.assertQuerysetEqual(qs, [repr(private_org)])
+            self.assertQuerysetEqual(qs, values=[repr(private_org)], transform=repr)

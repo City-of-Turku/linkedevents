@@ -29,9 +29,9 @@ from django.conf import settings
 from django.urls import NoReverseMatch
 from django.db.models import Q, QuerySet, When, Case, CharField
 from django.db.models.functions import Lower
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from rest_framework import (
     serializers, relations, viewsets, mixins, filters, generics, permissions
 )
@@ -55,6 +55,7 @@ from haystack.query import AutoQuery
 from munigeo.api import (
     GeoModelSerializer, GeoModelAPIView, build_bbox_filter, srid_to_srs
 )
+from munigeo.api import TranslatedModelSerializer as MunigeoTranslatedModelSerializer
 from munigeo.models import AdministrativeDivision
 from rest_framework_bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerMixin
 import pytz
@@ -1026,14 +1027,14 @@ class KeywordSetViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
 register_view(KeywordSetViewSet, 'keyword_set')
 
 
-class DivisionSerializer(TranslatedModelSerializer):
+class DivisionSerializer(MunigeoTranslatedModelSerializer):
     type = serializers.SlugRelatedField(slug_field='type', read_only=True)
     municipality = serializers.SlugRelatedField(
         slug_field='name', read_only=True)
 
     class Meta:
         model = AdministrativeDivision
-        fields = ('type', 'name', 'ocd_id', 'municipality')
+        fields = ('type', 'translations', 'ocd_id', 'municipality')
 
 
 def filter_division(queryset, name, value):
@@ -1087,14 +1088,14 @@ def filter_division(queryset, name, value):
     if hasattr(queryset, 'distinct'):
         # do the join with Q objects (not querysets) in case the queryset has extra fields that would crash qs join
         query = Q(**{name + '__ocd_id__in': ocd_ids}
-                  ) | Q(**{name + '__name__in': names})
+                  ) | Q(**{name + '__translations__name__in': names})
         return (queryset.filter(query)).distinct()
     else:
         # Haystack SearchQuerySet does not support distinct, so we only support one type of search at a time:
         if ocd_ids:
             return queryset.filter(**{name + '__ocd_id__in': ocd_ids})
         else:
-            return queryset.filter(**{name + '__name__in': names})
+            return queryset.filter(**{name + '__translations__name__in': names})
 
 
 class PlaceSerializer(EditableLinkedEventsObjectSerializer, GeoModelSerializer):
@@ -2036,7 +2037,7 @@ class EventSerializer(BulkSerializerMixin, EditableLinkedEventsObjectSerializer,
                 data['end_time'] += timedelta(days=1)
 
         if data.get('end_time') and data['end_time'] < timezone.now():
-            errors['end_time'] = force_text(
+            errors['end_time'] = force_str(
                 _('End time cannot be in the past. Please set a future end time.'))
 
         if errors:

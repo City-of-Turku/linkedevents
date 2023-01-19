@@ -182,12 +182,11 @@ def test__upload_an_image(api_client, settings, list_url, image_data, user, orga
     assert image.publisher == organization
 
     # image url should contain the image file's path relative to MEDIA_ROOT.
-    assert image.image.url.startswith('images/test_image')
+    assert image.image.url.startswith('/images/test_image')
     assert image.image.url.endswith('.png')
 
     # check the actual image file
-    image_path = os.path.join(settings.MEDIA_ROOT, image.image.url)
-    image = PILImage.open(image_path)
+    image = PILImage.open(image.image.path)
     assert image.size == (512, 256)
     assert image.format == 'PNG'
 
@@ -208,12 +207,11 @@ def test__upload_an_image_with_api_key(api_client, settings, list_url, image_dat
     assert image.publisher == organization
 
     # image url should contain the image file's path relative to MEDIA_ROOT.
-    assert image.image.url.startswith('images/test_image')
+    assert image.image.url.startswith('/images/test_image')
     assert image.image.url.endswith('.png')
 
     # check the actual image file
-    image_path = os.path.join(settings.MEDIA_ROOT, image.image.url)
-    image = PILImage.open(image_path)
+    image = PILImage.open(image.image.path)
     assert image.size == (512, 256)
     assert image.format == 'PNG'
 
@@ -467,8 +465,7 @@ def test__delete_an_image(api_client, settings, user, organization):
     assert Image.objects.all().count() == 1
 
     # verify that the image file exists at first just in case
-    image_path = os.path.join(settings.MEDIA_ROOT, existing_image.image.url)
-    assert os.path.isfile(image_path)
+    assert os.path.isfile(existing_image.image.path)
 
     detail_url = reverse('image-detail', kwargs={'pk': existing_image.pk})
     response = api_client.delete(detail_url)
@@ -476,7 +473,7 @@ def test__delete_an_image(api_client, settings, user, organization):
     assert Image.objects.all().count() == 0
 
     # check that the image file is deleted
-    assert not os.path.isfile(image_path)
+    assert not os.path.isfile(existing_image.image.path)
 
 
 @override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL='')
@@ -497,8 +494,7 @@ def test__delete_an_image_with_api_key(api_client, settings, organization, data_
     assert Image.objects.all().count() == 1
 
     # verify that the image file exists at first just in case
-    image_path = os.path.join(settings.MEDIA_ROOT, existing_image.image.url)
-    assert os.path.isfile(image_path)
+    assert os.path.isfile(existing_image.image.path)
 
     detail_url = reverse('image-detail', kwargs={'pk': existing_image.pk})
     response = api_client.delete(detail_url)
@@ -507,7 +503,7 @@ def test__delete_an_image_with_api_key(api_client, settings, organization, data_
     assert ApiKeyUser.objects.all().count() == 1
 
     # check that the image file is deleted
-    assert not os.path.isfile(image_path)
+    assert not os.path.isfile(existing_image.image.path)
 
 
 @pytest.mark.django_db

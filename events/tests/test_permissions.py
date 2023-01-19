@@ -154,19 +154,19 @@ class TestUserModelPermissions(TestCase):
         # magicmock cannot be used for object properties
         self.instance.admin_organizations.add(self.org)
         qs = self.instance.get_editable_events(total_qs)
-        self.assertQuerysetEqual(qs, [repr(event_1), repr(event_2), repr(event_3)], ordered=False)
+        self.assertQuerysetEqual(qs, values=[repr(event_1), repr(event_2), repr(event_3)], transform=repr, ordered=False)
 
         # test for regular user
         self.instance.admin_organizations.remove(self.org)
         self.instance.organization_memberships.add(self.org)
         qs = self.instance.get_editable_events(total_qs)
-        self.assertQuerysetEqual(qs, [repr(event_2)])
+        self.assertQuerysetEqual(qs, values=[repr(event_2)], transform=repr)
 
         # test for private user
         self.instance.organization_memberships.remove(self.org)
         self.instance.public_memberships.add(self.org)
         qs = self.instance.get_editable_events(total_qs)
-        self.assertQuerysetEqual(qs, [repr(event_1)])
+        self.assertQuerysetEqual(qs, values=[repr(event_1)], transform=repr)
 
         # test for other users
         self.instance.public_memberships.remove(self.org)
@@ -178,7 +178,8 @@ class TestUserModelPermissions(TestCase):
         qs = self.instance.get_editable_events(total_qs)
         self.assertQuerysetEqual(
             qs,
-            [repr(event_1), repr(event_2), repr(event_3), repr(event_4)],
+            values=[repr(event_1), repr(event_2), repr(event_3), repr(event_4)],
+            transform=repr,
             ordered=False,
         )
 

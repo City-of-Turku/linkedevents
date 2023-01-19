@@ -6,7 +6,7 @@ from dateutil.parser import parse as dateutil_parse
 import pytest
 import pytz
 from django.utils import timezone, translation
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from events.auth import ApiKeyUser
 from .utils import versioned_reverse as reverse
 from django.core.management import call_command
@@ -356,7 +356,7 @@ def test_short_description_required_in_name_languages(api_client, minimal_event_
 
     # there should be only one error
     assert len(response.data['short_description']) == 1
-    assert (force_text(response.data['short_description']['sv']) ==
+    assert (force_str(response.data['short_description']['sv']) ==
             'This field must be specified before an event is published.')
 
 
@@ -369,7 +369,7 @@ def test_short_description_cannot_exceed_160_chars(api_client, minimal_event_dic
     with translation.override('en'):
         response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
     assert response.status_code == 400
-    assert (force_text(response.data['short_description']['fi'] ==
+    assert (force_str(response.data['short_description']['fi'] ==
                        'Short description length must be 160 characters or less'))
 
 
@@ -433,7 +433,7 @@ def test_price_info_options(api_client, minimal_event_dict, user, offers, expect
 
     assert response.status_code == expected
     if expected == 400:
-        assert force_text(response.data['offers'][0]) == 'Price info must be specified before an event is published.'
+        assert force_str(response.data['offers'][0]) == 'Price info must be specified before an event is published.'
 
 
 @pytest.mark.django_db
@@ -468,7 +468,7 @@ def test_name_required_in_some_language(api_client, minimal_event_dict, user, na
         assert response.status_code == 400
 
     if not is_valid:
-        assert force_text(response.data['name'][0]) == 'The name must be specified.'
+        assert force_str(response.data['name'][0]) == 'The name must be specified.'
 
 
 @pytest.mark.django_db

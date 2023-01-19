@@ -262,11 +262,13 @@ def administrative_division_type2():
 @pytest.fixture
 def administrative_division(administrative_division_type, municipality):
     division = AdministrativeDivision.objects.create(
-        name_en='test division',
         type=administrative_division_type,
         ocd_id='ocd-division/test:1',
         municipality=municipality,
     )
+    division.set_current_language('fi')
+    division.name = 'test division'
+    division.save()
     coords = ((0, 0), (0, 200), (200, 200), (200, 0), (0, 0))
     AdministrativeDivisionGeometry.objects.create(division=division, boundary=MultiPolygon([Polygon(coords)]))
     return division
@@ -275,10 +277,12 @@ def administrative_division(administrative_division_type, municipality):
 @pytest.fixture
 def administrative_division2(administrative_division_type):
     division = AdministrativeDivision.objects.create(
-        name_en='test division 2',
         type=administrative_division_type,
         ocd_id='ocd-division/test:2'
     )
+    division.set_current_language('fi')
+    division.name = 'test division 2'
+    division.save()
     coords = ((100, 100), (100, 300), (300, 300), (300, 100), (100, 100))
     AdministrativeDivisionGeometry.objects.create(division=division, boundary=MultiPolygon([Polygon(coords)]))
     return division
@@ -305,6 +309,7 @@ def make_event(data_source, organization, place, user):
             event_status = Event.Status.POSTPONED
         else:
             event_status = Event.Status.SCHEDULED
+
         return Event.objects.create(
             id=data_source.id + ':' + origin_id, location=place,
             data_source=data_source, publisher=organization,
