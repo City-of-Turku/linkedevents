@@ -1603,7 +1603,7 @@ class OrganizationClassViewSet(JSONAPIViewMixin, viewsets.ReadOnlyModelViewSet):
     queryset = OrganizationClass.objects.exclude(id__in=unused_org_class_ids)
     serializer_class = OrganizationClassSerializer
     filter_backends = (filters.OrderingFilter,)
-    ordering = ('id',)
+    ordering = ('name',)
 
 
 register_view(OrganizationClassViewSet, 'organization_class')
