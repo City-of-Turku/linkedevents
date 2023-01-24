@@ -142,7 +142,7 @@ ecdsa==0.15
     # via python-jose
 elasticsearch==7.6.0
     # via -r requirements.in
-future==0.18.2
+future==0.18.3
     # via pyjwkest
 geographiclib==1.52
     # via geopy
@@ -270,8 +270,6 @@ rsa==4.7
     # via python-jose
 ruamel-yaml==0.17.21
     # via drf-yasg
-ruamel-yaml-clib==0.2.6
-    # via ruamel-yaml
 sentry-sdk==0.14.3
     # via -r requirements.in
 six==1.14.0
