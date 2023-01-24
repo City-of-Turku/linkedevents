@@ -2910,12 +2910,17 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
                     queryset = queryset.none()
             lat = self.request.query_params.get("lat")
             lon = self.request.query_params.get("lon")
+            radius = self.request.query_params.get("radius")
             if lat and lon:
-                # only display event near my location
+                # only return events within a radius of the given location
                 user_position = Point(float(lon), float(lat), srid=4326)
                 user_position.transform(3067)
+                if radius and radius.isnumeric():
+                    distance = radius
+                else:
+                    distance = settings.EVENT_RADIUS_DISTANCE
                 locations = Place.objects.filter(
-                    position__distance_lte=(user_position, Distance(m=settings.EVENT_RADIUS_DISTANCE))
+                    position__distance_lte=(user_position, Distance(m=distance))
                 )
                 location_ids = locations.values_list('id',flat=True)
                 queryset = queryset.filter(location__in=location_ids)

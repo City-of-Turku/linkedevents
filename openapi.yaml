@@ -59,6 +59,11 @@ paths:
           description: Number of results to return per page.
           required: false
           type: integer
+        - name: distance
+          in: query
+          description: Maximum distance in meters.
+          required: false
+          type: integer
       responses:
         '200':
           description: ''
