@@ -18,7 +18,7 @@ bleach==3.3.0
     # via -r requirements.in
 cachetools==5.2.1
     # via django-helusers
-certifi==2019.11.28
+certifi==2022.12.7
     # via
     #   requests
     #   sentry-sdk
@@ -270,8 +270,6 @@ rsa==4.7
     # via python-jose
 ruamel-yaml==0.17.21
     # via drf-yasg
-ruamel-yaml-clib==0.2.6
-    # via ruamel-yaml
 sentry-sdk==0.14.3
     # via -r requirements.in
 six==1.14.0
