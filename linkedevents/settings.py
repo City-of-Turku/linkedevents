@@ -146,7 +146,7 @@ LOGGING = {
 
 # Application definition
 INSTALLED_APPS = [
-    'helusers',
+    'helusers.apps.HelusersConfig',
     'django.contrib.sites',
     'modeltranslation',
     'django.contrib.auth',
@@ -383,6 +383,7 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
+                'django.template.context_processors.request',
                 'helusers.context_processors.settings',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -546,3 +547,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Palvelukartta import 'might' need these if API authentications are set in place. Consult if need be.
 SMBACKEND_USER = env('SMBACKEND_USER')
 SMBACKEND_PASS = env('SMBACKEND_PASS')
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

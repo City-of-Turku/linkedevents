@@ -25,12 +25,12 @@ import pytz
 from django.contrib.gis.db import models
 from rest_framework.exceptions import ValidationError
 from reversion import revisions as reversion
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from mptt.querysets import TreeQuerySet
 from django.contrib.contenttypes.models import ContentType
 from events import translation_utils
-from django.utils.encoding import python_2_unicode_compatible
+from six import python_2_unicode_compatible
 from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
