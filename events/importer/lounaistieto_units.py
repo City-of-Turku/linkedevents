@@ -318,7 +318,7 @@ class LounaistietoUnitsImporter(Importer):
 
                             # Transform the projection from SRID 3067 to 4326 (WGS84) for reverse geocoding
                             pnt.transform(4326)
-                            lat, lon = pnt.x, pnt.y
+                            lat, lon = pnt.y, pnt.x
 
                             # Reverse geocode the location from the coordinates
                             geolocator = Nominatim(user_agent='geocoder')
