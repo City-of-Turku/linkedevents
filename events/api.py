@@ -1384,6 +1384,16 @@ class OrganizationDetailSerializer(OrganizationListSerializer):
         connected_organizations = [
             'sub_organizations', 'affiliated_organizations']
         conn_orgs_in_request = {}
+
+        if validated_data.get("data_source") is None: 
+            # objects *created* by api are marked coming from the system data source by default
+            # we must optionally create the system data source here, as the settings may have changed at any time
+            system_data_source_defaults = {'user_editable': True}
+            data_source, created = DataSource.objects.get_or_create(
+                id=settings.SYSTEM_DATA_SOURCE_ID, 
+                defaults=system_data_source_defaults)
+            validated_data["data_source"] = data_source
+
         for org_type in connected_organizations:
             if org_type in self.request.data.keys():
                 if isinstance(self.request.data[org_type], list):
