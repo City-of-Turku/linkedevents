@@ -151,6 +151,29 @@ def test_get_event_list_verify_locality_filter(api_client, event, event2):
 
 
 @pytest.mark.django_db
+def test_get_event_list_verify_distance_filter(api_client, event, event2):
+    """
+    Test that only events within the given radius from the
+    given location are returned.
+
+    Note: API parameters are provided in EPSG:4326
+    """
+    # Event in Turku
+    event.location.position = Point(float(60.451508), float(22.264916), srid=4326)
+    event.location.position.transform(3067)
+    event.location.save()
+
+    # Event in Raisio
+    event2.location.position = Point(float(60.495433), float(22.228688), srid=4326)
+    event2.location.position.transform(3067)
+    event2.location.save()
+
+    response = get_list(api_client, data={'lon': 60.451629, 'lat': 22.266943, 'distance': 1000})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id not in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
 def test_get_event_list_verify_text_filter_by_place(api_client, user, data_source, organization, event, event2):
     place1 = Place.objects.create(
         id=data_source.id + ':test_location1',
