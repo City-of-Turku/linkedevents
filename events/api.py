@@ -2895,8 +2895,15 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
 
         if self.request.method in SAFE_METHODS:
             # we cannot use distinct for performance reasons
-            public_queryset = original_queryset.filter(
-                publication_status=PublicationStatus.PUBLIC)
+            public_user = self.request.query_params.get('public_user')
+            if public_user:
+                # include draft public events when user is public_user
+                public_queryset = original_queryset.filter(
+                    publication_status__in=[PublicationStatus.PUBLIC, PublicationStatus.DRAFT])
+            else:
+                public_queryset = original_queryset.filter(
+                    publication_status=PublicationStatus.PUBLIC)
+
             editable_queryset = original_queryset.none()
             if self.request.user.is_authenticated:
                 editable_queryset = self.request.user.get_editable_events(
