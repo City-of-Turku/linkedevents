@@ -561,6 +561,14 @@ paths:
         in: path
         required: true
         type: string
+  /{version}/place_locality/:
+    get:
+      operationId: place_locality_list
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
   /{version}/search/:
     get:
       operationId: search_list
