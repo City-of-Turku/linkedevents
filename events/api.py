@@ -27,13 +27,13 @@ from django.core.files.base import ContentFile
 from django.db.utils import IntegrityError
 from django.conf import settings
 from django.urls import NoReverseMatch
-from django.db.models import Q, QuerySet, When, Case, CharField
+from django.db.models import F, Q, QuerySet, When, Case, CharField
 from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.utils.encoding import force_str
 from rest_framework import (
-    serializers, relations, viewsets, mixins, filters, generics, permissions
+    serializers, relations, views, viewsets, mixins, filters, generics, permissions
 )
 from rest_framework.filters import BaseFilterBackend
 from rest_framework.permissions import SAFE_METHODS
@@ -99,7 +99,7 @@ def register_view(klass, name, basename=None):
     if basename is not None:
         entry['basename'] = basename
     all_views.append(entry)
-    if klass.serializer_class and \
+    if hasattr(klass, 'serializer_class') and \
             hasattr(klass.serializer_class, 'Meta') and \
             hasattr(klass.serializer_class.Meta, 'model'):
         model = klass.serializer_class.Meta.model
@@ -1250,9 +1250,32 @@ class PlaceListViewSet(JSONAPIViewMixin, GeoModelAPIView,
                 search_query_str = f"{q}:*"
         return search_query_str
 
+class PlaceLocalityListView(viewsets.ViewSet):
+    """
+    A view that returns a list of all the localities
+    (city/municipality etc.) of existing Places.
+    """
+
+    def list(self, request, version, format=None):
+        langs = utils.get_fixed_lang_codes()
+        annotation_map = {}
+        for lang in langs:
+            annotation_map[lang] = F(f"address_locality_{lang}")
+
+        localities = (
+            Place.objects.filter(address_locality__isnull=False)
+            .distinct("address_locality")
+            .order_by("address_locality")
+            .annotate(**annotation_map)
+            .values(*langs)
+        )
+
+        return Response({"count": localities.count(), "data": localities})
+
 
 register_view(PlaceRetrieveViewSet, 'place')
 register_view(PlaceListViewSet, 'place')
+register_view(PlaceLocalityListView, 'place_locality', basename='place_locality')
 
 
 class OpeningHoursSpecificationSerializer(LinkedEventsSerializer):
