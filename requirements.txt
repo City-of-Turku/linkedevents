@@ -34,7 +34,7 @@ coreschema==0.0.4
     # via
     #   coreapi
     #   drf-yasg
-cryptography==3.3.2
+cryptography==39.0.1
     # via
     #   pyjwt
     #   social-auth-core
@@ -270,15 +270,12 @@ rsa==4.7
     # via python-jose
 ruamel-yaml==0.17.21
     # via drf-yasg
-ruamel-yaml-clib==0.2.6
-    # via ruamel-yaml
 sentry-sdk==0.14.3
     # via -r requirements.in
 six==1.14.0
     # via
     #   -r requirements.in
     #   bleach
-    #   cryptography
     #   django-anymail
     #   django-extensions
     #   django-munigeo-turku
