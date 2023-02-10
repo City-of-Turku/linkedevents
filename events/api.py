@@ -2749,6 +2749,14 @@ def _filter_event_queryset(queryset, params, srs=None):
     if val_deleted:
         queryset = queryset.filter(deleted=True)
 
+    # Filter virtual events
+    val = params.get('virtual', None)
+    if val and val.lower() in ['true', 'false']:
+        if val.lower() == 'true':
+            queryset = queryset.filter(is_virtualevent=True)
+        elif val.lower() == 'false':
+            queryset = queryset.exclude(is_virtualevent=True)
+
     # Filter by free offer
     val = params.get('is_free', None)
     if val and val.lower() in ['true', 'false']:

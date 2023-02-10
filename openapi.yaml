@@ -64,6 +64,10 @@ paths:
           description: Maximum distance in meters.
           required: false
           type: integer
+        - name: virtual
+          in: query
+          description: Return virtual/non-virtual events only.
+          type: boolean
       responses:
         '200':
           description: ''

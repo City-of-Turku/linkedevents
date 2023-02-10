@@ -135,6 +135,26 @@ def test_get_event_list_verify_text_filter(api_client, event, event2):
 
 
 @pytest.mark.django_db
+def test_get_event_list_verify_virtual_filter(api_client, event, event2):
+    event.is_virtualevent = True
+    event.save()
+    event2.is_virtualevent = False
+    event2.save()
+
+    response = get_list(api_client, data={'virtual': 'true'})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id not in [entry['id'] for entry in response.data['data']]
+
+    response2 = get_list(api_client, data={'virtual': 'false'})
+    assert event.id not in [entry['id'] for entry in response2.data['data']]
+    assert event2.id in [entry['id'] for entry in response2.data['data']]
+
+    response3 = get_list(api_client, data={})
+    assert event.id in [entry['id'] for entry in response3.data['data']]
+    assert event2.id in [entry['id'] for entry in response3.data['data']]
+
+
+@pytest.mark.django_db
 def test_get_event_list_verify_locality_filter(api_client, event, event2):
     event.location.address_locality = 'Turku'
     event.location.save()
