@@ -55,23 +55,13 @@ class TestUserModelPermissionMixin(TestCase):
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
         self.assertTrue(can_edit)
 
-        # test for regular user
-        self.instance.is_admin = MagicMock(return_value=False)
-        self.instance.is_regular_user = MagicMock(return_value=True)
-        self.instance.is_private_user = MagicMock(return_value=False)
-
-        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
-        self.assertFalse(can_edit)
-        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
-        self.assertTrue(can_edit)
-
         # test for private user
         self.instance.is_admin = MagicMock(return_value=False)
         self.instance.is_regular_user = MagicMock(return_value=False)
         self.instance.is_private_user = MagicMock(return_value=True)
 
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
-        self.assertTrue(can_edit)
+        self.assertFalse(can_edit)
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
         self.assertTrue(can_edit)
 

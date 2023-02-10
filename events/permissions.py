@@ -33,7 +33,7 @@ class UserModelPermissionMixin:
     def public_memberships(self):
         raise NotImplementedError()
 
-    def can_edit_event(self, publisher, publication_status):
+    def can_edit_event(self, publisher, publication_status, event=None):
         """Check if current user can edit (create, change, modify)
         event with the given publisher and publication_status"""
         if hasattr(self, "is_superuser") and self.is_superuser:
@@ -42,7 +42,7 @@ class UserModelPermissionMixin:
             return True
         if self.is_private_user(publisher):
             return True
-        if self.is_regular_user(publisher) and publication_status == PublicationStatus.DRAFT:
+        if self.is_regular_user(publisher) and event and event.created_by == self:
             return True
         return False
 
