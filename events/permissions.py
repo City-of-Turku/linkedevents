@@ -40,7 +40,7 @@ class UserModelPermissionMixin:
             return True
         if self.is_admin(publisher):
             return True
-        if self.is_private_user(publisher):
+        if self.is_private_user(publisher) and publication_status == PublicationStatus.DRAFT:
             return True
         if self.is_regular_user(publisher) and event and event.created_by == self:
             return True
