@@ -2910,7 +2910,7 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
             event.publication_status == PublicationStatus.PUBLIC or
             self.request.user.is_authenticated and
             self.request.user.can_edit_event(
-                event.publisher, event.publication_status)
+                event.publisher, event.publication_status, event)
         ):
             if event.deleted:
                 raise EventDeletedException()
@@ -3001,9 +3001,11 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         if isinstance(serializer, EventSerializer) and not self.request.user.can_edit_event(
                 serializer.instance.publisher,
                 serializer.instance.publication_status,
+                serializer.instance,
         ):
             raise DRFPermissionDenied()
 
+        event_id = self.kwargs.get("pk")
         # Prevent changing existing events to a state that user doe snot have write permissions
         if isinstance(serializer.validated_data, list):
             event_data_list = serializer.validated_data
@@ -3014,7 +3016,15 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
             org = self.organization
             if hasattr(event_data, 'publisher'):
                 org = event_data['publisher']
-            if not self.request.user.can_edit_event(org, event_data['publication_status']):
+            if event_id is None:
+                event_id = event_data.get("id")
+
+            # Special handling for regular users
+            original_event = Event.objects.get(id=event_id)
+            editing_draft = original_event.publication_status == PublicationStatus.DRAFT
+            if self.request.user.is_regular_user(org) and original_event.created_by == self.request.user:
+                continue
+            elif not self.request.user.can_edit_event(org, event_data['publication_status'], original_event):
                 raise DRFPermissionDenied()
 
         super().perform_update(serializer)
@@ -3037,7 +3047,9 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
             org = self.organization
             if hasattr(event_data, 'publisher'):
                 org = event_data['publisher']
-            if not self.request.user.can_edit_event(org, event_data['publication_status']):
+            if self.request.user.is_regular_user(org):
+                continue
+            elif not self.request.user.can_edit_event(org, event_data['publication_status']):
                 raise DRFPermissionDenied()
 
         super().perform_create(serializer)
@@ -3047,7 +3059,9 @@ class EventViewSet(JSONAPIViewMixin, BulkModelViewSet, viewsets.ReadOnlyModelVie
         return super().destroy(request, *args, **kwargs)
 
     def perform_destroy(self, instance):
-        if not self.request.user.can_edit_event(instance.publisher, instance.publication_status):
+        regular_user = self.request.user.is_regular_user(instance.publisher)
+        event_owner = instance.created_by == self.request.user
+        if not (regular_user and event_owner) and not self.request.user.can_edit_event(instance.publisher, instance.publication_status, instance):
             raise DRFPermissionDenied()
 
         instance.soft_delete()

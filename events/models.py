@@ -114,7 +114,7 @@ class BaseQuerySet(models.QuerySet):
         if user.is_superuser:
             return True
         for event in self:
-            if not user.can_edit_event(event.publisher, event.publication_status):
+            if not user.can_edit_event(event.publisher, event.publication_status, event):
                 return False
         return True
 
@@ -836,7 +836,7 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
         """Check if current event can be edited by the given user"""
         if user.is_superuser:
             return True
-        return user.can_edit_event(self.publisher, self.publication_status)
+        return user.can_edit_event(self.publisher, self.publication_status, self)
 
     def soft_delete(self, using=None):
         self.deleted = True
