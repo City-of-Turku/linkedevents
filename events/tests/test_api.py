@@ -397,6 +397,7 @@ class TestImageAPI(APITestCase):
     def setUp(self):
         user_model = get_user_model()
 
+        self.user = user_model.objects.create(username='testuser')
         self.data_source = DataSource.objects.create(
             id='ds',
             name='data-source',
@@ -446,7 +447,20 @@ class TestImageAPI(APITestCase):
             publisher=self.org_3,
             url='http://fake.url/image-2/',
         )
-        self.user = user_model.objects.create(username='testuser')
+        self.image_4 = Image.objects.create(
+            name='image-2',
+            data_source=self.data_source,
+            publisher=self.org_3,
+            url='http://fake.url/image-2/',
+            is_shared_within_org=True,
+        )
+        self.image_5 = Image.objects.create(
+            name='image-2',
+            data_source=self.data_source,
+            publisher=self.org_3,
+            url='http://fake.url/image-2/',
+            created_by=self.user,
+        )
 
     def test_get_image_list_with_publisher(self):
         # test filtering with replaced organization
@@ -465,7 +479,21 @@ class TestImageAPI(APITestCase):
         url = '{0}?publisher=ds:org-3'.format(reverse('image-list'))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['data']), 1)
+        self.assertEqual(len(response.data['data']), 3)
+
+    def test_get_image_list_as_regular_user(self):
+        """
+        Test that regular users get only their own images and
+        the images that are shared within the organization.
+        """
+        self.user.organization_memberships.add(self.org_3)
+        url = '{0}?publisher=ds:org-3'.format(reverse('image-list'))
+        self.client.force_authenticate(self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['data']), 2)
+        assert self.image_4.id in [entry['id'] for entry in response.data['data']]
+        assert self.image_5.id in [entry['id'] for entry in response.data['data']]
 
     def test_get_image_list_as_superuser(self):
         # test that superusers get images from all organizations
@@ -474,4 +502,4 @@ class TestImageAPI(APITestCase):
         self.user.save()
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['data']), 3)
+        self.assertEqual(len(response.data['data']), 5)
