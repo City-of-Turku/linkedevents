@@ -184,6 +184,10 @@ class Image(models.Model):
         'Photographer name'), max_length=255, null=True, blank=True)
     alt_text = models.CharField(verbose_name=_(
         'Alt text'), max_length=320, null=True, blank=True)
+    is_shared_within_org = models.BooleanField(
+        default=False,
+        verbose_name=_('Is shared within organization')
+    )
 
     def save(self, *args, **kwargs):
         if not self.publisher:
