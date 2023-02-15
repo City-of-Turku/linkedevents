@@ -1814,9 +1814,19 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         queryset = Image.objects.all()
         publisher = self.request.query_params.get('publisher', None)
         if publisher:
+            try:
+                org = Organization.objects.get(id=publisher)
+            except Organization.DoesNotExist:
+                org = None
             publisher = publisher.lower().split(',')
             q = get_publisher_query(publisher)
             queryset = queryset.filter(q)
+
+            # Regular users can only see their own images and images that are shared within the organization
+            if org and isinstance(self.request.user, User) and self.request.user.is_regular_user(org):
+                shared = queryset.filter(is_shared_within_org=True)
+                created_by_user = queryset.filter(created_by=self.request.user)
+                queryset = shared | created_by_user
 
         data_source = self.request.query_params.get('data_source')
         # Filter by data source, multiple sources separated by comma
