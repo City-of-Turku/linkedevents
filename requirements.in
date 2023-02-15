@@ -18,7 +18,7 @@ django-mptt
 django-munigeo-turku==0.3
 django-orghierarchy-turku
 django-reversion==5.0.4
-django==3.2.16
+django==3.2.18
 djangorestframework
 djangorestframework-bulk
 djangorestframework-gis
