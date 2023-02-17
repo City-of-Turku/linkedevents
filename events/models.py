@@ -35,6 +35,8 @@ from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.db import transaction
+from django.db.models import Index
+from django.db.models.functions import Lower
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.contrib.postgres.search import SearchVectorField
@@ -483,6 +485,14 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
             GinIndex(fields=["search_column_fi"]),
             GinIndex(fields=["search_column_sv"]),
             GinIndex(fields=["search_column_en"]),
+            Index(
+                Lower("address_locality"),
+                "address_locality",
+                "address_locality_fi",
+                "address_locality_en",
+                "address_locality_sv",
+                name="locality_idx"
+            ),
         )
 
     def __unicode__(self):
