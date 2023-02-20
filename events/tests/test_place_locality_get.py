@@ -6,10 +6,13 @@ from .utils import versioned_reverse as reverse
 @pytest.mark.django_db
 def test_get_localities(api_client, place, place2, place3, place4):
     place.address_locality_fi = "Turku"
+    place.address_locality_sv = "Åbo"
     place.save()
     place2.address_locality_fi = "Kaarina"
+    place2.address_locality_sv = "S:t Karins"
     place2.save()
     place3.address_locality_fi = "Raisio"
+    place3.address_locality_sv = "Reso"
     place3.save()
     place4.address_locality_fi = "Raisio"
     place4.save()

@@ -1266,6 +1266,7 @@ class PlaceLocalityListView(viewsets.ViewSet):
 
         localities = (
             Place.objects.filter(address_locality__isnull=False)
+            .filter(address_locality_sv__isnull=False)
             .annotate(**annotation_map)
             .distinct("lower")
             .order_by("lower")
