@@ -1257,17 +1257,19 @@ class PlaceLocalityListView(viewsets.ViewSet):
     """
 
     def list(self, request, version, format=None):
-        langs = utils.get_fixed_lang_codes()
-        annotation_map = {}
-        for lang in langs:
-            annotation_map[lang] = F(f"address_locality_{lang}")
+        annotation_map = {
+            "fi": F("address_locality_fi"),
+            "sv": F("address_locality_sv"),
+            "en": F("address_locality_en"),
+            "lower": Lower("address_locality"),
+        }
 
         localities = (
             Place.objects.filter(address_locality__isnull=False)
-            .distinct("address_locality")
-            .order_by("address_locality")
             .annotate(**annotation_map)
-            .values(*langs)
+            .distinct("lower")
+            .order_by("lower")
+            .values(*annotation_map.keys())
         )
 
         return Response({"count": localities.count(), "data": localities})
