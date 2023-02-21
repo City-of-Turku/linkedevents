@@ -1816,6 +1816,14 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
         self.srs = getattr(self, 'srs', srid_to_srs(None))
         queryset = Image.objects.all()
         publisher = self.request.query_params.get('publisher', None)
+        parent = self.request.query_params.get('parent', None)
+        shared_by_parent = None
+
+        if parent:
+            parent = parent.lower().split(',')
+            q = get_publisher_query(parent)
+            shared_by_parent = queryset.filter(q, is_shared_within_org=True)
+
         if publisher:
             try:
                 org = Organization.objects.get(id=publisher)
@@ -1823,7 +1831,12 @@ class ImageViewSet(JSONAPIViewMixin, viewsets.ModelViewSet):
                 org = None
             publisher = publisher.lower().split(',')
             q = get_publisher_query(publisher)
-            queryset = queryset.filter(q)
+            publisher_images = queryset.filter(q)
+
+            if shared_by_parent is not None:
+                queryset = publisher_images | shared_by_parent
+            else:
+                queryset = publisher_images
 
             # Regular users can only see their own images and images that are shared within the organization
             if org and isinstance(self.request.user, User) and self.request.user.is_regular_user(org):
