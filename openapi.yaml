@@ -59,15 +59,51 @@ paths:
           description: Number of results to return per page.
           required: false
           type: integer
-        - name: distance
+        - name: radius
           in: query
-          description: Maximum distance in meters.
+          description: Maximum event radius in meters.
           required: false
           type: integer
         - name: virtual
           in: query
           description: Return virtual/non-virtual events only.
           type: boolean
+        - name: locality
+          in: query
+          description: Address locality where an event happens.
+          type: string
+        - name: text
+          in: query
+          description: Name of the event, event venue or event description.
+          type: string
+        - name: type_id
+          in: query
+          description: One or more of event types separated by comma.
+          type: string
+        - name: lat
+          in: query
+          description: Latitude of user coordinates to show events near user.
+          type: string
+        - name: lon
+          in: query
+          description: Longitude of user coordinates to show events near user.
+          type: string
+        - name: publisher
+          in: query
+          description: Event publisher organization id.
+          type: string
+        - name: language
+          in: query
+          description: Events language code.
+          type: string
+        - name: created_by
+          in: query
+          description: Event created by.
+          type: string
+        - name: publication_status
+          in: query
+          description: Event publication status.
+          type: string
       responses:
         '200':
           description: ''
