@@ -1,5 +1,5 @@
 from modeltranslation.translator import translator, TranslationOptions
-from .models import Language, Keyword, KeywordSet, Place, Event, Offer, License, Video, Image, PaymentMethod
+from .models import Language, Keyword, KeywordSet, Place, Event, Offer, License, Sidefield, Video, Image, PaymentMethod
 
 
 class LanguageTranslationOptions(TranslationOptions):
@@ -52,6 +52,14 @@ class OfferTranslationOptions(TranslationOptions):
 
 
 translator.register(Offer, OfferTranslationOptions)
+
+
+class SidefieldTranslationOptions(TranslationOptions):
+    fields = ('location_sidefield', 'location_mobile', 'umbrella_sidefield', 'umbrella_mobile',
+              'times_sidefield', 'times_mobile', 'offers_sidefield', 'offers_mobile', 'keyword_sidefield', 'keyword_mobile', 'category_sidefield', 'category_mobile',)
+
+
+translator.register(Sidefield, SidefieldTranslationOptions)
 
 
 class LicenseTranslationOptions(TranslationOptions):

@@ -92,7 +92,6 @@ want to have all of the features working.
 ```bash
 #YSO(General Finnish Ontology)-importer that adds all the concepts and their alt labels and hierarchies.
 #A large part of Linked Events features are built on top of YSO, this importer should be used in all installations.
-#(Developed solely by: https://github.com/Anthon98)
 python manage.py event_import ontology
 
 #TSL-wordlist(Turun sanalista)-importer adds a City-of-Turku specific wordlist that is used by some of the keyword set importers.
@@ -144,6 +143,9 @@ python manage.py event_import turku_image_bank
 		
 #Import event data from the old Turku events calendar.
 python manage.py event_import turku_old_events --events
+
+#Import default frontend sidefield help texts in three languages: Finnish, Swedish, English".
+python manage.py event_import helptexts
 ```
 
 Populating Search Columns

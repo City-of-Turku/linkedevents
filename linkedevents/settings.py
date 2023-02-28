@@ -78,6 +78,10 @@ env = environ.Env(
         str, 'helusers.tunnistamo_oidc.TunnistamoOIDCAuth'),
     SMBACKEND_USER=(str, ''),
     SMBACKEND_PASS=(str, ''),
+    USE_SWAGGER_OPENAPI_VIEW=(bool, False),
+    ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY=(bool, False),
+    PRIVATE_ORG_ID=(str, 'yksilo:2000'),
+    EVENT_RADIUS_DISTANCE=(int,5000) # distance in meters
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -104,6 +108,9 @@ DATABASES = {
 
 SYSTEM_DATA_SOURCE_ID = env('SYSTEM_DATA_SOURCE_ID')
 
+ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY = env('ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY')
+PRIVATE_ORG_ID = env('PRIVATE_ORG_ID')
+EVENT_RADIUS_DISTANCE = env('EVENT_RADIUS_DISTANCE')
 SITE_ID = 1
 
 LOGGING = {
@@ -139,7 +146,7 @@ LOGGING = {
 
 # Application definition
 INSTALLED_APPS = [
-    'helusers',
+    'helusers.apps.HelusersConfig',
     'django.contrib.sites',
     'modeltranslation',
     'django.contrib.auth',
@@ -174,6 +181,7 @@ INSTALLED_APPS = [
     'leaflet',
     'django_orghierarchy',
     'admin_auto_filters',
+    'drf_yasg',
 ] + env('EXTRA_INSTALLED_APPS')
 
 if env('SENTRY_DSN'):
@@ -271,6 +279,7 @@ LOGOUT_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_ON_GET = True
 SOCIALACCOUNT_ADAPTER = env('HELUSERS_SOCIALACCOUNT_ADAPTER')
 HELUSERS_PROVIDER = env('HELUSERS_PROVIDER')
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
 #
 # REST Framework
@@ -328,6 +337,24 @@ CORS_ORIGIN_ALLOW_ALL = True
 CSRF_COOKIE_NAME = '%s-csrftoken' % env('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env('COOKIE_PREFIX')
 
+# Swagger settings
+USE_SWAGGER_OPENAPI_VIEW = env('USE_SWAGGER_OPENAPI_VIEW')
+if USE_SWAGGER_OPENAPI_VIEW:
+    SWAGGER_SETTINGS = {
+        'USE_SESSION_AUTH': False,
+        'SECURITY_DEFINITIONS': {
+            'Bearer Token': {
+                'type': 'apiKey',
+                'name': 'Authorization',
+                'in': 'header',
+                'description': ('Token based authorization. '
+                                'Use Bearer as prefix i.e. `Bearer <my-token>`')
+            },
+        },
+        'DEFAULT_INFO': 'linkedevents.urls.openapi'
+    }
+
+
 from django_jinja.builtins import DEFAULT_EXTENSIONS  # noqa
 
 TEMPLATES = [
@@ -357,6 +384,7 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
+                'django.template.context_processors.request',
                 'helusers.context_processors.settings',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -515,8 +543,10 @@ if env('MAIL_MAILGUN_KEY'):
         'MAILGUN_SENDER_DOMAIN': env('MAIL_MAILGUN_DOMAIN'),
         'MAILGUN_API_URL': env('MAIL_MAILGUN_API'),
     }
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Palvelukartta import 'might' need these if API authentications are set in place. Consult if need be.
 SMBACKEND_USER = env('SMBACKEND_USER')
 SMBACKEND_PASS = env('SMBACKEND_PASS')
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

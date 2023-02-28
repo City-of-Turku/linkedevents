@@ -19,6 +19,7 @@ def assert_user_fields_exist(data, version='v1'):
     # TODO: incorporate version parameter into version aware
     # parts of test code
     fields = (
+        'pk',
         'last_login',
         'username',
         'email',
@@ -29,9 +30,11 @@ def assert_user_fields_exist(data, version='v1'):
         'department_name',
         'organization',
         'is_staff',
+        'is_superuser',
         'display_name',
         'admin_organizations',
         'organization_memberships',
+        'public_memberships',
     )
     assert_fields_exist(data, fields)
 

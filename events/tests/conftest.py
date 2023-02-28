@@ -100,7 +100,16 @@ def other_data_source():
 
 @pytest.mark.django_db
 @pytest.fixture
-def user():
+def yksilo_data_source():
+    return DataSource.objects.create(
+        id="yksilo",
+        api_key="yksilo"
+    )
+
+
+@pytest.mark.django_db
+@pytest.fixture
+def user(organization_yksilo):
     return get_user_model().objects.create(
         username='test_user',
         first_name='Cem',
@@ -111,7 +120,7 @@ def user():
 
 @pytest.mark.django_db
 @pytest.fixture
-def user2():
+def user2(organization_yksilo):
     return get_user_model().objects.create(
         username='test_user2',
         first_name='Brendan',
@@ -122,7 +131,7 @@ def user2():
 
 @pytest.mark.django_db
 @pytest.fixture
-def super_user():
+def super_user(organization_yksilo):
     return get_user_model().objects.create(
         username='super_user',
         first_name='Super',
@@ -170,6 +179,18 @@ def organization3(other_data_source, user2):
         data_source=other_data_source,
     )
     org.admin_users.add(user2)
+    org.save()
+    return org
+
+
+@pytest.mark.django_db
+@pytest.fixture
+def organization_yksilo(yksilo_data_source):
+    org, created = Organization.objects.get_or_create(
+        origin_id='2000',
+        name="yksilo",
+        data_source=yksilo_data_source,
+    )
     org.save()
     return org
 
@@ -241,11 +262,13 @@ def administrative_division_type2():
 @pytest.fixture
 def administrative_division(administrative_division_type, municipality):
     division = AdministrativeDivision.objects.create(
-        name_en='test division',
         type=administrative_division_type,
         ocd_id='ocd-division/test:1',
         municipality=municipality,
     )
+    division.set_current_language('fi')
+    division.name = 'test division'
+    division.save()
     coords = ((0, 0), (0, 200), (200, 200), (200, 0), (0, 0))
     AdministrativeDivisionGeometry.objects.create(division=division, boundary=MultiPolygon([Polygon(coords)]))
     return division
@@ -254,10 +277,12 @@ def administrative_division(administrative_division_type, municipality):
 @pytest.fixture
 def administrative_division2(administrative_division_type):
     division = AdministrativeDivision.objects.create(
-        name_en='test division 2',
         type=administrative_division_type,
         ocd_id='ocd-division/test:2'
     )
+    division.set_current_language('fi')
+    division.name = 'test division 2'
+    division.save()
     coords = ((100, 100), (100, 300), (300, 300), (300, 100), (100, 100))
     AdministrativeDivisionGeometry.objects.create(division=division, boundary=MultiPolygon([Polygon(coords)]))
     return division
@@ -271,7 +296,8 @@ def place(data_source, organization, administrative_division):
         data_source=data_source,
         publisher=organization,
         position=Point(50, 50),
-        name_fi='Paikka 1'
+        name_fi='Paikka 1',
+        search_column_fi='paikka 1',
     )
 
 
@@ -283,6 +309,7 @@ def make_event(data_source, organization, place, user):
             event_status = Event.Status.POSTPONED
         else:
             event_status = Event.Status.SCHEDULED
+
         return Event.objects.create(
             id=data_source.id + ':' + origin_id, location=place,
             data_source=data_source, publisher=organization,
@@ -322,7 +349,8 @@ def place2(other_data_source, organization2):
         data_source=other_data_source,
         publisher=organization2,
         position=Point(0, 0),
-        name_en='Place 2'
+        name_en='Place 2',
+        search_column_en='place 2',
     )
 
 
@@ -332,7 +360,19 @@ def place3(data_source, organization):
         id=data_source.id + ':test_location_3',
         data_source=data_source,
         publisher=organization,
-        name_sv='Plats 3'
+        name_sv='Plats 3',
+        search_column_sv='plats 3',
+    )
+
+
+@pytest.fixture
+def place4(data_source, organization):
+    return Place.objects.create(
+        id=data_source.id + ':test_location_4',
+        data_source=data_source,
+        publisher=organization,
+        name_fi='Paikka 4',
+        search_column_fi='paikka 4',
     )
 
 
@@ -510,6 +550,12 @@ def keywordlabel(kw_name, languages):
 
 
 @pytest.mark.django_db
+@pytest.fixture
+def keywordlabel2(languages):
+    return KeywordLabel.objects.create(name='toinen', language=languages[0])
+
+
+@pytest.mark.django_db
 @pytest.fixture(scope="class")
 def languages_class(request):
     lang_objs = [
@@ -550,7 +596,11 @@ def make_complex_event_dict(make_keyword_id):
                 {'name': TEXT_EN, 'link': URL, 'language': 'en'},
             ],
             'videos': [
-                {'name': TEXT_FI, 'url': URL, 'alt_text': TEXT_FI},
+                {
+                    'name': {'en': TEXT_EN, 'sv': TEXT_SV, 'fi': TEXT_FI},
+                    'url': URL,
+                    'alt_text': {'en': TEXT_EN, 'sv': TEXT_SV, 'fi': TEXT_FI},
+                }
             ],
             'offers': [
                 {

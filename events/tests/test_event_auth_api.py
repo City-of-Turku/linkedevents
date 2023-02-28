@@ -18,7 +18,7 @@ class TestEventAPI(APITestCase):
     def setUp(self):
         user_model = get_user_model()
         self.user = user_model.objects.create(username='testuser')
-
+        self.user2 = user_model.objects.create(username='testuser2')
         # this is the default data source when users POST through API
         self.system_data_source = DataSource.objects.create(
             id='ds',
@@ -146,6 +146,13 @@ class TestEventAPI(APITestCase):
             publisher=self.org_5,
             publication_status=PublicationStatus.PUBLIC,
         )
+        self.event_10 = Event.objects.create(
+            id='eeds:event-10',
+            name='event-10',
+            data_source=self.system_data_source,
+            publisher=self.org_3,
+            publication_status=PublicationStatus.DRAFT,
+        )
         self.place = Place.objects.create(
             id='neds:place-1',
             name='place-1',
@@ -174,7 +181,7 @@ class TestEventAPI(APITestCase):
         # Previously, the show_all filter only displayed drafts for one organization.
         # Descendants of organizations or replacement organizations were not considered at all.
         # Now, we display all events and drafts that the user has the right to view and edit.
-        self.assertEqual(len(response.data['data']), 9)  # all 8 events
+        self.assertEqual(len(response.data['data']), 10)  # all 10 events
         for event in response.data['data']:
             self.assertIn('publication_status', event)
             # user name fields should be shown in all except event-6 and event-9
@@ -199,7 +206,7 @@ class TestEventAPI(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # We should see everything else but not public events outside the admin orgs
-        self.assertEqual(len(response.data['data']), 7)  # all except event-6
+        self.assertEqual(len(response.data['data']), 8)  # all except event-6 and 9
         for event in response.data['data']:
             self.assertIn('publication_status', event)
             # now we should only have events with admin rights
@@ -725,7 +732,7 @@ class TestEventAPI(APITestCase):
         self.event_8.refresh_from_db()
         self.assertEqual(self.event_8.data_source, self.non_editable_data_source)
 
-    def test_regular_user_create_public_event_denied(self):
+    def test_regular_user_create_public_event(self):
         self.org_1.regular_users.add(self.user)
 
         url = reverse('event-list')
@@ -734,7 +741,7 @@ class TestEventAPI(APITestCase):
 
         self.client.force_authenticate(self.user)
         response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_regular_user_update_public_event_denied(self):
         self.org_1.regular_users.add(self.user)
@@ -747,9 +754,20 @@ class TestEventAPI(APITestCase):
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_regular_user_delete_public_event_denied(self):
+    def test_regular_user_delete_own_public_event(self):
         self.org_3.regular_users.add(self.user)
+        self.event_4.created_by = self.user
+        self.event_4.save()
+        url = reverse('event-detail', kwargs={'pk': self.event_4.id})
 
+        self.client.force_authenticate(self.user)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_regular_user_delete_other_public_event(self):
+        self.org_3.regular_users.add(self.user)
+        self.event_4.created_by = self.user2
+        self.event_4.save()
         url = reverse('event-detail', kwargs={'pk': self.event_4.id})
 
         self.client.force_authenticate(self.user)
@@ -775,6 +793,8 @@ class TestEventAPI(APITestCase):
 
     def test_regular_user_update_draft_event_other_fields(self):
         self.org_3.regular_users.add(self.user)
+        self.event_3.created_by = self.user
+        self.event_3.save()
         location_id = reverse('place-detail', kwargs={'pk': self.place.id})
 
         url = reverse('event-detail', kwargs={'pk': self.event_3.id})
@@ -788,20 +808,36 @@ class TestEventAPI(APITestCase):
         self.assertNotIn('created_by', response.data)
         self.assertNotIn('last_modified_by', response.data)
 
-    def test_regular_user_update_draft_event_to_public_denied(self):
+    def test_regular_user_update_own_draft_event_to_public(self):
         self.org_3.regular_users.add(self.user)
+        self.event_3.created_by = self.user
+        self.event_3.save()
         location_id = reverse('place-detail', kwargs={'pk': self.place.id})
-
+        
         url = reverse('event-detail', kwargs={'pk': self.event_3.id})
         data = self.make_minimal_event_dict(self.system_data_source, self.org_3, location_id)
         data['publication_status'] = 'public'
         self.client.force_authenticate(self.user)
         response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_regular_user_update_other_draft_event_to_public_can_not_be_accessed(self):
+        self.org_3.regular_users.add(self.user)
+        self.event_3.created_by = self.user2
+        self.event_3.save()
+        location_id = reverse('place-detail', kwargs={'pk': self.place.id})
+        
+        url = reverse('event-detail', kwargs={'pk': self.event_3.id})
+        data = self.make_minimal_event_dict(self.system_data_source, self.org_3, location_id)
+        data['publication_status'] = 'public'
+        self.client.force_authenticate(self.user)
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_regular_user_delete_draft_event(self):
         self.org_3.regular_users.add(self.user)
-
+        self.event_3.created_by = self.user
+        self.event_3.save()
         url = reverse('event-detail', kwargs={'pk': self.event_3.id})
         self.client.force_authenticate(self.user)
         response = self.client.delete(url)
@@ -840,7 +876,7 @@ class TestEventAPI(APITestCase):
 
         self.client.force_authenticate(self.user)
         response = self.client.post(url, [data_1, data_2], format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # test creating multiple draft events
         data_1['publication_status'] = 'draft'
@@ -848,11 +884,17 @@ class TestEventAPI(APITestCase):
         response = self.client.post(url, [data_1, data_2], format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         qs = Event.objects.filter(name_fi__in=['event-data-1', 'event-data-2'])
-        self.assertEqual(qs.count(), 2)
+        self.assertEqual(qs.count(), 4)
 
     @override_settings(SYSTEM_DATA_SOURCE_ID='ds')
     def test_regular_user_bulk_update(self):
         self.org_3.regular_users.add(self.user)
+        self.event_3.created_by = self.user
+        self.event_3.save()
+        self.event_4.created_by = self.user
+        self.event_4.save()
+        self.event_10.created_by = self.user
+        self.event_10.save()
         url = reverse('event-list')
         location_id = reverse('place-detail', kwargs={'pk': self.place.id})
         data_1 = self.make_complex_event_dict(self.system_data_source, self.org_3, location_id, self.languages)
@@ -863,10 +905,15 @@ class TestEventAPI(APITestCase):
         data_2['id'] = self.event_4.id  # public event
         data_2['name']['fi'] = 'event-4-changed'
         data_2['publication_status'] = 'public'
+        data_3 = deepcopy(data_1)
+        data_3['id'] = self.event_10.id  # draft event
+        data_3['name']['fi'] = 'event-10-changed'
+        data_3['publication_status'] = 'public' 
 
         self.client.force_authenticate(self.user)
         response = self.client.put(url, [data_1, data_2], format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0], 'Could not find all objects to update.')
 
         data_2['publication_status'] = 'draft'
         response = self.client.put(url, [data_1, data_2], format='json')
@@ -876,5 +923,8 @@ class TestEventAPI(APITestCase):
         response = self.client.put(url, [data_1], format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.event_3.refresh_from_db()
-        self.assertEqual(self.event_3.name, 'event-3-changed')
+        self.assertEqual(self.event_3.name_fi, 'event-3-changed')
         self.assertEqual(self.event_3.publication_status, PublicationStatus.DRAFT)
+
+        response = self.client.put(url, [data_1, data_3], format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

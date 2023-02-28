@@ -8,6 +8,7 @@ import logging
 import requests
 from pathlib import Path
 from PIL import Image as pil_image
+from glob import glob as glob_open
 
 # Django:
 from django import db
@@ -103,49 +104,40 @@ class ImageBankImporter(Importer):
         proc_time_frmt('Setup')
         self.handle()
 
-    def main(self) -> None:
-        """Main processing phase."""
-        try:
-            self.cc_by_license = License.objects.get(id='cc_by')
-        except License.DoesNotExist:
-            self.cc_by_license = None
+    def save_image(self, new_image_id) -> None:
+        """Generate the actual DB image object."""
 
-        image_bank_images = (
-            'https://i.imgur.com/XxE918k.jpg',
-            'https://i.imgur.com/bNjPBXO.jpg',
-            'https://i.imgur.com/IA5NbEy.jpg',
-            'https://i.imgur.com/hYAcCOg.jpg'
-        )
+        queryset = Image.objects.filter(image=new_image_id)
 
-        def _request_image_url(url: str) -> str:
-            """Fetches, processes, converts and saves the image into webp format."""
-            img = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, stream=True).raw
-            img_file_name = re.split('/|\.\s*', img_url)[-2]
-            paths = Path('%s/images' % settings.MEDIA_ROOT)
-
-            try:
-                img = pil_image.open(img)
-                # Scales the image so that it fits within the bounding box of a certain resolution.
-                min_scale = min((1280 / img.width, 720 / img.height)) # Get the scaling factor of the longest distance.
-                img = img.resize((int(img.width * min_scale), int(img.height * min_scale))) # Resize by multiplying scale by dimensions.
-                img.save('%s/%s.%s' % (paths, img_file_name, 'webp'), format='webp') # Convert and save the image to the path in webp format.
-            except Exception as e:
-                logger.error("Unable to process image due to: %s" % e)
-
-            return 'images/%s.webp' % img_file_name
-
-
-        # Loop through URLs and generate the actual DB image object.
-        for img_url in image_bank_images:
+        if not queryset:
             new_image = Image(data_source=getattr(self, 'data_source_image'))
             for props in ('name', 'photographer_name', 'alt_text'):
                 setattr(new_image, props, '')
             new_image.license = self.cc_by_license
             new_image.publisher = getattr(self, 'organization')
-            new_image_id = _request_image_url(url=img_url)
             new_image.image = new_image_id
             new_image.save()
-            logger.info("Saved new image ID: %s" % new_image_id)
+            logger.info(f"Saved new image ID: {new_image_id}")
+        else:
+            logger.info(f"The image with the ID: {new_image_id} already exists. There are {queryset.count()} of them. Skipping...")
+
+    def main(self) -> None:
+        """Main processing phase."""
+
+        try:
+            self.cc_by_license = License.objects.get(id='cc_by')
+        except License.DoesNotExist:
+            self.cc_by_license = None
+
+        images = glob_open(f"{Path.cwd()}/events/importer/storage/images/*.webp")
+        main_path = Path(f"{settings.MEDIA_ROOT}/images")
+
+        for image in images:
+            with open(image, 'rb') as img_file:
+                img = pil_image.open(img_file)
+                img_name = re.split('/|\.\s*', image)[-2]
+                img.save(f"{main_path}/{img_name}.webp")
+                self.save_image(new_image_id=f"images/{img_name}.webp")
 
     def handle(self) -> None:
         """The core handler function."""

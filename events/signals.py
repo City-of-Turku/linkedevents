@@ -2,6 +2,7 @@ import logging
 import operator
 from functools import reduce
 
+from django.conf import settings
 from django.contrib.postgres.search import SearchVector
 from django.db import transaction
 from django.dispatch import receiver
@@ -20,6 +21,27 @@ logger = logging.getLogger(__name__)
 def place_post_save(sender, **kwargs):
     obj = kwargs["instance"]
     transaction.on_commit(populate_search_column(obj))
+
+
+def date_updator(instance, *args, **kwargs):
+    if instance.sub_event_type == 'sub_recurring':
+        try:
+            # Mothers values need to be updated based on the min child start_time and max end_time date.
+            ev_objs = Event.objects.filter(super_event_id=instance.super_event.id).iterator(chunk_size=10)
+            '''
+            child_list appends both start_time and end_time values from the above returned query (mothers all children).
+            We can safely do this because logically, an end_time can never pre date a start_time. 
+            Max will always be an end_time and respectively; minimum will always be a start_time.
+            '''
+            child_list = [v for x in ev_objs if x.deleted == False and x.event_status != 2 for v in (x.start_time, x.end_time)]
+            
+            if child_list:
+                instance.super_event.start_time = min(child_list)
+                instance.super_event.end_time = max(child_list)
+                instance.super_event.publication_status = instance.publication_status
+                instance.super_event.save()
+        except Exception as e:
+            print(e)
 
 
 def populate_search_column(obj):
@@ -46,26 +68,6 @@ def populate_search_column(obj):
     return on_commit
 
 
-def post_update(instance, *args, **kwargs):
-    try:
-        if instance.sub_event_type == 'sub_recurring':
-            try:
-                # Mothers values need to be updated based on the min child start_time and max end_time date.
-                ev_objs = Event.objects.filter(super_event_id=instance.super_event.id)
-                '''
-                child_list appends both start_time and end_time values from the above returned query (mothers all children).
-                We can safely do this because logically, an end_time can never pre date a start_time. 
-                Max will always be an end_time and respectively; minimum will always be a start_time.
-                '''
-                child_list = [v for x in ev_objs for v in (x.start_time, x.end_time)]
-                instance.super_event.start_time = min(child_list)
-                instance.super_event.end_time = max(child_list)
-                instance.super_event.save()
-            except Exception as e:
-                pass
-    except:
-        pass
-
 def post_save(instance, *args, **kwargs):
     try:
         if instance.sub_event_type == 'sub_recurring':
@@ -76,6 +78,7 @@ def post_save(instance, *args, **kwargs):
             instance.super_event.save()
     except:
         pass
+
 
 def organization_post_save(sender, instance, created, **kwargs):
     if not created and instance.replaced_by:
@@ -92,9 +95,15 @@ def organization_post_save(sender, instance, created, **kwargs):
 def user_post_save(sender, instance, created, **kwargs):
     if created:
         User = get_user_model()
-        org = Organization.objects.get(id='yksilo:2000')
-        org.private_users.add(instance)
-        org.save()
+        if settings.ADD_USERS_TO_PRIVATE_ORG_AUTOMATICALLY:
+            try:
+                org = Organization.objects.get(id=settings.PRIVATE_ORG_ID)
+                org.private_users.add(instance)
+                org.save()
+            except Organization.DoesNotExist:
+                logger.warning(
+                    f'Unable to add private user to organization {settings.PRIVATE_ORG_ID} because it does not exist.'
+                )
         recipient_list = [item[0] for item in User.objects.filter(is_superuser=True).values_list('email')]
         notification_type = NotificationType.USER_CREATED
         context = {'user': instance}

@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+
 from .utils import versioned_reverse as reverse
 import pytest
 from .utils import get, assert_fields_exist
 from events.models import (
-    Event, PublicationStatus, Language
+    Event, PublicationStatus, Language, Place
 )
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.geos import Point
 from django.conf import settings
+from django.utils import timezone
 import dateutil.parser
 from freezegun import freeze_time
 
@@ -40,16 +43,23 @@ def assert_event_fields_exist(data, version='v1'):
         'date_published',
         'description',
         'end_time',
+        'enrolment_end_time',
+        'enrolment_start_time',
+        'enrolment_url',
         'event_status',
         'external_links',
         'id',
         'images',
         'in_language',
         'info_url',
+        'is_owner',
+        'is_virtualevent',
         'keywords',
         'last_modified_time',
         'location',
         'location_extra_info',
+        'maximum_attendee_capacity',
+        'minimum_attendee_capacity',
         'name',
         'offers',
         'provider',
@@ -60,9 +70,12 @@ def assert_event_fields_exist(data, version='v1'):
         'audience_max_age',
         'start_time',
         'sub_events',
+        'sub_event_type',
         'super_event',
         'super_event_type',
+        'type_id',
         'videos',
+        'virtualevent_url',
         'replaced_by',
         'deleted',
     )
@@ -119,6 +132,137 @@ def test_get_event_list_verify_text_filter(api_client, event, event2):
     response = get_list(api_client, data={'text': 'event'})
     assert event.id not in [entry['id'] for entry in response.data['data']]
     assert event2.id in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
+def test_get_event_list_verify_virtual_filter(api_client, event, event2):
+    event.is_virtualevent = True
+    event.save()
+    event2.is_virtualevent = False
+    event2.save()
+
+    response = get_list(api_client, data={'virtual': 'true'})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id not in [entry['id'] for entry in response.data['data']]
+
+    response2 = get_list(api_client, data={'virtual': 'false'})
+    assert event.id not in [entry['id'] for entry in response2.data['data']]
+    assert event2.id in [entry['id'] for entry in response2.data['data']]
+
+    response3 = get_list(api_client, data={})
+    assert event.id in [entry['id'] for entry in response3.data['data']]
+    assert event2.id in [entry['id'] for entry in response3.data['data']]
+
+
+@pytest.mark.django_db
+def test_get_event_list_verify_locality_filter(api_client, event, event2):
+    event.location.address_locality = 'Turku'
+    event.location.save()
+    event2.location.address_locality = 'Raisio'
+    event2.location.save()
+
+    response = get_list(api_client, data={'locality': 'turku'})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id not in [entry['id'] for entry in response.data['data']]
+
+    response = get_list(api_client, data={'locality': 'turku,raisio'})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
+def test_get_event_list_verify_distance_filter(api_client, event, event2):
+    """
+    Test that only events within the given radius from the
+    given location are returned.
+
+    Note: API parameters are provided in EPSG:4326
+    """
+    # Event in Turku
+    event.location.position = Point(float(60.451508), float(22.264916), srid=4326)
+    event.location.position.transform(3067)
+    event.location.save()
+
+    # Event in Raisio
+    event2.location.position = Point(float(60.495433), float(22.228688), srid=4326)
+    event2.location.position.transform(3067)
+    event2.location.save()
+
+    response = get_list(api_client, data={'lon': 60.451629, 'lat': 22.266943, 'distance': 1000})
+    assert event.id in [entry['id'] for entry in response.data['data']]
+    assert event2.id not in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
+def test_get_event_list_verify_text_filter_by_place(api_client, user, data_source, organization, event, event2):
+    place1 = Place.objects.create(
+        id=data_source.id + ':test_location1',
+        data_source=data_source,
+        publisher=organization,
+        position=Point(50, 50),
+        name_fi='Test Place XXXX',
+        street_address_fi="Address 1",
+        address_locality_fi="Test Place 1",
+    )
+    place2 = Place.objects.create(
+        id=data_source.id + ':test_location2',
+        data_source=data_source,
+        publisher=organization,
+        position=Point(50, 50),
+        name_fi='Test Place 2',
+        street_address_fi="XXXX",
+        address_locality_fi="Test Place 2",
+    )
+    place3 = Place.objects.create(
+        id=data_source.id + ':test_location3',
+        data_source=data_source,
+        publisher=organization,
+        position=Point(50, 50),
+        name_fi='Test Place 3',
+        street_address_fi="Address 3",
+        address_locality_fi="XXXX",
+    )
+    event3 = Event.objects.create(
+        id=data_source.id + ':test_event3',
+        location=place1,
+        data_source=data_source,
+        publisher=organization,
+        last_modified_by=user,
+        start_time=timezone.now() + timedelta(minutes=30),
+        end_time=timezone.now() + timedelta(hours=1),
+        short_description='short desc',
+        description='desc',
+        name='tapahtuma'
+    )
+    event4 = Event.objects.create(
+        id=data_source.id + ':test_event4',
+        location=place2,
+        data_source=data_source,
+        publisher=organization,
+        last_modified_by=user,
+        start_time=timezone.now() + timedelta(minutes=30),
+        end_time=timezone.now() + timedelta(hours=1),
+        short_description='short desc',
+        description='desc',
+        name='tapahtuma'
+    )
+    event5 = Event.objects.create(
+        id=data_source.id + ':test_event5',
+        location=place3,
+        data_source=data_source,
+        publisher=organization,
+        last_modified_by=user,
+        start_time=timezone.now() + timedelta(minutes=30),
+        end_time=timezone.now() + timedelta(hours=1),
+        short_description='short desc',
+        description='desc',
+        name='tapahtuma'
+    )
+
+    response = get_list(api_client, data={'text': 'XXX'})
+
+    ids = {e['id'] for e in response.data['data']}
+    assert ids == {event3.id, event4.id, event5.id}
 
 
 @pytest.mark.django_db
@@ -493,6 +637,17 @@ def test_admin_user_filter(api_client, event, event2, user):
     ids = {e['id'] for e in response.data['data']}
     assert event.id in ids
     assert event2.id not in ids
+
+
+@pytest.mark.django_db
+def test_get_events_as_superuser(api_client, event, event2, user):
+    """Superusers should get events from all organizations"""
+    api_client.force_authenticate(user=user)
+
+    response = get_list(api_client)
+    ids = {e['id'] for e in response.data['data']}
+    assert event.id in ids
+    assert event2.id in ids
 
 
 @pytest.mark.django_db

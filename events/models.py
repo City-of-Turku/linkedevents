@@ -25,16 +25,18 @@ import pytz
 from django.contrib.gis.db import models
 from rest_framework.exceptions import ValidationError
 from reversion import revisions as reversion
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from mptt.querysets import TreeQuerySet
 from django.contrib.contenttypes.models import ContentType
 from events import translation_utils
-from django.utils.encoding import python_2_unicode_compatible
+from six import python_2_unicode_compatible
 from django.contrib.postgres.fields import HStoreField
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.db import transaction
+from django.db.models import Index
+from django.db.models.functions import Lower
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.contrib.postgres.search import SearchVectorField
@@ -114,7 +116,7 @@ class BaseQuerySet(models.QuerySet):
         if user.is_superuser:
             return True
         for event in self:
-            if not user.can_edit_event(event.publisher, event.publication_status):
+            if not user.can_edit_event(event.publisher, event.publication_status, event):
                 return False
         return True
 
@@ -184,6 +186,10 @@ class Image(models.Model):
         'Photographer name'), max_length=255, null=True, blank=True)
     alt_text = models.CharField(verbose_name=_(
         'Alt text'), max_length=320, null=True, blank=True)
+    is_shared_within_org = models.BooleanField(
+        default=False,
+        verbose_name=_('Is shared within organization')
+    )
 
     def save(self, *args, **kwargs):
         if not self.publisher:
@@ -470,8 +476,8 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
     search_column_fi = SearchVectorField(null=True)
     search_column_sv = SearchVectorField(null=True)
     search_column_en = SearchVectorField(null=True)
-    
-    class Meta:            
+
+    class Meta:
         verbose_name = _('place')
         verbose_name_plural = _('places')
         unique_together = (('data_source', 'origin_id'),)
@@ -479,6 +485,14 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
             GinIndex(fields=["search_column_fi"]),
             GinIndex(fields=["search_column_sv"]),
             GinIndex(fields=["search_column_en"]),
+            Index(
+                Lower("address_locality"),
+                "address_locality",
+                "address_locality_fi",
+                "address_locality_en",
+                "address_locality_sv",
+                name="locality_idx"
+            ),
         )
 
     def __unicode__(self):
@@ -494,16 +508,22 @@ class Place(MPTTModel, BaseModel, SchemalessFieldMixin, ImageMixin, ReplacedByMi
         ,config language and weight.
         """
         if lang == "fi":
-            return [  
-                ("name_fi", "finnish", "A"),              
-            ]   
+            return [
+                ("name_fi", "finnish", "A"),
+                ("street_address_fi", "finnish", "B"),
+                ("address_locality_fi", "finnish", "C"),
+            ]
         elif lang == "sv":
             return [
                 ("name_sv", "swedish", "A"),
+                ("street_address_sv", "swedish", "B"),
+                ("address_locality_sv", "swedish", "C"),
             ]
         elif lang == "en":
             return [
                 ("name_en", "english", "A"),
+                ("street_address_en", "english", "B"),
+                ("address_locality_en", "english", "C"),
             ]
         else:
             return []
@@ -830,7 +850,7 @@ class Event(MPTTModel, BaseModel, SchemalessFieldMixin, ReplacedByMixin):
         """Check if current event can be edited by the given user"""
         if user.is_superuser:
             return True
-        return user.can_edit_event(self.publisher, self.publication_status)
+        return user.can_edit_event(self.publisher, self.publication_status, self)
 
     def soft_delete(self, using=None):
         self.deleted = True
@@ -936,6 +956,54 @@ class Offer(models.Model, SimpleValueMixin):
 
 
 reversion.register(Offer)
+
+
+class Sidefield(BaseModel, models.Model, SimpleValueMixin):
+
+    class Type_Id:
+        GENERAL = 1
+        COURSE = 2
+        VOLUNTEERING = 3
+        HOBBIES = 4
+
+    TYPE_IDS = (
+        (Type_Id.GENERAL, _("General")),
+        (Type_Id.COURSE, _("Course")),
+        (Type_Id.VOLUNTEERING, _("Volunteering")),
+        (Type_Id.HOBBIES, _("Hobbies")),
+    )
+
+    type_id = models.SmallIntegerField(blank=False, null=False, db_index=False,
+                                       default=Type_Id.GENERAL, choices=TYPE_IDS)
+
+    sidefieldset_name = models.CharField(verbose_name=_('Sidefield set name'), max_length=50, blank=True)
+
+    location_sidefield = models.CharField(verbose_name=_('Location Sidefield'), max_length=1000, blank=True)
+    location_mobile = models.CharField(verbose_name=_('Location Button'), max_length=50, blank=True)
+    umbrella_sidefield = models.CharField(verbose_name=_('Umbrella Sidefield'), max_length=1000, blank=True)
+    umbrella_mobile = models.CharField(verbose_name=_('Umbrella Button'), max_length=50, blank=True)
+    times_sidefield = models.CharField(verbose_name=_('Times Sidefield'), max_length=1000, blank=True)
+    times_mobile = models.CharField(verbose_name=_('Times Button'), max_length=50, blank=True)
+    offers_sidefield = models.CharField(verbose_name=_('Offers Sidefield'), max_length=1000, blank=True)
+    offers_mobile = models.CharField(verbose_name=_('Offers Button'), max_length=50, blank=True)
+    keyword_sidefield = models.CharField(verbose_name=_('Keyword Sidefield'), max_length=1000, blank=True)
+    keyword_mobile = models.CharField(verbose_name=_('Keyword Button'), max_length=50, blank=True)
+    category_sidefield = models.CharField(verbose_name=_('Category Sidefield'), max_length=1000, blank=True)
+    category_mobile = models.CharField(verbose_name=_('Category Button'), max_length=50, blank=True)
+
+    def can_be_edited_by(self, user):
+        """Check if sidefield can be edited by the given user"""
+        return user.is_superuser
+
+    def save(self, *args, **kwargs):
+        db_obj = Sidefield.objects.filter(id=self.id).first()
+        self.last_modified_time = BaseModel.now()
+        if db_obj:
+            prev_db = db_obj.data_source
+            if prev_db.id == 'sidefield':
+                self.data_source = DataSource.objects.get(id='sidefield')
+
+        super(Sidefield, self).save(*args, **kwargs)
 
 
 class EventLink(models.Model, SimpleValueMixin):

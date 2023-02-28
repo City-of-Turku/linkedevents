@@ -58,7 +58,7 @@ class TestEvent(TestCase):
     def setUp(self):
         user_model = get_user_model()
         self.user = user_model.objects.create(username='testuser')
-
+        self.user2 = user_model.objects.create(username='testuser2')
         self.data_source = DataSource.objects.create(
             id='ds',
             name='data-source',
@@ -105,11 +105,20 @@ class TestEvent(TestCase):
     def test_can_be_edited_by_regular_user(self):
         self.org.regular_users.add(self.user)
 
+        self.event_1.created_by = self.user
+        self.event_1.save()
         can_be_edited = self.event_1.can_be_edited_by(self.user)
         self.assertTrue(can_be_edited)  # can edit draft event
 
+        self.event_2.created_by = self.user2
+        self.event_2.save()
         can_be_edited = self.event_2.can_be_edited_by(self.user)
         self.assertFalse(can_be_edited)  # cannot edit public event
+
+        self.event_2.created_by = self.user
+        self.event_2.save()
+        can_be_edited = self.event_2.can_be_edited_by(self.user)
+        self.assertTrue(can_be_edited)  # cann edit own public event
 
     def test_can_be_edited_by_admin_user(self):
         self.org.admin_users.add(self.user)

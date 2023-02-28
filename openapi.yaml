@@ -1,0 +1,811 @@
+swagger: '2.0'
+info:
+  title: LinkedEvents API View
+  description: LinkedEvents API Documentation
+  termsOfService: https://www.google.com/policies/terms/
+  contact:
+    email: sovellustuki@turku.fi
+  license:
+    name: MIT License
+  version: v1
+basePath: /
+consumes:
+  - application/json
+  - application/ld+json
+produces:
+  - application/json
+  - application/ld+json
+securityDefinitions:
+  Bearer Token:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: Token based authorization. Use Bearer as prefix i.e. `Bearer <my-token>`
+security:
+  - Bearer Token: []
+paths:
+  /{version}/event/:
+    get:
+      operationId: event_list
+      description: ''
+      parameters:
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: division
+          in: query
+          description: ''
+          required: false
+          type: string
+        - name: super_event_type
+          in: query
+          description: ''
+          required: false
+          type: string
+        - name: super_event
+          in: query
+          description: ''
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+        - name: radius
+          in: query
+          description: Maximum event radius in meters.
+          required: false
+          type: integer
+        - name: virtual
+          in: query
+          description: Return virtual/non-virtual events only.
+          type: boolean
+        - name: locality
+          in: query
+          description: Address locality where an event happens.
+          type: string
+        - name: text
+          in: query
+          description: Name of the event, event venue or event description.
+          type: string
+        - name: type_id
+          in: query
+          description: One or more of event types separated by comma.
+          type: string
+        - name: lat
+          in: query
+          description: Latitude of user coordinates to show events near user.
+          type: string
+        - name: lon
+          in: query
+          description: Longitude of user coordinates to show events near user.
+          type: string
+        - name: publisher
+          in: query
+          description: Event publisher organization id.
+          type: string
+        - name: language
+          in: query
+          description: Events language code.
+          type: string
+        - name: created_by
+          in: query
+          description: Event created by.
+          type: string
+        - name: publication_status
+          in: query
+          description: Event publication status.
+          type: string
+      responses:
+        '200':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    post:
+      operationId: event_create
+      description: ''
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    put:
+      operationId: event_update
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    patch:
+      operationId: event_partial_update
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/event/{id}/:
+    get:
+      operationId: event_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    put:
+      operationId: event_update
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    patch:
+      operationId: event_partial_update
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    delete:
+      operationId: event_delete
+      description: ''
+      parameters: []
+      responses:
+        '204':
+          description: ''
+      produces:
+        - application/json
+        - application/ld+json
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      tags:
+        - event
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this event.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/image/:
+    get:
+      operationId: image_list
+      description: ''
+      parameters:
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - image
+    post:
+      operationId: image_create
+      description: ''
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags:
+        - image
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/image/{id}/:
+    get:
+      operationId: image_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - image
+    put:
+      operationId: image_update
+      description: Handles thorough PUT method /image/ endpoint validation.
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - image
+    patch:
+      operationId: image_partial_update
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - image
+    delete:
+      operationId: image_delete
+      description: ''
+      parameters: []
+      responses:
+        '204':
+          description: ''
+      tags:
+        - image
+    parameters:
+      - name: id
+        in: path
+        description: A unique integer value identifying this image.
+        required: true
+        type: integer
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/keyword/:
+    get:
+      operationId: keyword_list
+      description: ''
+      parameters:
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - keyword
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/keyword/{id}/:
+    get:
+      operationId: keyword_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - keyword
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this keyword.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/keyword_set/:
+    get:
+      operationId: keyword_set_list
+      description: ''
+      parameters:
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - keyword_set
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/keyword_set/{id}/:
+    get:
+      operationId: keyword_set_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - keyword_set
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this keyword set.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/language/:
+    get:
+      operationId: language_list
+      description: ''
+      parameters:
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - language
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/language/{id}/:
+    get:
+      operationId: language_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - language
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this language.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/organization/:
+    get:
+      operationId: organization_list
+      description: ''
+      parameters:
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - organization
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/organization/{id}/:
+    get:
+      operationId: organization_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - organization
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this organization.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/paymentmethod/:
+    get:
+      operationId: paymentmethod_list
+      description: ''
+      parameters:
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - paymentmethod
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/paymentmethod/{id}/:
+    get:
+      operationId: paymentmethod_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - paymentmethod
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this payment method.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/place/:
+    get:
+      operationId: place_list
+      description: ''
+      parameters:
+        - name: division
+          in: query
+          description: ''
+          required: false
+          type: string
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - place
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/place/{id}/:
+    get:
+      operationId: place_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - place
+    parameters:
+      - name: id
+        in: path
+        description: A unique value identifying this place.
+        required: true
+        type: string
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/place_locality/:
+    get:
+      operationId: place_locality_list
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+  /{version}/search/:
+    get:
+      operationId: search_list
+      description: ''
+      parameters:
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - search
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/sidefield/:
+    get:
+      operationId: sidefield_list
+      description: ''
+      parameters:
+        - name: sort
+          in: query
+          description: Which field to use when ordering the results.
+          required: false
+          type: string
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+      tags:
+        - sidefield
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/sidefield/{id}/:
+    get:
+      operationId: sidefield_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - sidefield
+    parameters:
+      - name: id
+        in: path
+        description: A unique integer value identifying this sidefield.
+        required: true
+        type: integer
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/user/:
+    get:
+      operationId: user_list
+      description: ''
+      parameters:
+        - name: page
+          in: query
+          description: A page number within the paginated result set.
+          required: false
+          type: integer
+        - name: page_size
+          in: query
+          description: Number of results to return per page.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: ''
+          schema:
+            required:
+              - count
+              - results
+            type: object
+            properties:
+              count:
+                type: integer
+              next:
+                type: string
+                format: uri
+                x-nullable: true
+              previous:
+                type: string
+                format: uri
+                x-nullable: true
+              results:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+      tags:
+        - user
+    parameters:
+      - name: version
+        in: path
+        required: true
+        type: string
+  /{version}/user/{id}/:
+    get:
+      operationId: user_read
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/User'
+      tags:
+        - user
+    parameters:
+      - name: id
+        in: path
+        description: A unique integer value identifying this user.
+        required: true
+        type: integer
+      - name: version
+        in: path
+        required: true
+        type: string
+definitions:
+  User:
+    required:
+      - username
+      - uuid
+    type: object
+    properties:
+      last_login:
+        title: Viimeisin kirjautuminen
+        type: string
+        format: date-time
+        x-nullable: true
+      username:
+        title: Käyttäjätunnus
+        description: Vaaditaan. Enintään 150 merkkiä. Vain kirjaimet, numerot ja @/./+/-/_
+          ovat sallittuja.
+        type: string
+        pattern: ^[\w.@+-]+$
+        maxLength: 150
+        minLength: 1
+      email:
+        title: Sähköpostiosoite
+        type: string
+        format: email
+        maxLength: 254
+      date_joined:
+        title: Liittynyt
+        type: string
+        format: date-time
+      first_name:
+        title: Etunimi
+        type: string
+        maxLength: 30
+      last_name:
+        title: Sukunimi
+        type: string
+        maxLength: 150
+      uuid:
+        title: Uuid
+        type: string
+        format: uuid
+      department_name:
+        title: Department name
+        type: string
+        maxLength: 50
+        x-nullable: true
+      is_staff:
+        title: Ylläpitäjä
+        description: Määrittää, pääseekö käyttäjä tähän sivuston ylläpito-osioon.
+        type: boolean
+      is_superuser:
+        title: Pääkäyttäjä
+        description: Määrittää, onko käyttäjällä pääkäyttäjän oikeudet.
+        type: boolean
+      display_name:
+        title: Display name
+        type: string
+        readOnly: true

@@ -64,10 +64,35 @@ def test_get_keyword_list_verify_text_filter(api_client, keyword, keyword2, keyw
 
 
 @pytest.mark.django_db
-def test_get_keyword_list_verify_alt_labels_filter(api_client, keyword, keyword2, keyword3, keywordlabel):
+def test_get_keyword_list_verify_alt_labels_filter_when_name_is_found(
+        api_client, keyword, keyword2, keyword3, keywordlabel):
+    '''
+    Tests that when keywords are found with name alone, alt labels are not
+    used in queries
+    '''
     keyword2.alt_labels.add(keywordlabel)
-    response = api_client.get(reverse('keyword-list'), data={'text': 'avainsana',
-                                                             'show_all_keywords': True})
+    response = api_client.get(
+        reverse('keyword-list'),
+        data={'text': 'avainsana', 'show_all_keywords': True}
+    )
+    assert keyword.id in [entry['id'] for entry in response.data['data']]
+    assert keyword2.id not in [entry['id'] for entry in response.data['data']]
+    assert keyword3.id not in [entry['id'] for entry in response.data['data']]
+
+
+@pytest.mark.django_db
+def test_get_keyword_list_verify_alt_labels_filter_when_name_is_not_found(
+        api_client, keyword, keyword2, keyword3, keywordlabel2):
+    '''
+    Tests that when keywords are not found with name alone, alt labels are
+    used in queries
+    '''
+    keyword.alt_labels.add(keywordlabel2)
+    keyword2.alt_labels.add(keywordlabel2)
+    response = api_client.get(
+        reverse('keyword-list'),
+        data={'text': 'toinen', 'show_all_keywords': True}
+    )
     assert keyword.id in [entry['id'] for entry in response.data['data']]
     assert keyword2.id in [entry['id'] for entry in response.data['data']]
     assert keyword3.id not in [entry['id'] for entry in response.data['data']]

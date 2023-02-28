@@ -28,6 +28,9 @@ from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.gdal.error import GDALException
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point
 
+# Geocoding
+from geopy.geocoders import Nominatim
+
 # Query speed measurement (used if need be).
 from django.db import connection, reset_queries
 
@@ -233,7 +236,11 @@ class LounaistietoUnitsImporter(Importer):
         return txt
 
     def build_data(self, unit: dict, geom: dict) -> dict:
-        """Processes, validates and builds the data. Skips invalid units."""
+        """
+        Processes, validates and builds the data. Skips invalid units.
+        If the source data doesn't have the municipality/city information, use
+        reverse geocoding to get it from Nominatim based on the coordinates.
+        """
         data = {
             'ID': None,
             'ORIGIN_ID': None,
@@ -299,16 +306,41 @@ class LounaistietoUnitsImporter(Importer):
         if not data['NAME']:
             return None
 
-        # Get position:
+        # Get the position, and municipality and postal code based on the position:
         if isinstance(geom, dict):
             coords = geom.get('coordinates')
             if isinstance(coords, list):
                 if len(coords) == 2:
                     if all(isinstance(coords[i], (float, int)) for i in range(len(coords))):
                         try:
-                            pnt = Point(
-                                coords[0], coords[1], srid=3067)
+                            pnt = Point(coords[0], coords[1], srid=3067)
                             data['POSITION'] = pnt
+
+                            # Transform the projection from SRID 3067 to 4326 (WGS84) for reverse geocoding
+                            pnt.transform(4326)
+                            lat, lon = pnt.y, pnt.x
+
+                            # Reverse geocode the location from the coordinates
+                            geolocator = Nominatim(user_agent='geocoder')
+                            location = geolocator.reverse([lat, lon]).raw
+                            address = location.get('address')
+                            if address:
+                                localities = [address.get('city'), address.get('town'), address.get('village')]
+                                localities = [loc.upper() for loc in localities if loc is not None]
+                                muni = None
+                                for loc in localities:
+                                    if loc in MUNICIPALITIES:
+                                        muni = loc
+                                if muni:
+                                    for idx, lang in enumerate(('fi', 'sv')):
+                                        data['ADDRESS_LOCALITY'][lang] = MUNICIPALITIES[muni][idx]
+                                        data['POST_CODE'] = address.get("postcode")
+                                        # TODO: The city district info is also available here
+                                else:
+                                # We don't import units that are outside our region.
+                                    return None
+                            else:
+                                return None
                         except Exception as e:
                             logger.warn(
                                 "Could not instantiate the location: %s" % e)
@@ -330,9 +362,8 @@ class LounaistietoUnitsImporter(Importer):
                     for ch in SAFE_REGEX:
                         street = street.replace(ch, '')
 
-                    # Get the municipality:
                     splt = unit['osoite'].split(',')
-                    if len(splt) > 1:
+                    if not data['ADDRESS_LOCALITY'] and len(splt) > 1:
                         if len(splt) == 3:
                             # For parsing OSM streets:
                             splt[1] = splt[1] + splt[2]
@@ -347,9 +378,11 @@ class LounaistietoUnitsImporter(Importer):
                                 # We don't import units that are outside our region.
                                 return None
                             post_code = munisplt[0]
-                            if post_code != '':
+                            if not data['POST_CODE'] and post_code != '':
                                 data['POST_CODE'] = post_code
+
                     data['STREET_ADDRESS']['fi'] = unit['osoite']
+
                     # Find the street from the street registry.
                     try:
                         addr = Place.objects.filter(data_source_id='osoite', address_locality_fi=data['ADDRESS_LOCALITY']['fi']).filter(

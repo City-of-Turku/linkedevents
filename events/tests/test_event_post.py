@@ -6,7 +6,7 @@ from dateutil.parser import parse as dateutil_parse
 import pytest
 import pytz
 from django.utils import timezone, translation
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from events.auth import ApiKeyUser
 from .utils import versioned_reverse as reverse
 from django.core.management import call_command
@@ -196,19 +196,19 @@ def test__cannot_publish_an_event_without_start_time(list_url,
 
 
 @pytest.mark.django_db
-def test__cannot_publish_an_event_without_description(list_url,
+def test__cannot_publish_an_event_without_short_description(list_url,
                                                       api_client,
                                                       minimal_event_dict,
                                                       user):
     api_client.force_authenticate(user=user)
-    minimal_event_dict['description'] = {'fi': None}
+    minimal_event_dict['short_description'] = {'fi': None}
     response = api_client.post(list_url, minimal_event_dict, format='json')
     assert response.status_code == 400
-    assert 'description' in response.data
-    del minimal_event_dict['description']
+    assert 'short_description' in response.data
+    del minimal_event_dict['short_description']
     response2 = api_client.post(list_url, minimal_event_dict, format='json')
     assert response2.status_code == 400
-    assert 'description' in response2.data
+    assert 'short_description' in response2.data
 
 
 @pytest.mark.django_db
@@ -345,23 +345,18 @@ def test_start_time_and_end_time_validation(api_client, minimal_event_dict, user
 
 
 @pytest.mark.django_db
-def test_description_and_short_description_required_in_name_languages(api_client, minimal_event_dict, user):
+def test_short_description_required_in_name_languages(api_client, minimal_event_dict, user):
     api_client.force_authenticate(user)
 
     minimal_event_dict['name'] = {'fi': 'nimi', 'sv': 'namn'}
     minimal_event_dict['short_description'] = {'fi': 'lyhyt kuvaus'}
-    minimal_event_dict['description'] = {'sv': 'description in swedish'}
 
     with translation.override('en'):
         response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
 
     # there should be only one error
     assert len(response.data['short_description']) == 1
-    assert len(response.data['description']) == 1
-
-    assert (force_text(response.data['short_description']['sv']) ==
-            'This field must be specified before an event is published.')
-    assert (force_text(response.data['description']['fi']) ==
+    assert (force_str(response.data['short_description']['sv']) ==
             'This field must be specified before an event is published.')
 
 
@@ -374,7 +369,7 @@ def test_short_description_cannot_exceed_160_chars(api_client, minimal_event_dic
     with translation.override('en'):
         response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
     assert response.status_code == 400
-    assert (force_text(response.data['short_description']['fi'] ==
+    assert (force_str(response.data['short_description']['fi'] ==
                        'Short description length must be 160 characters or less'))
 
 
@@ -438,7 +433,7 @@ def test_price_info_options(api_client, minimal_event_dict, user, offers, expect
 
     assert response.status_code == expected
     if expected == 400:
-        assert force_text(response.data['offers'][0]) == 'Price info must be specified before an event is published.'
+        assert force_str(response.data['offers'][0]) == 'Price info must be specified before an event is published.'
 
 
 @pytest.mark.django_db
@@ -473,7 +468,7 @@ def test_name_required_in_some_language(api_client, minimal_event_dict, user, na
         assert response.status_code == 400
 
     if not is_valid:
-        assert force_text(response.data['name'][0]) == 'The name must be specified.'
+        assert force_str(response.data['name'][0]) == 'The name must be specified.'
 
 
 @pytest.mark.django_db
@@ -544,3 +539,20 @@ def test_create_super_event_with_subevents(api_client, minimal_event_dict, user)
 
     sub_event_names = set([sub_event.name_fi for sub_event in super_event.sub_events.all()])
     assert sub_event_names == {'sub event 1', 'sub event 2'}
+
+
+@pytest.mark.django_db
+def test_create_event_that_is_virtual(api_client, minimal_event_dict, user):
+    api_client.force_authenticate(user)
+    minimal_event_dict['is_virtualevent'] = True
+    response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
+    assert response.status_code == 201
+    assert response.data['is_virtualevent'] == True
+
+
+@pytest.mark.django_db
+def test_create_event_without_is_virtualevent_field(api_client, minimal_event_dict, user):
+    api_client.force_authenticate(user)
+    response = api_client.post(reverse('event-list'), minimal_event_dict, format='json')
+    assert response.status_code == 201
+    assert response.data['is_virtualevent'] == False

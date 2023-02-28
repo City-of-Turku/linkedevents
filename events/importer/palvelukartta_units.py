@@ -127,7 +127,7 @@ async def main(unit_pages: int) -> dict:
         tasks = []
         for page_no in range(1, unit_pages+1):
             # Testipalvelukartta needs turku VPN connection.
-            URL = "https://testipalvelukartta-api.turku.fi/api/v2/unit/?page=%s&page_size=50" % page_no
+            URL = "https://palvelukartta-api.turku.fi/api/v2/unit/?page=%s&page_size=50" % page_no
             tasks.append(fetch(session=session, URL=URL, id=page_no))
             logger.info("Asynchronous task: %s instantiated" % page_no)
         try:
@@ -147,7 +147,7 @@ def async_main(retry_count=3) -> dict:
     by dividing it with default value 20 (servicemap).
     Testipalvelukartta needs turku VPN connection.
     """
-    url = "https://testipalvelukartta-api.turku.fi/api/v2/unit"
+    url = "https://palvelukartta-api.turku.fi/api/v2/unit"
 
     try:
         fetch = requests.get(url, headers=HEADERS, auth=(

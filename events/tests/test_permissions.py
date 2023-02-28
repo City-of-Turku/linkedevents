@@ -39,6 +39,13 @@ class TestUserModelPermissionMixin(TestCase):
             self.org,
         )
 
+    def test_is_private_user(self):
+        self.assertRaises(
+            NotImplementedError,
+            self.instance.is_private_user,
+            self.org,
+        )
+
     def test_can_edit_event(self):
         # test for admin user
         self.instance.is_admin = MagicMock(return_value=True)
@@ -48,9 +55,10 @@ class TestUserModelPermissionMixin(TestCase):
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
         self.assertTrue(can_edit)
 
-        # test for regular user
+        # test for private user
         self.instance.is_admin = MagicMock(return_value=False)
-        self.instance.is_regular_user = MagicMock(return_value=True)
+        self.instance.is_regular_user = MagicMock(return_value=False)
+        self.instance.is_private_user = MagicMock(return_value=True)
 
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
         self.assertFalse(can_edit)
@@ -60,6 +68,7 @@ class TestUserModelPermissionMixin(TestCase):
         # test for other users
         self.instance.is_admin = MagicMock(return_value=False)
         self.instance.is_regular_user = MagicMock(return_value=False)
+        self.instance.is_private_user = MagicMock(return_value=False)
 
         can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
         self.assertFalse(can_edit)
@@ -89,6 +98,11 @@ class TestUserModelPermissions(TestCase):
             data_source=self.data_source,
             parent=self.org
         )
+        self.org3 = Organization.objects.create(
+            name='org3',
+            origin_id='org3',
+            data_source=self.data_source,
+        )
 
     def test_get_editable_events(self):
         # this test requires the whole User model, as admin organizations are dependent on org hierarchy
@@ -116,20 +130,52 @@ class TestUserModelPermissions(TestCase):
             publication_status=PublicationStatus.DRAFT
         )
 
+        # superusers should be allowed to see events from all organizations
+        event_4 = Event.objects.create(
+            id='event-4',
+            name='event-4',
+            data_source=self.data_source,
+            publisher=self.org3,
+            publication_status=PublicationStatus.DRAFT
+        )
+
         total_qs = Event.objects.all()
         # test for admin user
         # magicmock cannot be used for object properties
         self.instance.admin_organizations.add(self.org)
         qs = self.instance.get_editable_events(total_qs)
-        self.assertQuerysetEqual(qs, [repr(event_1), repr(event_2), repr(event_3)], ordered=False)
+        self.assertQuerysetEqual(qs, values=[repr(event_1), repr(event_2), repr(event_3)], transform=repr, ordered=False)
 
         # test for regular user
         self.instance.admin_organizations.remove(self.org)
         self.instance.organization_memberships.add(self.org)
         qs = self.instance.get_editable_events(total_qs)
-        self.assertQuerysetEqual(qs, [repr(event_2)])
+        self.assertQuerysetEqual(qs, values=[repr(event_2)], transform=repr)
+
+        # test for private user
+        self.instance.organization_memberships.remove(self.org)
+        self.instance.public_memberships.add(self.org)
+        qs = self.instance.get_editable_events(total_qs)
+        self.assertQuerysetEqual(qs, values=[repr(event_1)], transform=repr)
 
         # test for other users
-        self.instance.organization_memberships.remove(self.org)
+        self.instance.public_memberships.remove(self.org)
         qs = self.instance.get_editable_events(total_qs)
         self.assertQuerysetEqual(qs, [])
+
+        # test for superusers
+        self.instance.is_superuser = True
+        qs = self.instance.get_editable_events(total_qs)
+        self.assertQuerysetEqual(
+            qs,
+            values=[repr(event_1), repr(event_2), repr(event_3), repr(event_4)],
+            transform=repr,
+            ordered=False,
+        )
+
+    def test_superuser_can_edit_events(self):
+        self.instance.is_superuser = True
+        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.PUBLIC)
+        self.assertTrue(can_edit)
+        can_edit = self.instance.can_edit_event(self.org, PublicationStatus.DRAFT)
+        self.assertTrue(can_edit)
