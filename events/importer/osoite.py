@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 THREAD_POOL_SIZE = 8
 
 MUNICIPALITIES = { 
-    # Code, municipality_id, name_fi, name_sv
+    # Code, municipality_id, name_fi, name_sv, batch
     19: ("aura","Aura", "Aura"),
     202: ("kaarina","Kaarina", "S:t Karins"),
     284: ("koski_tl", "Koski Tl", "Koskis"),
@@ -69,7 +69,8 @@ MUNICIPALITIES = {
     636: ("pöytyä", "Pöytyä", "Pöytis"),
     680: ("raisio", "Raisio", "Reso"),
     704: ("rusko", "Rusko", "Rusko"),
-    734: ("salo", "Salo", "Salo"),
+    734: ("salo", "Salo", "Salo", 1),
+    '734': ("salo", "Salo", "Salo", 2),
     738: ("sauvo", "Sauvo", "Sagu"),
     761: ("somero", "Somero", "Somero"),
     833: ("taivassalo", "Taivassalo", "Tövsala"),
@@ -86,7 +87,7 @@ SOURCE_SRS = SpatialReference(SOURCE_DATA_SRID)
 TARGET_SRS = SpatialReference(settings.PROJECTION_SRID)
 # 1000 is the max page size in munigeo
 PAGE_SIZE = 1000
-
+BATCH_SIZE = 130
 def proc_time_frmt(stage: str) -> None:
     # Formatter for logs.
     ft = math.modf(time.process_time())
@@ -274,10 +275,16 @@ class OsoiteImporter(Importer):
         url = f"{BASE_URL}?municipality={municipality[0]}"
         count = self.get_count(url)
         num_pages = int(count / PAGE_SIZE) + 1
+        start = 0
         logger.info(f"Fetching municipality:{municipality[1]}")
         logger.info(f"Number of pages to fetch: {num_pages} with page size: {PAGE_SIZE}.")
+
+        if len(municipality) == 4 and municipality[3] == 1:
+            num_pages = BATCH_SIZE
+        elif len(municipality) == 4 and municipality[3] == 2:
+            start = BATCH_SIZE
         
-        for pool in range(0, num_pages, THREAD_POOL_SIZE):
+        for pool in range(start, num_pages, THREAD_POOL_SIZE):
             threads = []
             # Create threads to the pool
             for page in range(1, THREAD_POOL_SIZE + 1):
