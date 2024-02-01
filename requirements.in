@@ -33,7 +33,7 @@ icalendar
 isodate
 jinja2
 langdetect
-lxml==4.6.5
+lxml==4.9.1
 markdown
 pillow
 --no-binary psycopg2
