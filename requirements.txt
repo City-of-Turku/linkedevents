@@ -142,7 +142,7 @@ ecdsa==0.15
     # via python-jose
 elasticsearch==7.6.0
     # via -r requirements.in
-future==0.18.2
+future==0.18.3
     # via pyjwkest
 geographiclib==1.52
     # via geopy
