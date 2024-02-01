@@ -18,7 +18,7 @@ bleach==3.3.0
     # via -r requirements.in
 cachetools==5.2.1
     # via django-helusers
-certifi==2019.11.28
+certifi==2022.12.7
     # via
     #   requests
     #   sentry-sdk
