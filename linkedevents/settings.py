@@ -484,7 +484,7 @@ for language in [l[0] for l in LANGUAGES]:
 
 
 import bleach  # noqa
-BLEACH_ALLOWED_TAGS = bleach.ALLOWED_TAGS + ["p", "div", "br"]
+BLEACH_ALLOWED_TAGS = frozenset().union(*[bleach.ALLOWED_TAGS, frozenset(["p", "div", "br"])])
 
 from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa
 THUMBNAIL_PROCESSORS = (

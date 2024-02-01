@@ -49,3 +49,4 @@ requests-cache
 requests
 sentry-sdk
 six
+urllib3<2
