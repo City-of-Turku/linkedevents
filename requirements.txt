@@ -6,18 +6,25 @@
 #
 --no-binary psycopg2
 
-aiohttp==3.7.4.post0
+aiohttp==3.9.2
     # via -r requirements.in
+aiosignal==1.3.1
+    # via aiohttp
 asgiref==3.6.0
     # via django
-async-timeout==3.0.1
+async-timeout==4.0.3
     # via aiohttp
 attrs==21.2.0
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   cattrs
+    #   requests-cache
 bleach==3.3.0
     # via -r requirements.in
 cachetools==5.2.1
     # via django-helusers
+cattrs==23.1.1
+    # via requests-cache
 certifi==2019.11.28
     # via
     #   requests
@@ -25,9 +32,7 @@ certifi==2019.11.28
 cffi==1.14.0
     # via cryptography
 chardet==3.0.4
-    # via
-    #   aiohttp
-    #   requests
+    # via requests
 coreapi==2.3.3
     # via drf-yasg
 coreschema==0.0.4
@@ -142,6 +147,12 @@ ecdsa==0.15
     # via python-jose
 elasticsearch==7.6.0
     # via -r requirements.in
+exceptiongroup==1.2.0
+    # via cattrs
+frozenlist==1.4.1
+    # via
+    #   aiohttp
+    #   aiosignal
 future==0.18.2
     # via pyjwkest
 geographiclib==1.52
@@ -196,6 +207,8 @@ pillow==8.2.0
     # via
     #   -r requirements.in
     #   easy-thumbnails
+platformdirs==4.2.0
+    # via requests-cache
 psycopg2==2.8.4
     # via -r requirements.in
 pyasn1==0.4.8
@@ -212,6 +225,7 @@ pyjwt[crypto]==1.7.1
     # via
     #   django-allauth
     #   djangorestframework-jwt
+    #   pyjwt
     #   social-auth-core
 pyparsing==2.4.6
     # via
@@ -258,7 +272,7 @@ requests==2.23.0
     #   requests-cache
     #   requests-oauthlib
     #   social-auth-core
-requests-cache==0.6.0.dev1
+requests-cache==1.1.1
     # via
     #   -r requirements.in
     #   django-munigeo-turku
@@ -270,6 +284,8 @@ rsa==4.7
     # via python-jose
 ruamel-yaml==0.17.21
     # via drf-yasg
+ruamel-yaml-clib==0.2.8
+    # via ruamel-yaml
 sentry-sdk==0.14.3
     # via -r requirements.in
 six==1.14.0
@@ -288,6 +304,7 @@ six==1.14.0
     #   python-jose
     #   social-auth-app-django
     #   social-auth-core
+    #   url-normalize
 social-auth-app-django==3.1.0
     # via -r requirements.in
 social-auth-core==3.3.2
@@ -300,16 +317,19 @@ swapper==1.3.0
     # via django-orghierarchy-turku
 typing-extensions==3.10.0.0
     # via
-    #   aiohttp
+    #   cattrs
     #   django-modeltranslation
 uritemplate==4.1.1
     # via
     #   coreapi
     #   drf-yasg
+url-normalize==1.4.3
+    # via requests-cache
 urllib3==1.25.9
     # via
     #   elasticsearch
     #   requests
+    #   requests-cache
     #   sentry-sdk
 webencodings==0.5.1
     # via bleach
