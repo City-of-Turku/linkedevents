@@ -45,7 +45,7 @@ defusedxml==0.8.0rc2
     #   social-auth-core
 deprecation==2.1.0
     # via django-helusers
-django==3.2.23
+django==3.2.25
     # via
     #   -r requirements.in
     #   django-admin-autocomplete-filter
@@ -222,7 +222,6 @@ pyjwt[crypto]==1.7.1
     # via
     #   django-allauth
     #   djangorestframework-jwt
-    #   pyjwt
     #   social-auth-core
 pyparsing==3.1.1
     # via rdflib
