@@ -200,7 +200,7 @@ packaging==23.2
     # via
     #   deprecation
     #   drf-yasg
-pillow==10.2.0
+pillow==10.3.0
     # via
     #   -r requirements.in
     #   easy-thumbnails
@@ -222,7 +222,6 @@ pyjwt[crypto]==1.7.1
     # via
     #   django-allauth
     #   djangorestframework-jwt
-    #   pyjwt
     #   social-auth-core
 pyparsing==3.1.1
     # via rdflib
