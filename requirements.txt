@@ -174,7 +174,7 @@ isodate==0.6.1
     # via
     #   -r requirements.in
     #   rdflib
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   -r requirements.in
     #   django-jinja
@@ -222,7 +222,6 @@ pyjwt[crypto]==1.7.1
     # via
     #   django-allauth
     #   djangorestframework-jwt
-    #   pyjwt
     #   social-auth-core
 pyparsing==3.1.1
     # via rdflib
